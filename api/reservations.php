@@ -1,50 +1,66 @@
 <?php
-// api/reservations.php - CRUD Operations with PDO Prepared Statements
+// api/reservations.php - Multi-Tenant Reservation CRUD
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 header('Content-Type: application/json; charset=utf-8');
 
 $pdo = require __DIR__ . '/../config/db.php';
-
 $action = $_REQUEST['action'] ?? 'list';
 
 try {
     if ($action === 'list') {
         $search = trim($_GET['search'] ?? '');
-        $field = trim($_GET['field'] ?? '');
+        $field_id = (int)($_GET['field_id'] ?? 0);
         $status = trim($_GET['status'] ?? '');
         $city = trim($_GET['city'] ?? '');
         $district = trim($_GET['district'] ?? '');
+        $facility_id = (int)($_GET['facility_id'] ?? 0);
 
-        $sql = "SELECT * FROM field_reservations WHERE 1=1";
+        // If owner is logged in, force their facility_id
+        if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'owner') {
+            $facility_id = (int)$_SESSION['facility_id'];
+        }
+
+        $sql = "SELECT r.*, f.name as facility_name 
+                FROM field_reservations r 
+                LEFT JOIN facilities f ON r.facility_id = f.id 
+                WHERE 1=1";
         $params = [];
 
+        if ($facility_id > 0) {
+            $sql .= " AND r.facility_id = ?";
+            $params[] = $facility_id;
+        }
+
         if ($search !== '') {
-            $sql .= " AND (team_name LIKE ? OR contact_name LIKE ? OR phone LIKE ?)";
+            $sql .= " AND (r.team_name LIKE ? OR r.contact_name LIKE ? OR r.phone LIKE ?)";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
         }
 
-        if ($field !== '' && $field !== 'Tüm Sahalar') {
-            $sql .= " AND field_name = ?";
-            $params[] = $field;
+        if ($field_id > 0) {
+            $sql .= " AND r.field_id = ?";
+            $params[] = $field_id;
         }
 
         if ($status !== '' && $status !== 'Tümü') {
-            $sql .= " AND status = ?";
+            $sql .= " AND r.status = ?";
             $params[] = $status;
         }
 
         if ($city !== '' && $city !== 'Tüm İller') {
-            $sql .= " AND city = ?";
+            $sql .= " AND r.city = ?";
             $params[] = $city;
         }
 
         if ($district !== '' && $district !== 'Tüm İlçeler') {
-            $sql .= " AND district = ?";
+            $sql .= " AND r.district = ?";
             $params[] = $district;
         }
 
-        $sql .= " ORDER BY reservation_date DESC, reservation_time ASC";
+        $sql .= " ORDER BY r.reservation_date DESC, r.reservation_time ASC";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
@@ -70,6 +86,9 @@ try {
 
     if ($action === 'save') {
         $id = (int)($_POST['id'] ?? 0);
+        $facility_id = (int)($_POST['facility_id'] ?? 0);
+        $field_id = (int)($_POST['field_id'] ?? 0);
+        $field_name = trim($_POST['field_name'] ?? '');
         $team_name = trim($_POST['team_name'] ?? '');
         $contact_name = trim($_POST['contact_name'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
@@ -77,23 +96,36 @@ try {
         $district = trim($_POST['district'] ?? 'Kadıköy');
         $reservation_date = trim($_POST['reservation_date'] ?? '');
         $reservation_time = trim($_POST['reservation_time'] ?? '');
-        $field_name = trim($_POST['field_name'] ?? '');
         $fee = (float)($_POST['fee'] ?? 0);
         $status = trim($_POST['status'] ?? 'Bekliyor');
         $subscription_plan = trim($_POST['subscription_plan'] ?? 'Standart');
         $needs_player = isset($_POST['needs_player']) ? 1 : 0;
         $notes = trim($_POST['notes'] ?? '');
 
+        // Owner override
+        if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'owner') {
+            $facility_id = (int)$_SESSION['facility_id'];
+        }
+
         // Basic Validation
-        if (empty($team_name) || empty($contact_name) || empty($phone) || empty($reservation_date) || empty($reservation_time) || empty($field_name)) {
-            echo json_encode(['status' => 'error', 'message' => 'Lütfen tüm zorunlu alanları doldurunuz.']);
+        if ($facility_id <= 0 || empty($team_name) || empty($contact_name) || empty($phone) || empty($reservation_date) || empty($reservation_time)) {
+            echo json_encode(['status' => 'error', 'message' => 'Lütfen tesis, tarih, saat ve zorunlu alanları doldurunuz.']);
             exit;
         }
 
-        // Check Conflict (Same Field + Date + Time, excluding current ID if updating, and excluding Cancelled)
+        // Fetch field name if missing
+        if ($field_id > 0 && empty($field_name)) {
+            $fStmt = $pdo->prepare("SELECT field_name FROM facility_fields WHERE id = ?");
+            $fStmt->execute([$field_id]);
+            $fRow = $fStmt->fetch();
+            if ($fRow) $field_name = $fRow['field_name'];
+        }
+
+        // Check Conflict for same Facility + Field + Date + Time
         $conflictSql = "SELECT id, team_name FROM field_reservations 
-                        WHERE field_name = ? AND reservation_date = ? AND reservation_time = ? AND status != 'İptal'";
-        $conflictParams = [$field_name, $reservation_date, $reservation_time];
+                        WHERE facility_id = ? AND (field_id = ? OR field_name = ?) 
+                        AND reservation_date = ? AND reservation_time = ? AND status != 'İptal'";
+        $conflictParams = [$facility_id, $field_id, $field_name, $reservation_date, $reservation_time];
 
         if ($id > 0) {
             $conflictSql .= " AND id != ?";
@@ -107,7 +139,7 @@ try {
         if ($conflict) {
             echo json_encode([
                 'status' => 'error', 
-                'message' => "❌ ÇAKIŞMA UYARISI: {$field_name} için {$reservation_date} tarihinde ve {$reservation_time} saatinde '{$conflict['team_name']}' adına onaylı/aktif bir randevu zaten mevcut!"
+                'message' => "❌ ÇAKIŞMA UYARISI: {$field_name} sahasında {$reservation_date} tarihinde ve {$reservation_time} saatinde '{$conflict['team_name']}' adına onaylı randevu mevcuttur!"
             ]);
             exit;
         }
@@ -115,29 +147,26 @@ try {
         if ($id > 0) {
             // Update
             $updateSql = "UPDATE field_reservations SET 
-                team_name = ?, contact_name = ?, phone = ?, city = ?, district = ?, 
-                reservation_date = ?, reservation_time = ?, field_name = ?, fee = ?, 
-                status = ?, subscription_plan = ?, needs_player = ?, notes = ?
+                facility_id = ?, field_id = ?, field_name = ?, team_name = ?, contact_name = ?, phone = ?, city = ?, district = ?, 
+                reservation_date = ?, reservation_time = ?, fee = ?, status = ?, subscription_plan = ?, needs_player = ?, notes = ?
                 WHERE id = ?";
             $stmt = $pdo->prepare($updateSql);
             $stmt->execute([
-                $team_name, $contact_name, $phone, $city, $district, 
-                $reservation_date, $reservation_time, $field_name, $fee, 
-                $status, $subscription_plan, $needs_player, $notes, $id
+                $facility_id, $field_id, $field_name, $team_name, $contact_name, $phone, $city, $district, 
+                $reservation_date, $reservation_time, $fee, $status, $subscription_plan, $needs_player, $notes, $id
             ]);
             echo json_encode(['status' => 'success', 'message' => 'Randevu başarıyla güncellendi.']);
         } else {
             // Insert
             $insertSql = "INSERT INTO field_reservations 
-                (team_name, contact_name, phone, city, district, reservation_date, reservation_time, field_name, fee, status, subscription_plan, needs_player, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                (facility_id, field_id, field_name, team_name, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, needs_player, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($insertSql);
             $stmt->execute([
-                $team_name, $contact_name, $phone, $city, $district, 
-                $reservation_date, $reservation_time, $field_name, $fee, 
-                $status, $subscription_plan, $needs_player, $notes
+                $facility_id, $field_id, $field_name, $team_name, $contact_name, $phone, $city, $district, 
+                $reservation_date, $reservation_time, $fee, $status, $subscription_plan, $needs_player, $notes
             ]);
-            echo json_encode(['status' => 'success', 'message' => 'Yeni randevu başarıyla oluşturuldu.']);
+            echo json_encode(['status' => 'success', 'message' => 'Yeni randevu başarıyla kaydoldu!']);
         }
         exit;
     }
@@ -149,10 +178,16 @@ try {
             exit;
         }
 
-        $stmt = $pdo->prepare("DELETE FROM field_reservations WHERE id = ?");
-        $stmt->execute([$id]);
+        // Owner security check
+        if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'owner') {
+            $stmt = $pdo->prepare("DELETE FROM field_reservations WHERE id = ? AND facility_id = ?");
+            $stmt->execute([$id, $_SESSION['facility_id']]);
+        } else {
+            $stmt = $pdo->prepare("DELETE FROM field_reservations WHERE id = ?");
+            $stmt->execute([$id]);
+        }
 
-        echo json_encode(['status' => 'success', 'message' => 'Randevu başarıyla silindi.']);
+        echo json_encode(['status' => 'success', 'message' => 'Randevu silindi.']);
         exit;
     }
 
