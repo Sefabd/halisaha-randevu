@@ -1,5 +1,5 @@
 <?php
-// api/auth.php - Session, Authentication & Team Theme Controller
+// api/auth.php - Session, Authentication & Persistent Team Controller
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -8,25 +8,37 @@ $pdo = require __DIR__ . '/../config/db.php';
 $action = $_REQUEST['action'] ?? '';
 
 try {
-    // Standard Logout Redirect Fix
+    // Logout Redirect Fix
     if ($action === 'logout') {
         session_destroy();
         header('Location: ../login.php');
         exit;
     }
 
+    // PERSISTENT TEAM SETTING IN DB
     if ($action === 'set_team') {
         header('Content-Type: application/json; charset=utf-8');
         $team = trim($_POST['team'] ?? 'neutral');
         $_SESSION['user_team'] = $team;
+
+        if (isset($_SESSION['user_role'])) {
+            if ($_SESSION['user_role'] === 'player' && isset($_SESSION['user_id'])) {
+                $up = $pdo->prepare("UPDATE users SET favorite_team = ? WHERE id = ?");
+                $up->execute([$team, $_SESSION['user_id']]);
+            } else if ($_SESSION['user_role'] === 'owner' && isset($_SESSION['facility_id'])) {
+                $up = $pdo->prepare("UPDATE facilities SET favorite_team = ? WHERE id = ?");
+                $up->execute([$team, $_SESSION['facility_id']]);
+            }
+        }
+
         echo json_encode(['status' => 'success', 'team' => $team]);
         exit;
     }
 
-    // 1. OYUNCU KAYIT OL
+    // 1. OYUNCU KAYIT OL (BÜYÜK HARF İSİM STANDARDİ)
     if ($action === 'register_player') {
         header('Content-Type: application/json; charset=utf-8');
-        $full_name = trim($_POST['full_name'] ?? '');
+        $full_name = mb_strtoupper(trim($_POST['full_name'] ?? ''), 'UTF-8');
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
@@ -49,6 +61,7 @@ try {
         $ins->execute([$full_name, $username, $passHash, $phone, $team]);
 
         $_SESSION['user_role'] = 'player';
+        $_SESSION['user_id'] = $pdo->lastInsertId();
         $_SESSION['user_name'] = $full_name;
         $_SESSION['username'] = $username;
         $_SESSION['user_team'] = $team;
@@ -59,7 +72,7 @@ try {
         exit;
     }
 
-    // 2. OYUNCU GİRİŞ YAP
+    // 2. OYUNCU GİRİŞ YAP (PERSISTENT TEAM LOAD FROM DB)
     if ($action === 'login_player') {
         header('Content-Type: application/json; charset=utf-8');
         $username = trim($_POST['username'] ?? '');
@@ -77,7 +90,7 @@ try {
         if ($user && (password_verify($password, $user['password']) || $password === '123')) {
             $_SESSION['user_role'] = 'player';
             $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['full_name'];
+            $_SESSION['user_name'] = mb_strtoupper($user['full_name'], 'UTF-8');
             $_SESSION['username'] = $user['username'];
             $_SESSION['user_team'] = $user['favorite_team'] ?? 'neutral';
             $_SESSION['city'] = 'İstanbul';
@@ -90,11 +103,11 @@ try {
         exit;
     }
 
-    // 3. İŞLETMECİ KAYIT OL
+    // 3. İŞLETMECİ KAYIT OL (BÜYÜK HARF İSİM STANDARDİ)
     if ($action === 'register_owner') {
         header('Content-Type: application/json; charset=utf-8');
         $facility_name = trim($_POST['facility_name'] ?? '');
-        $owner_name = trim($_POST['owner_name'] ?? '');
+        $owner_name = mb_strtoupper(trim($_POST['owner_name'] ?? ''), 'UTF-8');
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
         $city = trim($_POST['city'] ?? 'İstanbul');
@@ -111,7 +124,7 @@ try {
         $checkStmt = $pdo->prepare("SELECT id FROM facilities WHERE username = ?");
         $checkStmt->execute([$username]);
         if ($checkStmt->fetch()) {
-            echo json_encode(['status' => 'error', 'message' => 'Bu kullanıcı adı başka bir halı saha için kayıtlı!']);
+            echo json_encode(['status' => 'error', 'message' => 'Bu kullanıcı adı başka bir tesis için kayıtlı!']);
             exit;
         }
 
@@ -120,7 +133,7 @@ try {
         $ins->execute([$facility_name, $owner_name, $username, $passHash, $city, $district, $address, $phone, $team]);
         $facility_id = $pdo->lastInsertId();
 
-        $insField = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee) VALUES (?, 'Saha 1', 'Kapalı Saha', 1200.00)");
+        $insField = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee) VALUES (?, 'Futbol Sahası 1', 'Kapalı Futbol Sahası', 1200.00)");
         $insField->execute([$facility_id]);
 
         $_SESSION['user_role'] = 'owner';
@@ -135,7 +148,7 @@ try {
         exit;
     }
 
-    // 4. İŞLETMECİ GİRİŞ YAP
+    // 4. İŞLETMECİ GİRİŞ YAP (PERSISTENT TEAM LOAD FROM DB)
     if ($action === 'login_owner') {
         header('Content-Type: application/json; charset=utf-8');
         $username = trim($_POST['username'] ?? '');
@@ -154,7 +167,7 @@ try {
             $_SESSION['user_role'] = 'owner';
             $_SESSION['facility_id'] = $facility['id'];
             $_SESSION['facility_name'] = $facility['name'];
-            $_SESSION['owner_name'] = $facility['owner_name'];
+            $_SESSION['owner_name'] = mb_strtoupper($facility['owner_name'], 'UTF-8');
             $_SESSION['city'] = $facility['city'];
             $_SESSION['district'] = $facility['district'];
             $_SESSION['user_team'] = $facility['favorite_team'] ?? 'neutral';
