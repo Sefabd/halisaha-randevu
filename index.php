@@ -9,6 +9,7 @@ $is_logged_in = isset($_SESSION['user_role']);
 $current_team = $is_logged_in ? ($_SESSION['user_team'] ?? 'neutral') : 'neutral';
 $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
 $user_name_upper = $user_name ? mb_strtoupper($user_name, 'UTF-8') : '';
+$today_str = date('Y-m-d');
 ?>
 <!DOCTYPE html>
 <html lang="tr" data-team="<?php echo htmlspecialchars($current_team); ?>">
@@ -56,6 +57,7 @@ $user_name_upper = $user_name ? mb_strtoupper($user_name, 'UTF-8') : '';
                     <option value="neutral" <?php echo $current_team === 'neutral' ? 'selected' : ''; ?>>🟢⚪ Yeşil</option>
                 </select>
 
+                <!-- Clean User Name Badge (without (OYUNCU) suffix) -->
                 <span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-user text-primary me-1"></i> <?php echo htmlspecialchars($user_name_upper); ?></span>
                 <a href="api/auth.php?action=logout" class="btn btn-sm btn-outline-danger rounded-3" title="Çıkış Yap"><i class="fa-solid fa-right-from-bracket"></i> Çıkış</a>
             <?php else: ?>
@@ -67,20 +69,21 @@ $user_name_upper = $user_name ? mb_strtoupper($user_name, 'UTF-8') : '';
     </div>
 </header>
 
-<!-- 2. SPORPIN STYLE BODY HERO SEARCH BANNER -->
+<!-- 2. HERO SEARCH BANNER WITH HIGH CONTRAST SUB-HEADLINE TEXT AND 4-COLUMN SEARCH BAR -->
 <section class="py-5 mb-5 bg-dark text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
     <div class="container text-center py-4 position-relative" style="z-index: 2;">
         <span class="badge bg-white text-dark rounded-pill px-3 py-2 fs-7 mb-3 fw-bold shadow-sm">
             <i class="fa-solid fa-bolt text-warning me-1"></i> SPORCULARLA TESİSLERİ BULUŞTURAN PLATFORM
         </span>
         <h1 class="display-6 fw-extrabold mb-2">Hemen Saha Bul, Online Rezervasyon Yap.</h1>
-        <p class="text-muted fs-6 mb-4 max-w-700 mx-auto">İl ve ilçe seçip "SAHA BUL" butonuna basarak spor tesislerini listeleyin.</p>
+        <!-- High Contrast Readable Light Gray Sub-headline -->
+        <p class="fs-6 mb-4 max-w-700 mx-auto fw-medium" style="color: #cbd5e1;">İl ve ilçe seçip "SAHA BUL" butonuna basarak spor tesislerini listeleyin.</p>
 
-        <!-- YÜZEN 3'LÜ ARAMA KUTUSU -->
-        <div class="minimal-card p-4 max-w-950 mx-auto shadow-lg text-dark bg-white">
+        <!-- YÜZEN ARAMA KUTUSU (TESİS ADI İLE ARA VE 4 ANA KOLON) -->
+        <div class="minimal-card p-4 max-w-1000 mx-auto shadow-lg text-dark bg-white">
             <form onsubmit="executeSearch(event)" class="row g-3 align-items-center">
                 
-                <!-- 1. SPOR TİPİ (VARSAYILAN FUTBOL/HALI SAHA SEÇİLİ) -->
+                <!-- 1. SPOR TİPİ -->
                 <div class="col-md-3">
                     <label class="form-label text-muted fs-8 fw-bold mb-1 text-uppercase text-start d-block">SPOR TİPİ</label>
                     <div class="input-group">
@@ -94,7 +97,7 @@ $user_name_upper = $user_name ? mb_strtoupper($user_name, 'UTF-8') : '';
                     </div>
                 </div>
 
-                <!-- 2. İL SEÇİMİ (VARSAYILAN "İl Seçiniz") -->
+                <!-- 2. İL SEÇİMİ -->
                 <div class="col-md-3">
                     <label class="form-label text-muted fs-8 fw-bold mb-1 text-uppercase text-start d-block">İL SEÇİMİ</label>
                     <div class="input-group">
@@ -110,7 +113,7 @@ $user_name_upper = $user_name ? mb_strtoupper($user_name, 'UTF-8') : '';
                     </div>
                 </div>
 
-                <!-- 3. İLÇE SEÇİMİ (VARSAYILAN "İlçe Seçiniz") -->
+                <!-- 3. İLÇE SEÇİMİ -->
                 <div class="col-md-3">
                     <label class="form-label text-muted fs-8 fw-bold mb-1 text-uppercase text-start d-block">İLÇE SEÇİMİ</label>
                     <div class="input-group">
@@ -121,36 +124,44 @@ $user_name_upper = $user_name ? mb_strtoupper($user_name, 'UTF-8') : '';
                     </div>
                 </div>
 
-                <!-- 4. SAHA BUL BUTONU -->
-                <div class="col-md-3 align-self-end">
+                <!-- 4. SAHA TİPİ (ŞIK INTEGRATED 4. KOLON DROPDOWN) -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted fs-8 fw-bold mb-1 text-uppercase text-start d-block">SAHA TİPİ</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-building text-primary"></i></span>
+                        <select class="form-select border-0 bg-light fw-bold text-dark" id="filterFieldCover">
+                            <option value="Tümü" selected>Tüm Sahalar</option>
+                            <option value="Kapalı">🏢 Kapalı Saha</option>
+                            <option value="Açık">☀️ Açık Saha</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- CANLI TESİS ADI ARAMA INPUT VE SAHA BUL BUTONU -->
+                <div class="col-md-9 border-top pt-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-magnifying-glass text-primary"></i></span>
+                        <input type="text" class="form-control border-0 bg-light fw-bold" id="searchFacilityName" placeholder="🔍 Tesis Adı İle Canlı Ara... (Örn: Kadıköy, Moda, Kalamış)" oninput="filterFacilitiesByName()">
+                    </div>
+                </div>
+
+                <div class="col-md-3 border-top pt-3">
                     <button type="submit" class="btn btn-team w-100 py-2.5 fw-bold">
                         <i class="fa-solid fa-magnifying-glass me-1"></i> SAHA BUL
                     </button>
                 </div>
 
-                <!-- EKSTRA FİLTRE PILL'LERİ VE ŞIK YÜKSEK KONTRASTLI SAHA TİPİ SEÇİCİ -->
-                <div class="col-12 border-top pt-3 mt-2">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 fs-7">
-                        <div class="d-flex flex-wrap align-items-center gap-2">
-                            <div class="filter-pill" id="pillCamera" onclick="togglePill('pillCamera')">
-                                <i class="fa-solid fa-video me-1"></i> HD Kamera Kaydı
-                            </div>
-                            <div class="filter-pill" id="pillWater" onclick="togglePill('pillWater')">
-                                <i class="fa-solid fa-bottle-water me-1"></i> Ücretsiz Su & İkram
-                            </div>
-                            <div class="filter-pill" id="pillShower" onclick="togglePill('pillShower')">
-                                <i class="fa-solid fa-shower me-1"></i> Soyunma Odası & Duş
-                            </div>
+                <!-- EKSTRA FİLTRE PILL'LERİ -->
+                <div class="col-12 border-top pt-2">
+                    <div class="d-flex flex-wrap align-items-center gap-2 fs-7">
+                        <div class="filter-pill" id="pillCamera" onclick="togglePill('pillCamera')">
+                            <i class="fa-solid fa-video me-1"></i> HD Kamera Kaydı
                         </div>
-
-                        <!-- SAHA TİPİ SEÇİCİ (YÜKSEK KONTRAST FIX) -->
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-muted fw-bold fs-8">Saha Tipi:</span>
-                            <select class="form-select form-select-sm border border-secondary border-opacity-25 bg-white fw-bold text-dark max-w-150" id="filterFieldCover">
-                                <option value="Tümü">Tüm Tesisler</option>
-                                <option value="Kapalı">🏢 Kapalı Saha</option>
-                                <option value="Açık">☀️ Açık Saha</option>
-                            </select>
+                        <div class="filter-pill" id="pillWater" onclick="togglePill('pillWater')">
+                            <i class="fa-solid fa-bottle-water me-1"></i> Ücretsiz Su & İkram
+                        </div>
+                        <div class="filter-pill" id="pillShower" onclick="togglePill('pillShower')">
+                            <i class="fa-solid fa-shower me-1"></i> Soyunma Odası & Duş
                         </div>
                     </div>
                 </div>
@@ -274,7 +285,7 @@ $user_name_upper = $user_name ? mb_strtoupper($user_name, 'UTF-8') : '';
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">TARİH</label>
-                            <input type="date" class="form-control" name="reservation_date" id="modalDate" readonly>
+                            <input type="date" class="form-control" name="reservation_date" id="modalDate" min="<?php echo $today_str; ?>" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">SAAT</label>
@@ -347,6 +358,7 @@ $user_name_upper = $user_name ? mb_strtoupper($user_name, 'UTF-8') : '';
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const IS_LOGGED_IN = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
+const TODAY_STR = '<?php echo $today_str; ?>';
 
 const CITIES_DISTRICTS = {
     'İstanbul': ['Tüm İlçeler', 'Kadıköy', 'Beşiktaş', 'Üsküdar', 'Şişli', 'Beyoğlu', 'Maltepe', 'Ataşehir', 'Ümraniye', 'Bakırköy', 'Fatih', 'Pendik', 'Sarıyer'],
@@ -412,79 +424,91 @@ async function loadFacilities() {
     const res = await fetch(`api/facility.php?action=list_public&city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}&sport_type=${encodeURIComponent(sportType)}`);
     const json = await res.json();
 
-    const listContainer = document.getElementById('stackedFacilitiesList');
     if (json.status === 'success') {
         currentFacilities = json.data;
-
-        document.getElementById('facilityCountBadge').innerText = `${currentFacilities.length} Tesis Bulundu`;
-
-        if (currentFacilities.length === 0) {
-            listContainer.innerHTML = `<div class="minimal-card p-5 text-center text-muted">Seçilen kriterlerde kayıtlı tesis bulunamadı. Lütfen başka bir spor tipi, il veya ilçe seçiniz.</div>`;
-            return;
-        }
-
-        let html = '';
-        currentFacilities.forEach((fac) => {
-            html += `<div class="minimal-card p-4">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
-                    <div>
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <h4 class="fw-bold text-dark fs-5 mb-0"><i class="fa-solid fa-stadium text-primary me-1"></i>${escapeHtml(fac.name)}</h4>
-                            <span class="badge bg-light text-dark border fs-8"><i class="fa-solid fa-clock text-primary me-1"></i>Açık Saatler: ${fac.open_time} - ${fac.close_time}</span>
-                        </div>
-                        <p class="text-muted fs-7 mb-2"><i class="fa-solid fa-location-dot text-danger me-1"></i>${escapeHtml(fac.address)} &bull; <i class="fa-solid fa-phone text-success me-1"></i>${escapeHtml(fac.phone)}</p>
-                    </div>
-                </div>
-
-                <!-- Clean Field Badges (KORT YAZISI SİLİNDİ - YALNIZCA SAHALAR) -->
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                    <span class="text-muted fs-8 fw-bold">SAHALAR:</span>
-                    ${fac.fields.map(f => {
-                        const isCovered = f.field_type && f.field_type.includes('Kapalı');
-                        let icon = '⚽';
-                        if (f.field_name.includes('Basketbol') || (f.field_type && f.field_type.includes('Basketbol'))) icon = '🏀';
-                        else if (f.field_name.includes('Tenis') || (f.field_type && f.field_type.includes('Tenis'))) icon = '🎾';
-                        else if (f.field_name.includes('Voleybol') || (f.field_type && f.field_type.includes('Voleybol'))) icon = '🏐';
-
-                        const coverBadge = isCovered ? '🏢 Kapalı' : '☀️ Açık';
-                        return `<span class="badge bg-light text-dark border fs-8">${icon} ${escapeHtml(f.field_name)} <span class="text-muted">(${coverBadge})</span> <strong class="text-primary">(₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')})</strong></span>`;
-                    }).join('')}
-                </div>
-
-                <!-- Feature Icons -->
-                <div class="d-flex flex-wrap gap-3 fs-8 text-muted border-top pt-3">
-                    <span><i class="fa-solid fa-video text-success me-1"></i> HD Kamera Kaydı var</span>
-                    <span><i class="fa-solid fa-bottle-water text-info me-1"></i> Ücretsiz İkram</span>
-                    <span><i class="fa-solid fa-shower text-primary me-1"></i> Soyunma Odası & Duş</span>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="d-flex flex-wrap gap-2 mt-3 pt-2 border-top">
-                    <button class="btn btn-team flex-grow-1 py-2 fs-7 fw-bold" onclick="toggleAccordionDrawer(${fac.id})">
-                        <i class="fa-solid fa-calendar-days me-1"></i> Saatleri Gör & Randevu Al
-                    </button>
-                    <button class="btn btn-outline-secondary py-2 fs-7 fw-bold" onclick="openFacilitySubModal(${fac.id}, '${escapeHtml(fac.name)}')">
-                        <i class="fa-solid fa-crown text-warning me-1"></i> İncele & Abone Ol
-                    </button>
-                </div>
-
-                <!-- INLINE SLIDE-DOWN ACCORDION RESERVATION DRAWER -->
-                <div id="drawer-fac-${fac.id}" class="facility-accordion-drawer d-none">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clock text-primary me-1"></i> Uygun Saat Seçimi</h6>
-                        <input type="date" class="form-control form-control-sm max-w-150" id="date-fac-${fac.id}" value="${new Date().toISOString().split('T')[0]}" onchange="renderInlineDrawerTimeline(${fac.id})">
-                    </div>
-                    <div id="timeline-container-${fac.id}" class="table-responsive">
-                        <!-- Populated dynamically via JS -->
-                    </div>
-                </div>
-
-            </div>`;
-        });
-
-        listContainer.innerHTML = html;
-        document.getElementById('facilitiesSection').scrollIntoView({ behavior: 'smooth' });
+        renderFacilitiesList(currentFacilities);
     }
+}
+
+function filterFacilitiesByName() {
+    const query = document.getElementById('searchFacilityName').value.toLowerCase().trim();
+    if (!query) {
+        renderFacilitiesList(currentFacilities);
+        return;
+    }
+    const filtered = currentFacilities.filter(f => f.name.toLowerCase().includes(query) || f.address.toLowerCase().includes(query));
+    renderFacilitiesList(filtered);
+}
+
+function renderFacilitiesList(facilities) {
+    const listContainer = document.getElementById('stackedFacilitiesList');
+    document.getElementById('facilityCountBadge').innerText = `${facilities.length} Tesis Bulundu`;
+
+    if (facilities.length === 0) {
+        listContainer.innerHTML = `<div class="minimal-card p-5 text-center text-muted">Seçilen kriterlerde kayıtlı tesis bulunamadı. Lütfen başka bir spor tipi, il veya ilçe seçiniz.</div>`;
+        return;
+    }
+
+    let html = '';
+    facilities.forEach((fac) => {
+        html += `<div class="minimal-card p-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <h4 class="fw-bold text-dark fs-5 mb-0"><i class="fa-solid fa-stadium text-primary me-1"></i>${escapeHtml(fac.name)}</h4>
+                        <span class="badge bg-light text-dark border fs-8"><i class="fa-solid fa-clock text-primary me-1"></i>Açık Saatler: ${fac.open_time} - ${fac.close_time}</span>
+                    </div>
+                    <p class="text-muted fs-7 mb-2"><i class="fa-solid fa-location-dot text-danger me-1"></i>${escapeHtml(fac.address)} &bull; <i class="fa-solid fa-phone text-success me-1"></i>${escapeHtml(fac.phone)}</p>
+                </div>
+            </div>
+
+            <!-- Clean Field Badges -->
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <span class="text-muted fs-8 fw-bold">SAHALAR:</span>
+                ${fac.fields.map(f => {
+                    const isCovered = f.field_type && f.field_type.includes('Kapalı');
+                    let icon = '⚽';
+                    if (f.field_name.includes('Basketbol') || (f.field_type && f.field_type.includes('Basketbol'))) icon = '🏀';
+                    else if (f.field_name.includes('Tenis') || (f.field_type && f.field_type.includes('Tenis'))) icon = '🎾';
+                    else if (f.field_name.includes('Voleybol') || (f.field_type && f.field_type.includes('Voleybol'))) icon = '🏐';
+
+                    const coverBadge = isCovered ? '🏢 Kapalı' : '☀️ Açık';
+                    return `<span class="badge bg-light text-dark border fs-8">${icon} ${escapeHtml(f.field_name)} <span class="text-muted">(${coverBadge})</span> <strong class="text-primary">(₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')})</strong></span>`;
+                }).join('')}
+            </div>
+
+            <!-- Feature Icons -->
+            <div class="d-flex flex-wrap gap-3 fs-8 text-muted border-top pt-3">
+                <span><i class="fa-solid fa-video text-success me-1"></i> HD Kamera Kaydı var</span>
+                <span><i class="fa-solid fa-bottle-water text-info me-1"></i> Ücretsiz İkram</span>
+                <span><i class="fa-solid fa-shower text-primary me-1"></i> Soyunma Odası & Duş</span>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex flex-wrap gap-2 mt-3 pt-2 border-top">
+                <button class="btn btn-team flex-grow-1 py-2 fs-7 fw-bold" onclick="toggleAccordionDrawer(${fac.id})">
+                    <i class="fa-solid fa-calendar-days me-1"></i> Saatleri Gör & Randevu Al
+                </button>
+                <button class="btn btn-outline-secondary py-2 fs-7 fw-bold" onclick="openFacilitySubModal(${fac.id}, '${escapeHtml(fac.name)}')">
+                    <i class="fa-solid fa-crown text-warning me-1"></i> İncele & Abone Ol
+                </button>
+            </div>
+
+            <!-- INLINE SLIDE-DOWN ACCORDION RESERVATION DRAWER (GEÇMİŞ TARİH ENGELİ KONTROLÜ) -->
+            <div id="drawer-fac-${fac.id}" class="facility-accordion-drawer d-none">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clock text-primary me-1"></i> Uygun Saat Seçimi</h6>
+                    <input type="date" class="form-control form-control-sm max-w-150" id="date-fac-${fac.id}" min="${TODAY_STR}" value="${TODAY_STR}" onchange="renderInlineDrawerTimeline(${fac.id})">
+                </div>
+                <div id="timeline-container-${fac.id}" class="table-responsive">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+        </div>`;
+    });
+
+    listContainer.innerHTML = html;
 }
 
 async function toggleAccordionDrawer(facId) {
@@ -506,7 +530,14 @@ async function renderInlineDrawerTimeline(facId) {
     if (!fac) return;
 
     const dateInput = document.getElementById(`date-fac-${facId}`);
-    const date = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+    let date = dateInput ? dateInput.value : TODAY_STR;
+
+    // PAST DATE CHECK
+    if (date < TODAY_STR) {
+        alert('⚠️ Geçmiş bir tarihe randevu alınamaz!');
+        date = TODAY_STR;
+        if (dateInput) dateInput.value = TODAY_STR;
+    }
 
     const res = await fetch(`api/reservations.php?action=list&facility_id=${facId}`);
     const json = await res.json();
@@ -557,6 +588,10 @@ async function renderInlineDrawerTimeline(facId) {
 function handleSlotClick(facId, fieldId, fieldName, date, time, fee) {
     if (!IS_LOGGED_IN) {
         new bootstrap.Modal(document.getElementById('authRequiredModal')).show();
+        return;
+    }
+    if (date < TODAY_STR) {
+        alert('⚠️ Geçmiş bir tarihe randevu alınamaz!');
         return;
     }
     openPlayerBookModal(facId, fieldId, fieldName, date, time, fee);

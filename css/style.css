@@ -24,23 +24,23 @@
   --font-body: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* Süper Lig Team Color Engines */
+/* Süper Lig Team Color Engines (GS & FB Revize) */
 [data-team="galatasaray"] {
-  --team-primary: #d6001c;
+  --team-primary: #a9041e;
   --team-secondary: #fdb913;
-  --team-light: #fff5f5;
-  --team-border: #fca5a5;
-  --team-glow: rgba(214, 0, 28, 0.15);
-  --team-gradient: linear-gradient(135deg, #d6001c, #fdb913);
+  --team-light: #fff7ed;
+  --team-border: #fed7aa;
+  --team-glow: rgba(169, 4, 30, 0.15);
+  --team-gradient: linear-gradient(135deg, #a9041e, #fdb913);
 }
 
 [data-team="fenerbahce"] {
-  --team-primary: #002b66;
+  --team-primary: #002d72;
   --team-secondary: #ffed00;
-  --team-light: #f0f7ff;
-  --team-border: #93c5fd;
-  --team-glow: rgba(0, 43, 102, 0.15);
-  --team-gradient: linear-gradient(135deg, #002b66, #0055b8);
+  --team-light: #fefce8;
+  --team-border: #fef08a;
+  --team-glow: rgba(0, 45, 114, 0.18);
+  --team-gradient: linear-gradient(135deg, #002d72, #001f52);
 }
 
 [data-team="besiktas"] {
@@ -112,8 +112,8 @@ h1, h2, h3, h4, h5, h6, .brand-font {
 
 /* Role Cards */
 .role-card {
-  padding: 20px;
-  border-radius: 16px;
+  padding: 16px;
+  border-radius: 14px;
   border: 2px solid var(--border-color);
   background: #ffffff;
   cursor: pointer;
@@ -128,16 +128,15 @@ h1, h2, h3, h4, h5, h6, .brand-font {
 }
 
 .role-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   background: var(--team-light);
   color: var(--team-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  margin-bottom: 10px;
+  font-size: 1.2rem;
 }
 
 /* Minimal Filter Pills */

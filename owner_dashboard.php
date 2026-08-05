@@ -1,5 +1,5 @@
 <?php
-// owner_dashboard.php - Tesis İşletmecisi Paneli (Logo, Temiz Tablo & Renkli Saat Matrisi)
+// owner_dashboard.php - Tesis İşletmecisi Paneli (Sekmeli Randevu Listesi & Canlı Tarih Matrisi)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -12,6 +12,7 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
 $facility_name = $_SESSION['facility_name'] ?? 'Tesisim';
 $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
 $current_team = $_SESSION['user_team'] ?? 'neutral';
+$today_str = date('Y-m-d');
 ?>
 <!DOCTYPE html>
 <html lang="tr" data-team="<?php echo htmlspecialchars($current_team); ?>">
@@ -27,7 +28,7 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
 </head>
 <body>
 
-<!-- Header Navbar with Official Brand Logo -->
+<!-- Header Navbar (Elden Hızlı Randevu Ekle Butonu Üst Menüden Kaldırıldı) -->
 <header class="minimal-navbar py-3 mb-4">
     <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-3">
@@ -53,9 +54,6 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
                 <option value="neutral" <?php echo $current_team === 'neutral' ? 'selected' : ''; ?>>🟢⚪ Yeşil</option>
             </select>
 
-            <button class="btn btn-team btn-sm" data-bs-toggle="modal" data-bs-target="#walkinModal">
-                <i class="fa-solid fa-plus-circle me-1"></i> Elden Hızlı Randevu Ekle
-            </button>
             <a href="api/auth.php?action=logout" class="btn btn-outline-danger btn-sm rounded-3">
                 <i class="fa-solid fa-right-from-bracket me-1"></i> Çıkış
             </a>
@@ -93,21 +91,20 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
         </div>
     </div>
 
-    <!-- RENKLİ SAAT MATRİSİ PANENLİ (🟢 Yeşil: Boş | 🔴 Kırmızı: Alınan Normal | 🟡 Sarı: Abonmanlı) -->
+    <!-- RENKLİ SAAT MATRİSİ (SEÇİLEN TARİHE GÖRE CANLI GÜNCELLENİR) -->
     <section class="minimal-card p-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-days text-primary me-2"></i> Canlı Saatlik Doluluk Matrisi</h5>
-                <span class="text-muted fs-8">Saha durumlarını renklerle takip edin. Üzerlerine tıklayarak detay görün veya hızlı randevu yazın.</span>
+                <span class="text-muted fs-8">Tarih değiştirerek istenen günün doluluğunu inceleyin. 🟢 Boş saatlere tıklayarak elden kayıt yapabilirsiniz.</span>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <!-- Color Legend -->
-                <div class="d-flex align-items-center gap-2 fs-8">
+                <div class="d-flex align-items-center gap-2 fs-8 d-none d-md-flex">
                     <span class="badge bg-success bg-opacity-10 text-success border border-success">🟢 Boş (Elden Kayıt)</span>
                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">🔴 Alınan Randevu</span>
                     <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">🟡 Abonmanlı</span>
                 </div>
-                <input type="date" class="form-control form-control-sm max-w-150" id="matrixDate" onchange="loadOwnerFacility()">
+                <input type="date" class="form-control form-control-sm max-w-160 fw-bold border-primary" id="matrixDate" value="<?php echo $today_str; ?>" onchange="renderOwnerMatrix()">
             </div>
         </div>
 
@@ -122,7 +119,7 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
     </section>
 
     <div class="row g-4 mb-4">
-        <!-- 1. TESİS AYARLARI VE DİNAMİK İL/İLÇE DROPDOWN -->
+        <!-- 1. TESİS AYARLARI -->
         <div class="col-lg-5">
             <div class="minimal-card p-4 h-100">
                 <h5 class="fw-bold text-dark mb-3">
@@ -136,7 +133,6 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
                             <input type="text" class="form-control" name="name" id="fac_name" required>
                         </div>
 
-                        <!-- 5 İL VE TÜM İLÇELERİ DROPDOWN (SERBEST METİN GİRİŞİ YERİNE) -->
                         <div class="col-6">
                             <label class="form-label text-muted fs-7 fw-semibold">İL SEÇİMİ</label>
                             <select class="form-select" name="city" id="fac_city" onchange="onOwnerCityChange()">
@@ -161,7 +157,6 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
                             <input type="text" class="form-control" name="phone" id="fac_phone" required>
                         </div>
                         
-                        <!-- Çalışma Saatleri -->
                         <div class="col-6">
                             <label class="form-label text-primary fs-7 fw-bold">AÇILIŞ SAATİ</label>
                             <select class="form-select" name="open_time" id="fac_open_time">
@@ -228,9 +223,41 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
         </div>
     </div>
 
-    <!-- 3. KENDİ SAHALARIMIN RANDEVU LİSTESİ (TEMİZ GÖRSEL TABLO REVİZYONU - SCREENSHOT 5 FIX) -->
+    <!-- 3. REKOR DÜZEYDE REVİZE EDİLMİŞ SEKMELİ İŞLETME RANDEVU LİSTESİ (BUGÜNKÜ / GELECEK / GEÇMİŞ) -->
     <section class="minimal-card p-4 mb-5">
-        <h4 class="fw-bold text-dark mb-3 fs-5"><i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevu Listesi</h4>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
+            <div>
+                <h4 class="fw-bold text-dark mb-0 fs-5"><i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevu Yönetimi</h4>
+                <span class="text-muted fs-7">Kayıtlı randevularınızı filtrelere göre listeleyin ve yönetin.</span>
+            </div>
+
+            <!-- CANLI ARAMA KUTUSU -->
+            <div class="max-w-300">
+                <input type="text" class="form-control form-control-sm" id="searchReservationQuery" placeholder="🔍 Takım veya Yetkili Ara..." oninput="filterReservations()">
+            </div>
+        </div>
+
+        <!-- 3 FILTER TABS -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <ul class="nav nav-pills" id="reservationFilterTabs">
+                <li class="nav-item">
+                    <button class="nav-link active fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('today')">
+                        <i class="fa-solid fa-calendar-day me-1 text-warning"></i> Bugünkü Randevular <span class="badge bg-white text-dark ms-1" id="tabCountToday">0</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('future')">
+                        <i class="fa-solid fa-clock me-1 text-primary"></i> Gelecek Randevular <span class="badge bg-white text-dark ms-1" id="tabCountFuture">0</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('past')">
+                        <i class="fa-solid fa-history me-1 text-secondary"></i> Geçmiş Randevular <span class="badge bg-white text-dark ms-1" id="tabCountPast">0</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-hover align-middle m-0 fs-7">
                 <thead class="table-light text-muted border-bottom">
@@ -253,7 +280,7 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
 
 </div>
 
-<!-- Modal: RANDEVU DETAY POPUP (DOLU SAATE TIKLANINCA AÇILIR) -->
+<!-- Modal: RANDEVU DETAY POPUP -->
 <div class="modal fade" id="reservationDetailsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">
@@ -367,6 +394,8 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+const TODAY_STR = '<?php echo $today_str; ?>';
+
 const CITIES_DISTRICTS = {
     'İstanbul': ['Kadıköy', 'Beşiktaş', 'Üsküdar', 'Şişli', 'Beyoğlu', 'Maltepe', 'Ataşehir', 'Ümraniye', 'Bakırköy', 'Fatih', 'Pendik', 'Sarıyer'],
     'Ankara': ['Çankaya', 'Keçiören', 'Yenimahalle', 'Mamak', 'Etimesgut', 'Sincan', 'Gölbaşı'],
@@ -376,10 +405,6 @@ const CITIES_DISTRICTS = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    document.getElementById('matrixDate').value = todayStr;
-    document.getElementById('walkinDate').value = todayStr;
-
     loadOwnerFacility();
     loadOwnerReservations();
 });
@@ -404,6 +429,7 @@ function onOwnerCityChange(defaultDistrict = null) {
 let ownerFieldsData = [];
 let ownerFacilityData = null;
 let ownerReservationsData = [];
+let activeReservationTab = 'today';
 
 async function loadOwnerFacility() {
     const res = await fetch('api/facility.php?action=get_owner_facility');
@@ -436,8 +462,12 @@ function renderOwnerFields(fields) {
 
     let html = '';
     fields.forEach(f => {
+        let icon = '⚽';
+        if (f.field_name.includes('Basketbol') || (f.field_type && f.field_type.includes('Basketbol'))) icon = '🏀';
+        else if (f.field_name.includes('Tenis') || (f.field_type && f.field_type.includes('Tenis'))) icon = '🎾';
+
         html += `<tr>
-            <td class="fw-bold text-dark"><i class="fa-solid fa-futbol text-success me-2"></i>${escapeHtml(f.field_name)}</td>
+            <td class="fw-bold text-dark">${icon} ${escapeHtml(f.field_name)}</td>
             <td><span class="badge bg-light text-dark border">${escapeHtml(f.field_type)}</span></td>
             <td class="fw-bold text-dark">₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
             <td class="text-end">
@@ -472,7 +502,11 @@ function renderOwnerMatrix() {
     let bHtml = '';
 
     ownerFieldsData.forEach(field => {
-        bHtml += `<tr><td class="fw-bold text-dark text-start py-2">${escapeHtml(field.field_name)}</td>`;
+        let icon = '⚽';
+        if (field.field_name.includes('Basketbol') || (field.field_type && field.field_type.includes('Basketbol'))) icon = '🏀';
+        else if (field.field_name.includes('Tenis') || (field.field_type && field.field_type.includes('Tenis'))) icon = '🎾';
+
+        bHtml += `<tr><td class="fw-bold text-dark text-start py-2">${icon} ${escapeHtml(field.field_name)}</td>`;
 
         hours.forEach(h => {
             const booking = ownerReservationsData.find(r => r.field_id == field.id && r.reservation_date === date && r.reservation_time === h && r.status !== 'İptal');
@@ -480,16 +514,16 @@ function renderOwnerMatrix() {
             if (booking) {
                 const isSub = booking.subscription_plan && booking.subscription_plan !== 'Standart';
                 const badgeClass = isSub ? 'slot-busy-sub' : 'slot-busy-normal';
-                const icon = isSub ? 'fa-crown' : 'fa-lock';
+                const iconClass = isSub ? 'fa-crown' : 'fa-lock';
 
                 bHtml += `<td>
                     <div class="slot-badge ${badgeClass}" onclick="showBookingDetails(${booking.id})" title="Detay için tıkla">
-                        <i class="fa-solid ${icon} me-1"></i>${h}
+                        <i class="fa-solid ${iconClass} me-1"></i>${h}
                     </div>
                 </td>`;
             } else {
                 bHtml += `<td>
-                    <div class="slot-badge slot-free" onclick="quickWalkinModal(${field.id}, '${h}')" title="Hızlı Elden Kayıt">
+                    <div class="slot-badge slot-free" onclick="quickWalkinModal(${field.id}, '${date}', '${h}')" title="Hızlı Elden Kayıt">
                         +${h}
                     </div>
                 </td>`;
@@ -520,8 +554,9 @@ function showBookingDetails(id) {
     new bootstrap.Modal(document.getElementById('reservationDetailsModal')).show();
 }
 
-function quickWalkinModal(fieldId, time) {
+function quickWalkinModal(fieldId, date, time) {
     document.getElementById('walkinFieldSelect').value = fieldId;
+    document.getElementById('walkinDate').value = date;
     document.getElementById('walkinTimeSelect').value = time;
     new bootstrap.Modal(document.getElementById('walkinModal')).show();
 }
@@ -597,48 +632,81 @@ async function deleteField(id) {
 async function loadOwnerReservations() {
     const res = await fetch('api/reservations.php?action=list');
     const json = await res.json();
-    const tbody = document.getElementById('ownerReservationsBody');
 
     if (json.status === 'success') {
         ownerReservationsData = json.data;
         renderOwnerMatrix();
-
-        let total = json.data.length;
-        let todayCount = 0;
-        let approvedCount = 0;
-        let income = 0;
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        let html = '';
-        json.data.forEach(r => {
-            if (r.reservation_date === todayStr) {
-                todayCount++;
-                if (r.status === 'Onaylandı' || r.status === 'Tamamlandı') income += parseFloat(r.fee);
-            }
-            if (r.status === 'Onaylandı') approvedCount++;
-
-            html += `<tr>
-                <td class="fw-bold text-dark px-3 py-3">${escapeHtml(r.team_name)}</td>
-                <td class="px-3 py-3">${escapeHtml(r.contact_name)}</td>
-                <td class="px-3 py-3">${escapeHtml(r.phone)}</td>
-                <td class="px-3 py-3"><span class="badge bg-light text-dark border px-2 py-1">${escapeHtml(r.field_name)}</span></td>
-                <td class="px-3 py-3 text-primary fw-semibold">${r.reservation_date}</td>
-                <td class="px-3 py-3 text-dark fw-bold">${r.reservation_time}</td>
-                <td class="px-3 py-3 text-success fw-bold">₺${parseFloat(r.fee).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
-                <td class="px-3 py-3">${getStatusBadge(r.status)}</td>
-                <td class="px-3 py-3 text-end">
-                    <button class="btn btn-sm btn-outline-danger" onclick="cancelReservation(${r.id})">İptal Et / Sil</button>
-                </td>
-            </tr>`;
-        });
-
-        tbody.innerHTML = html || `<tr><td colspan="9" class="text-center text-muted py-4">Tesisinize ait henüz randevu yok.</td></tr>`;
-
-        document.getElementById('ownerStatTotal').innerText = total;
-        document.getElementById('ownerStatToday').innerText = todayCount;
-        document.getElementById('ownerStatApproved').innerText = approvedCount;
-        document.getElementById('ownerStatIncome').innerText = income.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' ₺';
+        filterReservations();
     }
+}
+
+function setReservationTab(tab) {
+    activeReservationTab = tab;
+    document.querySelectorAll('#reservationFilterTabs .nav-link').forEach(el => el.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    filterReservations();
+}
+
+function filterReservations() {
+    const query = document.getElementById('searchReservationQuery').value.toLowerCase().trim();
+    const tbody = document.getElementById('ownerReservationsBody');
+
+    let todayRes = [];
+    let futureRes = [];
+    let pastRes = [];
+    let income = 0;
+    let approvedCount = 0;
+
+    ownerReservationsData.forEach(r => {
+        if (r.reservation_date === TODAY_STR) {
+            todayRes.push(r);
+            if (r.status === 'Onaylandı' || r.status === 'Tamamlandı') income += parseFloat(r.fee);
+        } else if (r.reservation_date > TODAY_STR) {
+            futureRes.push(r);
+        } else {
+            pastRes.push(r);
+        }
+        if (r.status === 'Onaylandı') approvedCount++;
+    });
+
+    document.getElementById('tabCountToday').innerText = todayRes.length;
+    document.getElementById('tabCountFuture').innerText = futureRes.length;
+    document.getElementById('tabCountPast').innerText = pastRes.length;
+
+    document.getElementById('ownerStatTotal').innerText = ownerReservationsData.length;
+    document.getElementById('ownerStatToday').innerText = todayRes.length;
+    document.getElementById('ownerStatApproved').innerText = approvedCount;
+    document.getElementById('ownerStatIncome').innerText = income.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' ₺';
+
+    let activeList = (activeReservationTab === 'today') ? todayRes : ((activeReservationTab === 'future') ? futureRes : pastRes);
+
+    if (query) {
+        activeList = activeList.filter(r => r.team_name.toLowerCase().includes(query) || r.contact_name.toLowerCase().includes(query) || r.phone.includes(query));
+    }
+
+    if (activeList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">Bu sekmede kayıtlı randevu bulunamadı.</td></tr>`;
+        return;
+    }
+
+    let html = '';
+    activeList.forEach(r => {
+        html += `<tr>
+            <td class="fw-bold text-dark px-3 py-3">${escapeHtml(r.team_name)}</td>
+            <td class="px-3 py-3">${escapeHtml(r.contact_name)}</td>
+            <td class="px-3 py-3">${escapeHtml(r.phone)}</td>
+            <td class="px-3 py-3"><span class="badge bg-light text-dark border px-2 py-1">${escapeHtml(r.field_name)}</span></td>
+            <td class="px-3 py-3 text-primary fw-semibold">${r.reservation_date}</td>
+            <td class="px-3 py-3 text-dark fw-bold">${r.reservation_time}</td>
+            <td class="px-3 py-3 text-success fw-bold">₺${parseFloat(r.fee).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
+            <td class="px-3 py-3">${getStatusBadge(r.status)}</td>
+            <td class="px-3 py-3 text-end">
+                <button class="btn btn-sm btn-outline-danger" onclick="cancelReservation(${r.id})">İptal Et / Sil</button>
+            </td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = html;
 }
 
 async function saveWalkinReservation(e) {
