@@ -10,6 +10,7 @@ $current_team = $is_logged_in ? ($_SESSION['user_team'] ?? 'neutral') : 'neutral
 $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
 $user_name_upper = $user_name ? mb_strtoupper($user_name, 'UTF-8') : '';
 $today_str = date('Y-m-d');
+$current_hour = (int)date('H');
 ?>
 <!DOCTYPE html>
 <html lang="tr" data-team="<?php echo htmlspecialchars($current_team); ?>">
@@ -69,17 +70,16 @@ $today_str = date('Y-m-d');
     </div>
 </header>
 
-<!-- 2. HERO SEARCH BANNER WITH HIGH CONTRAST SUB-HEADLINE TEXT AND 4-COLUMN SEARCH BAR -->
+<!-- 2. HERO SEARCH BANNER WITH 4-COLUMN SEARCH BAR -->
 <section class="py-5 mb-5 bg-dark text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
     <div class="container text-center py-4 position-relative" style="z-index: 2;">
         <span class="badge bg-white text-dark rounded-pill px-3 py-2 fs-7 mb-3 fw-bold shadow-sm">
             <i class="fa-solid fa-bolt text-warning me-1"></i> SPORCULARLA TESİSLERİ BULUŞTURAN PLATFORM
         </span>
         <h1 class="display-6 fw-extrabold mb-2">Hemen Saha Bul, Online Rezervasyon Yap.</h1>
-        <!-- High Contrast Readable Light Gray Sub-headline -->
         <p class="fs-6 mb-4 max-w-700 mx-auto fw-medium" style="color: #cbd5e1;">İl ve ilçe seçip "SAHA BUL" butonuna basarak spor tesislerini listeleyin.</p>
 
-        <!-- YÜZEN ARAMA KUTUSU (TESİS ADI İLE ARA VE 4 ANA KOLON) -->
+        <!-- YÜZEN ARAMA KUTUSU (4 ANA KOLON) -->
         <div class="minimal-card p-4 max-w-1000 mx-auto shadow-lg text-dark bg-white">
             <form onsubmit="executeSearch(event)" class="row g-3 align-items-center">
                 
@@ -124,7 +124,7 @@ $today_str = date('Y-m-d');
                     </div>
                 </div>
 
-                <!-- 4. SAHA TİPİ (ŞIK INTEGRATED 4. KOLON DROPDOWN) -->
+                <!-- 4. SAHA TİPİ -->
                 <div class="col-md-3">
                     <label class="form-label text-muted fs-8 fw-bold mb-1 text-uppercase text-start d-block">SAHA TİPİ</label>
                     <div class="input-group">
@@ -137,31 +137,25 @@ $today_str = date('Y-m-d');
                     </div>
                 </div>
 
-                <!-- CANLI TESİS ADI ARAMA INPUT VE SAHA BUL BUTONU -->
-                <div class="col-md-9 border-top pt-3">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-magnifying-glass text-primary"></i></span>
-                        <input type="text" class="form-control border-0 bg-light fw-bold" id="searchFacilityName" placeholder="🔍 Tesis Adı İle Canlı Ara... (Örn: Kadıköy, Moda, Kalamış)" oninput="filterFacilitiesByName()">
-                    </div>
-                </div>
-
-                <div class="col-md-3 border-top pt-3">
-                    <button type="submit" class="btn btn-team w-100 py-2.5 fw-bold">
-                        <i class="fa-solid fa-magnifying-glass me-1"></i> SAHA BUL
-                    </button>
-                </div>
-
-                <!-- EKSTRA FİLTRE PILL'LERİ -->
-                <div class="col-12 border-top pt-2">
-                    <div class="d-flex flex-wrap align-items-center gap-2 fs-7">
-                        <div class="filter-pill" id="pillCamera" onclick="togglePill('pillCamera')">
-                            <i class="fa-solid fa-video me-1"></i> HD Kamera Kaydı
+                <!-- SAHA BUL BUTONU VE PILL'LER -->
+                <div class="col-12 border-top pt-3">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div class="d-flex flex-wrap align-items-center gap-2 fs-7">
+                            <div class="filter-pill" id="pillCamera" onclick="togglePill('pillCamera')">
+                                <i class="fa-solid fa-video me-1"></i> HD Kamera Kaydı
+                            </div>
+                            <div class="filter-pill" id="pillWater" onclick="togglePill('pillWater')">
+                                <i class="fa-solid fa-bottle-water me-1"></i> Ücretsiz Su & İkram
+                            </div>
+                            <div class="filter-pill" id="pillShower" onclick="togglePill('pillShower')">
+                                <i class="fa-solid fa-shower me-1"></i> Soyunma Odası & Duş
+                            </div>
                         </div>
-                        <div class="filter-pill" id="pillWater" onclick="togglePill('pillWater')">
-                            <i class="fa-solid fa-bottle-water me-1"></i> Ücretsiz Su & İkram
-                        </div>
-                        <div class="filter-pill" id="pillShower" onclick="togglePill('pillShower')">
-                            <i class="fa-solid fa-shower me-1"></i> Soyunma Odası & Duş
+
+                        <div class="max-w-250 w-100">
+                            <button type="submit" class="btn btn-team w-100 py-2.5 fw-bold fs-6">
+                                <i class="fa-solid fa-magnifying-glass me-1"></i> SAHA BUL
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -172,7 +166,7 @@ $today_str = date('Y-m-d');
 
 <div class="container px-4">
 
-    <!-- 3. TESİSLER LİSTESİ VE SAĞ TARAFTA FİLTRE / İLETİŞİM PANENLİ -->
+    <!-- 3. TESİSLER LİSTESİ VE SAĞ TARAFTA ARAMA / FİLTRE ÖZETİ PANENLİ -->
     <section id="facilitiesSection" class="mb-5">
         
         <div class="row g-4">
@@ -196,12 +190,21 @@ $today_str = date('Y-m-d');
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN (30%): STICKY QUICK FILTER & SUPPORT INFO BOX -->
+            <!-- RIGHT COLUMN (30%): STICKY QUICK FILTER WITH MOVED CANLI TESİS ADI ARAMA INPUT -->
             <div class="col-lg-4">
                 <div class="minimal-card p-4 position-sticky" style="top: 90px;">
                     <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
                         <i class="fa-solid fa-sliders text-primary me-2"></i> Arama & Filtre Özeti
                     </h5>
+
+                    <!-- TESİS ADI İLE CANLI ARAMA INPUT (BURAYA TAŞINDI) -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-8 fw-bold">TESİS ADI İLE CANLI ARA</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-primary"></i></span>
+                            <input type="text" class="form-control border-start-0 bg-light fw-semibold" id="searchFacilityName" placeholder="Tesis adı yazın... (Örn: Kadıköy, Moda)" oninput="filterFacilitiesByName()">
+                        </div>
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label text-muted fs-8 fw-bold">SEÇİLİ KONUM</label>
@@ -359,6 +362,7 @@ $today_str = date('Y-m-d');
 <script>
 const IS_LOGGED_IN = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 const TODAY_STR = '<?php echo $today_str; ?>';
+const CURRENT_HOUR = <?php echo $current_hour; ?>;
 
 const CITIES_DISTRICTS = {
     'İstanbul': ['Tüm İlçeler', 'Kadıköy', 'Beşiktaş', 'Üsküdar', 'Şişli', 'Beyoğlu', 'Maltepe', 'Ataşehir', 'Ümraniye', 'Bakırköy', 'Fatih', 'Pendik', 'Sarıyer'],
@@ -367,6 +371,23 @@ const CITIES_DISTRICTS = {
     'Bursa': ['Tüm İlçeler', 'Nilüfer', 'Osmangazi', 'Yıldırım', 'Mudanya'],
     'Antalya': ['Tüm İlçeler', 'Muratpaşa', 'Konyaaltı', 'Kepez', 'Alanya']
 };
+
+const TURKISH_DAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+const TURKISH_MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+function formatTurkishDate(dateStr) {
+    if (!dateStr || dateStr.length !== 10) return '';
+    const parts = dateStr.split('-');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
+
+    const dateObj = new Date(year, month, day);
+    const dayName = TURKISH_DAYS[dateObj.getDay()];
+    const monthName = TURKISH_MONTHS[month];
+
+    return `${day} ${monthName} ${year} - ${dayName}`;
+}
 
 function onCityChange() {
     const city = document.getElementById('portalCity').value;
@@ -468,9 +489,9 @@ function renderFacilitiesList(facilities) {
                 ${fac.fields.map(f => {
                     const isCovered = f.field_type && f.field_type.includes('Kapalı');
                     let icon = '⚽';
-                    if (f.field_name.includes('Basketbol') || (f.field_type && f.field_type.includes('Basketbol'))) icon = '🏀';
-                    else if (f.field_name.includes('Tenis') || (f.field_type && f.field_type.includes('Tenis'))) icon = '🎾';
-                    else if (f.field_name.includes('Voleybol') || (f.field_type && f.field_type.includes('Voleybol'))) icon = '🏐';
+                    if (field_name_has(f, 'Basketbol')) icon = '🏀';
+                    else if (field_name_has(f, 'Tenis')) icon = '🎾';
+                    else if (field_name_has(f, 'Voleybol')) icon = '🏐';
 
                     const coverBadge = isCovered ? '🏢 Kapalı' : '☀️ Açık';
                     return `<span class="badge bg-light text-dark border fs-8">${icon} ${escapeHtml(f.field_name)} <span class="text-muted">(${coverBadge})</span> <strong class="text-primary">(₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')})</strong></span>`;
@@ -494,11 +515,14 @@ function renderFacilitiesList(facilities) {
                 </button>
             </div>
 
-            <!-- INLINE SLIDE-DOWN ACCORDION RESERVATION DRAWER (GEÇMİŞ TARİH ENGELİ KONTROLÜ) -->
+            <!-- INLINE SLIDE-DOWN ACCORDION RESERVATION DRAWER WITH TÜRKÇE GÜN İSMİ (ÇARŞAMBA VB.) -->
             <div id="drawer-fac-${fac.id}" class="facility-accordion-drawer d-none">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clock text-primary me-1"></i> Uygun Saat Seçimi</h6>
-                    <input type="date" class="form-control form-control-sm max-w-150" id="date-fac-${fac.id}" min="${TODAY_STR}" value="${TODAY_STR}" onchange="renderInlineDrawerTimeline(${fac.id})">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3 pb-2 border-bottom">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-check text-primary me-2"></i> Uygun Saat Seçimi</h6>
+                        <span class="badge bg-white text-dark border mt-1 fs-7 fw-bold" id="day-label-fac-${fac.id}">${formatTurkishDate(TODAY_STR)}</span>
+                    </div>
+                    <input type="date" class="form-control form-control-sm max-w-160 fw-bold" id="date-fac-${fac.id}" min="${TODAY_STR}" value="${TODAY_STR}" oninput="onDrawerDateInput(${fac.id}, this)">
                 </div>
                 <div id="timeline-container-${fac.id}" class="table-responsive">
                     <!-- Populated dynamically via JS -->
@@ -509,6 +533,27 @@ function renderFacilitiesList(facilities) {
     });
 
     listContainer.innerHTML = html;
+}
+
+function field_name_has(f, word) {
+    return f.field_name.includes(word) || (f.field_type && f.field_type.includes(word));
+}
+
+function onDrawerDateInput(facId, inputEl) {
+    const val = inputEl.value;
+    // FIX: Only validate when date string is full 10 chars (YYYY-MM-DD) to prevent early popping while typing 06!
+    if (!val || val.length !== 10) return;
+
+    if (val < TODAY_STR) {
+        alert('⚠️ Geçmiş bir tarihe randevu alınamaz!');
+        inputEl.value = TODAY_STR;
+        return;
+    }
+
+    const dayLabel = document.getElementById(`day-label-fac-${facId}`);
+    if (dayLabel) dayLabel.innerText = formatTurkishDate(val);
+
+    renderInlineDrawerTimeline(facId);
 }
 
 async function toggleAccordionDrawer(facId) {
@@ -530,14 +575,10 @@ async function renderInlineDrawerTimeline(facId) {
     if (!fac) return;
 
     const dateInput = document.getElementById(`date-fac-${facId}`);
-    let date = dateInput ? dateInput.value : TODAY_STR;
+    let date = (dateInput && dateInput.value && dateInput.value.length === 10) ? dateInput.value : TODAY_STR;
 
-    // PAST DATE CHECK
-    if (date < TODAY_STR) {
-        alert('⚠️ Geçmiş bir tarihe randevu alınamaz!');
-        date = TODAY_STR;
-        if (dateInput) dateInput.value = TODAY_STR;
-    }
+    const dayLabel = document.getElementById(`day-label-fac-${facId}`);
+    if (dayLabel) dayLabel.innerText = formatTurkishDate(date);
 
     const res = await fetch(`api/reservations.php?action=list&facility_id=${facId}`);
     const json = await res.json();
@@ -559,16 +600,21 @@ async function renderInlineDrawerTimeline(facId) {
 
     fac.fields.forEach(field => {
         let icon = '⚽';
-        if (field.field_name.includes('Basketbol') || (field.field_type && field.field_type.includes('Basketbol'))) icon = '🏀';
-        else if (field.field_name.includes('Tenis') || (field.field_type && field.field_type.includes('Tenis'))) icon = '🎾';
+        if (field_name_has(field, 'Basketbol')) icon = '🏀';
+        else if (field_name_has(field, 'Tenis')) icon = '🎾';
 
         hHtml += `<tr><td class="fw-bold text-dark text-start py-2">${icon} ${escapeHtml(field.field_name)}</td>`;
 
         hours.forEach(h => {
+            const hourNum = parseInt(h.split(':')[0]);
+            const isToday = (date === TODAY_STR);
+            const isPastHourToday = isToday && (hourNum <= CURRENT_HOUR);
             const isBooked = reservations.some(r => r.field_id == field.id && r.reservation_date === date && r.reservation_time === h && r.status !== 'İptal');
 
             if (isBooked) {
                 hHtml += `<td><div class="slot-badge slot-busy-normal"><i class="fa-solid fa-lock me-1"></i>DOLU</div></td>`;
+            } else if (isPastHourToday) {
+                hHtml += `<td><div class="slot-badge bg-secondary bg-opacity-10 text-muted border border-secondary border-opacity-25" style="cursor:not-allowed;" title="Saat Geçti"><i class="fa-solid fa-clock-rotate-left me-1"></i>GEÇTİ</div></td>`;
             } else {
                 hHtml += `<td>
                     <div class="slot-badge slot-free" onclick="handleSlotClick(${fac.id}, ${field.id}, '${escapeHtml(field.field_name)}', '${date}', '${h}', ${field.hourly_fee})">
@@ -592,6 +638,11 @@ function handleSlotClick(facId, fieldId, fieldName, date, time, fee) {
     }
     if (date < TODAY_STR) {
         alert('⚠️ Geçmiş bir tarihe randevu alınamaz!');
+        return;
+    }
+    const hourNum = parseInt(time.split(':')[0]);
+    if (date === TODAY_STR && hourNum <= CURRENT_HOUR) {
+        alert('⚠️ Geçmiş bir saate randevu alınamaz!');
         return;
     }
     openPlayerBookModal(facId, fieldId, fieldName, date, time, fee);

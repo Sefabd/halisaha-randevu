@@ -1,5 +1,5 @@
 <?php
-// owner_dashboard.php - Tesis İşletmecisi Paneli (Sekmeli Randevu Listesi & Canlı Tarih Matrisi)
+// owner_dashboard.php - Tesis İşletmecisi Paneli (Otomatik Maç Durum Motoru & Anlık Sistem Saati)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -13,6 +13,7 @@ $facility_name = $_SESSION['facility_name'] ?? 'Tesisim';
 $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
 $current_team = $_SESSION['user_team'] ?? 'neutral';
 $today_str = date('Y-m-d');
+$current_hour = (int)date('H');
 ?>
 <!DOCTYPE html>
 <html lang="tr" data-team="<?php echo htmlspecialchars($current_team); ?>">
@@ -28,7 +29,7 @@ $today_str = date('Y-m-d');
 </head>
 <body>
 
-<!-- Header Navbar (Elden Hızlı Randevu Ekle Butonu Üst Menüden Kaldırıldı) -->
+<!-- Header Navbar (Anlık Canlı Sistem Saati Widget'ı ile) -->
 <header class="minimal-navbar py-3 mb-4">
     <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-3">
@@ -44,7 +45,12 @@ $today_str = date('Y-m-d');
             </div>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
+        <!-- ANLIK CANLI SİSTEM SAATİ WIDGET'I -->
+        <div class="d-flex align-items-center gap-3">
+            <div class="badge bg-dark text-white p-2 rounded-3 fs-7 fw-bold d-none d-sm-block">
+                <i class="fa-solid fa-clock text-warning me-1"></i> Sistem Saati: <span id="liveSystemClock">--:--:--</span>
+            </div>
+
             <!-- Team Quick Switcher -->
             <select class="form-select form-select-sm max-w-130 border-0 bg-light" onchange="switchTeamTheme(this.value)">
                 <option value="galatasaray" <?php echo $current_team === 'galatasaray' ? 'selected' : ''; ?>>🟡🔴 GS</option>
@@ -79,7 +85,7 @@ $today_str = date('Y-m-d');
         </div>
         <div class="col-6 col-md-3">
             <div class="minimal-card p-3">
-                <div class="text-muted fs-8 fw-bold">ONAYLANAN</div>
+                <div class="text-muted fs-8 fw-bold">OYNAYAN / TAMAMLANAN</div>
                 <div class="fs-3 fw-extrabold text-success mt-1" id="ownerStatApproved">0</div>
             </div>
         </div>
@@ -104,7 +110,7 @@ $today_str = date('Y-m-d');
                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">🔴 Alınan Randevu</span>
                     <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">🟡 Abonmanlı</span>
                 </div>
-                <input type="date" class="form-control form-control-sm max-w-160 fw-bold border-primary" id="matrixDate" value="<?php echo $today_str; ?>" onchange="renderOwnerMatrix()">
+                <input type="date" class="form-control form-control-sm max-w-160 fw-bold border-primary" id="matrixDate" value="<?php echo $today_str; ?>" oninput="onMatrixDateInput(this)">
             </div>
         </div>
 
@@ -223,12 +229,12 @@ $today_str = date('Y-m-d');
         </div>
     </div>
 
-    <!-- 3. REKOR DÜZEYDE REVİZE EDİLMİŞ SEKMELİ İŞLETME RANDEVU LİSTESİ (BUGÜNKÜ / GELECEK / GEÇMİŞ) -->
+    <!-- 3. OTOMATİK MAÇ DURUM MOTORLU SEKMELİ İŞLETME RANDEVU LİSTESİ -->
     <section class="minimal-card p-4 mb-5">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
             <div>
                 <h4 class="fw-bold text-dark mb-0 fs-5"><i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevu Yönetimi</h4>
-                <span class="text-muted fs-7">Kayıtlı randevularınızı filtrelere göre listeleyin ve yönetin.</span>
+                <span class="text-muted fs-7">Sistem saatine göre otomatik Maç Durumları: ⏳ Bekliyor, ⚽ Başladı, 🏁 Bitti</span>
             </div>
 
             <!-- CANLI ARAMA KUTUSU -->
@@ -269,7 +275,7 @@ $today_str = date('Y-m-d');
                         <th class="py-3">TARİH</th>
                         <th class="py-3">SAAT</th>
                         <th class="py-3">ÜCRET</th>
-                        <th class="py-3">DURUM</th>
+                        <th class="py-3">MAÇ DURUMU (OTOMATİK)</th>
                         <th class="py-3 text-end">İŞLEMLER</th>
                     </tr>
                 </thead>
@@ -373,14 +379,7 @@ $today_str = date('Y-m-d');
                             <label class="form-label text-muted fs-7 fw-semibold">ÜCRET (TL) *</label>
                             <input type="number" step="0.01" class="form-control" name="fee" value="1200.00" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted fs-7 fw-semibold">DURUM *</label>
-                            <select class="form-select" name="status">
-                                <option value="Onaylandı" selected>✅ Onaylandı</option>
-                                <option value="Tamamlandı">🏆 Tamamlandı</option>
-                                <option value="Bekliyor">⏳ Bekliyor</option>
-                            </select>
-                        </div>
+                        <input type="hidden" name="status" value="Onaylandı">
                     </div>
                 </div>
                 <div class="modal-footer border-top">
@@ -405,9 +404,22 @@ const CITIES_DISTRICTS = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    startLiveClock();
     loadOwnerFacility();
     loadOwnerReservations();
 });
+
+function startLiveClock() {
+    function updateClock() {
+        const now = new Date();
+        const clockEl = document.getElementById('liveSystemClock');
+        if (clockEl) {
+            clockEl.innerText = now.toLocaleTimeString('tr-TR');
+        }
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+}
 
 function switchTeamTheme(team) {
     document.documentElement.setAttribute('data-team', team);
@@ -479,9 +491,15 @@ function renderOwnerFields(fields) {
     tbody.innerHTML = html;
 }
 
+function onMatrixDateInput(inputEl) {
+    if (!inputEl.value || inputEl.value.length !== 10) return;
+    renderOwnerMatrix();
+}
+
 function renderOwnerMatrix() {
     if (!ownerFacilityData || ownerFieldsData.length === 0) return;
-    const date = document.getElementById('matrixDate').value;
+    const dateInput = document.getElementById('matrixDate');
+    const date = (dateInput && dateInput.value && dateInput.value.length === 10) ? dateInput.value : TODAY_STR;
 
     const openH = parseInt(ownerFacilityData.open_time || '13');
     let closeH = parseInt(ownerFacilityData.close_time || '01');
@@ -555,6 +573,15 @@ function showBookingDetails(id) {
 }
 
 function quickWalkinModal(fieldId, date, time) {
+    const now = new Date();
+    const currentH = now.getHours();
+    const resH = parseInt(time.split(':')[0]);
+
+    if (date < TODAY_STR || (date === TODAY_STR && resH < currentH)) {
+        alert('⚠️ Geçmiş bir saate randevu eklenemez!');
+        return;
+    }
+
     document.getElementById('walkinFieldSelect').value = fieldId;
     document.getElementById('walkinDate').value = date;
     document.getElementById('walkinTimeSelect').value = time;
@@ -647,6 +674,33 @@ function setReservationTab(tab) {
     filterReservations();
 }
 
+// OTOMATİK MAÇ DURUM MOTORU (Bekliyor / Başladı / Bitti)
+function computeMatchStatusBadge(resDate, resTime) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1 < 10 ? '0' : '') + (now.getMonth() + 1);
+    const day = (now.getDate() < 10 ? '0' : '') + now.getDate();
+    const todayStr = `${year}-${month}-${day}`;
+    const currentHour = now.getHours();
+    const resHour = parseInt(resTime.split(':')[0]);
+
+    if (resDate < todayStr) {
+        return `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1"><i class="fa-solid fa-flag-checkered me-1"></i>🏁 Bitti</span>`;
+    }
+    if (resDate > todayStr) {
+        return `<span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25 px-2 py-1"><i class="fa-solid fa-hourglass-half me-1 text-warning"></i>⏳ Bekliyor</span>`;
+    }
+
+    // TODAY
+    if (resHour < currentHour) {
+        return `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1"><i class="fa-solid fa-flag-checkered me-1"></i>🏁 Bitti</span>`;
+    } else if (resHour === currentHour) {
+        return `<span class="badge bg-success text-white px-2.5 py-1 shadow-sm"><i class="fa-solid fa-futbol me-1"></i>⚽ Başladı (Maç Oynanıyor)</span>`;
+    } else {
+        return `<span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25 px-2 py-1"><i class="fa-solid fa-hourglass-half me-1 text-warning"></i>⏳ Bekliyor</span>`;
+    }
+}
+
 function filterReservations() {
     const query = document.getElementById('searchReservationQuery').value.toLowerCase().trim();
     const tbody = document.getElementById('ownerReservationsBody');
@@ -655,18 +709,24 @@ function filterReservations() {
     let futureRes = [];
     let pastRes = [];
     let income = 0;
-    let approvedCount = 0;
+    let playedOrFinishedCount = 0;
+
+    const now = new Date();
+    const currentH = now.getHours();
 
     ownerReservationsData.forEach(r => {
+        const resH = parseInt(r.reservation_time.split(':')[0]);
+
         if (r.reservation_date === TODAY_STR) {
             todayRes.push(r);
-            if (r.status === 'Onaylandı' || r.status === 'Tamamlandı') income += parseFloat(r.fee);
+            income += parseFloat(r.fee);
+            if (resH <= currentH) playedOrFinishedCount++;
         } else if (r.reservation_date > TODAY_STR) {
             futureRes.push(r);
         } else {
             pastRes.push(r);
+            playedOrFinishedCount++;
         }
-        if (r.status === 'Onaylandı') approvedCount++;
     });
 
     document.getElementById('tabCountToday').innerText = todayRes.length;
@@ -675,7 +735,7 @@ function filterReservations() {
 
     document.getElementById('ownerStatTotal').innerText = ownerReservationsData.length;
     document.getElementById('ownerStatToday').innerText = todayRes.length;
-    document.getElementById('ownerStatApproved').innerText = approvedCount;
+    document.getElementById('ownerStatApproved').innerText = playedOrFinishedCount;
     document.getElementById('ownerStatIncome').innerText = income.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' ₺';
 
     let activeList = (activeReservationTab === 'today') ? todayRes : ((activeReservationTab === 'future') ? futureRes : pastRes);
@@ -699,7 +759,7 @@ function filterReservations() {
             <td class="px-3 py-3 text-primary fw-semibold">${r.reservation_date}</td>
             <td class="px-3 py-3 text-dark fw-bold">${r.reservation_time}</td>
             <td class="px-3 py-3 text-success fw-bold">₺${parseFloat(r.fee).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
-            <td class="px-3 py-3">${getStatusBadge(r.status)}</td>
+            <td class="px-3 py-3">${computeMatchStatusBadge(r.reservation_date, r.reservation_time)}</td>
             <td class="px-3 py-3 text-end">
                 <button class="btn btn-sm btn-outline-danger" onclick="cancelReservation(${r.id})">İptal Et / Sil</button>
             </td>
@@ -731,15 +791,6 @@ async function cancelReservation(id) {
     const res = await fetch('api/reservations.php?action=delete', { method: 'POST', body: formData });
     const json = await res.json();
     if (json.status === 'success') loadOwnerReservations();
-}
-
-function getStatusBadge(status) {
-    switch (status) {
-        case 'Onaylandı': return `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">Onaylandı</span>`;
-        case 'Tamamlandı': return `<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1">Tamamlandı</span>`;
-        case 'İptal': return `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">İptal</span>`;
-        default: return `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">Bekliyor</span>`;
-    }
 }
 
 function escapeHtml(str) {
