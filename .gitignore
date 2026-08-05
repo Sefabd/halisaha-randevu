@@ -1,0 +1,15 @@
+# SahaNet PRO Git Ignore File
+
+# Local SQLite Database
+database.sqlite
+database.sqlite-journal
+
+# IDE & OS Files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Docker volumes / temp logs
+*.log

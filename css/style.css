@@ -1,0 +1,433 @@
+/* SahaNet PRO - Custom UEFA Dark Glassmorphism Styling */
+
+:root {
+  --bg-dark: #070b12;
+  --bg-card: rgba(15, 23, 42, 0.75);
+  --bg-card-hover: rgba(30, 41, 59, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-glow: rgba(56, 189, 248, 0.4);
+  
+  --uefa-blue: #0284c7;
+  --uefa-blue-glow: rgba(2, 132, 199, 0.5);
+  --gold-primary: #f59e0b;
+  --gold-glow: rgba(245, 158, 11, 0.6);
+  --vip-red: #ef4444;
+  --vip-red-glow: rgba(239, 68, 68, 0.5);
+  --pitch-green: #10b981;
+  --pitch-green-glow: rgba(16, 185, 129, 0.4);
+  
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  margin: 0;
+  padding-bottom: 90px;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.15), transparent 70%),
+    radial-gradient(circle at 85% 30%, rgba(245, 158, 11, 0.08), transparent 50%),
+    radial-gradient(circle at 15% 70%, rgba(16, 185, 129, 0.1), transparent 50%);
+  background-attachment: fixed;
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand, .brand-font {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* UEFA Header & Brand */
+.uefa-header {
+  background: rgba(7, 11, 18, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.brand-badge {
+  background: linear-gradient(135deg, var(--uefa-blue), #0369a1);
+  color: #fff;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px var(--uefa-blue-glow);
+}
+
+/* Metrics Bar */
+.metric-card {
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 4px; height: 100%;
+  background: var(--accent-color, var(--uefa-blue));
+  border-radius: 4px 0 0 4px;
+}
+
+.metric-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+}
+
+/* ABONMAN PAKETLERİ Section */
+.abonman-section-title {
+  position: relative;
+  display: inline-block;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffffff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subscription-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.sub-card {
+  position: relative;
+  padding: 30px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 24px;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.sub-card:hover {
+  transform: translateY(-8px);
+}
+
+/* Card 1: Aylık Fix (Blue/Silver) */
+.sub-card-blue {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 132, 199, 0.15));
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: 0 10px 30px rgba(2, 132, 199, 0.15);
+}
+.sub-card-blue:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 15px 40px rgba(56, 189, 248, 0.3);
+}
+.sub-card-blue .icon-box {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+/* Card 2: Sezonluk Efsane VIP (Red/Gold Highlighted) */
+.sub-card-vip {
+  background: linear-gradient(145deg, rgba(30, 10, 15, 0.95), rgba(245, 158, 11, 0.2));
+  border: 2px solid var(--gold-primary);
+  box-shadow: 0 0 35px var(--gold-glow);
+  transform: scale(1.04);
+  z-index: 2;
+}
+.sub-card-vip:hover {
+  transform: scale(1.07) translateY(-6px);
+  box-shadow: 0 0 50px rgba(245, 158, 11, 0.8);
+}
+.sub-card-vip .icon-box {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+/* Floating Golden Banner for VIP */
+.vip-banner {
+  position: absolute;
+  top: -14px;
+  right: 25px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+  font-weight: 900;
+  font-size: 0.75rem;
+  padding: 4px 14px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.6);
+}
+
+/* Card 3: Kemik Kadro (Yellow/Black) */
+.sub-card-yellow {
+  background: linear-gradient(145deg, rgba(20, 20, 20, 0.95), rgba(234, 179, 8, 0.15));
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  box-shadow: 0 10px 30px rgba(234, 179, 8, 0.15);
+}
+.sub-card-yellow:hover {
+  border-color: #eab308;
+  box-shadow: 0 15px 40px rgba(234, 179, 8, 0.35);
+}
+.sub-card-yellow .icon-box {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+}
+
+.icon-box {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+}
+
+.sub-price {
+  font-size: 1.75rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  margin: 15px 0;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 0.92rem;
+  color: #cbd5e1;
+}
+
+.feature-list li i {
+  font-size: 1rem;
+}
+
+/* Hourly Matrix Grid */
+.matrix-container {
+  overflow-x: auto;
+  padding: 10px 0;
+}
+.slot-badge {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  border: 1px solid transparent;
+}
+.slot-free {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
+}
+.slot-free:hover {
+  background: #10b981;
+  color: #fff;
+  box-shadow: 0 0 15px var(--pitch-green-glow);
+}
+.slot-busy {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+  cursor: not-allowed;
+}
+
+/* Form Controls in Dark Glass */
+.form-control, .form-select {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: #f8fafc !important;
+  border-radius: 12px !important;
+  padding: 10px 16px !important;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--uefa-blue) !important;
+  box-shadow: 0 0 12px var(--uefa-blue-glow) !important;
+}
+
+.form-control::placeholder {
+  color: #64748b;
+}
+
+/* Table Styling */
+.table-dark-glass {
+  width: 100%;
+  color: #f8fafc;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.table-dark-glass th {
+  background: rgba(15, 23, 42, 0.9);
+  padding: 14px 18px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.table-dark-glass td {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(10px);
+  padding: 16px 18px;
+  vertical-align: middle;
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.table-dark-glass td:first-child {
+  border-left: 1px solid var(--glass-border);
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+}
+
+.table-dark-glass td:last-child {
+  border-right: 1px solid var(--glass-border);
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+}
+
+.table-dark-glass tr:hover td {
+  background: rgba(30, 41, 59, 0.85);
+}
+
+/* Badges */
+.badge-status {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.badge-onaylandi { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+.badge-bekliyor { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+.badge-tamamlandi { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+.badge-iptal { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+
+/* Buttons */
+.btn-uefa {
+  background: linear-gradient(135deg, var(--uefa-blue), #0369a1);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 10px 20px;
+  box-shadow: 0 4px 15px var(--uefa-blue-glow);
+  transition: all 0.3s;
+}
+
+.btn-uefa:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--uefa-blue-glow);
+  color: #fff;
+}
+
+.btn-whatsapp {
+  background: #25D366;
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  transition: all 0.2s;
+}
+
+.btn-whatsapp:hover {
+  background: #1da851;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(37, 211, 102, 0.5);
+}
+
+/* Floating Bottom Navigation Bar */
+.bottom-nav {
+  position: fixed;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 30px);
+  max-width: 550px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 30px;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1050;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.nav-item-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.nav-item-btn i {
+  font-size: 1.25rem;
+}
+
+.nav-item-btn:hover, .nav-item-btn.active {
+  color: #38bdf8;
+  transform: translateY(-2px);
+}
+
+/* Modal Dark Glass */
+.modal-content-glass {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(25px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  color: #f8fafc;
+}
+
+.modal-header-glass {
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.modal-footer-glass {
+  border-top: 1px solid var(--glass-border);
+}
