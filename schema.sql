@@ -1,9 +1,20 @@
--- SahaNet PRO FIFA/Stadyum Konseptli İlişkisel Veritabanı Şeması
+-- SahaNet PRO Ilişkisel Veritabanı Şeması (Kullanıcı & İşletmeci Kayıt Uyumlu)
 
 CREATE DATABASE IF NOT EXISTS `halisaha_db` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `halisaha_db`;
 
--- 1. Halı Saha Tesisleri (İşletmeciler)
+-- 1. Oyuncular / Kullanıcılar Tablosu
+CREATE TABLE IF NOT EXISTS `users` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `full_name` VARCHAR(100) NOT NULL,
+    `username` VARCHAR(50) NOT NULL UNIQUE,
+    `password` VARCHAR(255) NOT NULL,
+    `phone` VARCHAR(30) NOT NULL,
+    `favorite_team` VARCHAR(30) DEFAULT 'galatasaray',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2. Halı Saha Tesisleri (İşletmeciler) Tablosu
 CREATE TABLE IF NOT EXISTS `facilities` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(150) NOT NULL,
@@ -16,10 +27,11 @@ CREATE TABLE IF NOT EXISTS `facilities` (
     `phone` VARCHAR(30) NOT NULL,
     `open_time` VARCHAR(10) NOT NULL DEFAULT '13:00',
     `close_time` VARCHAR(10) NOT NULL DEFAULT '01:00',
+    `favorite_team` VARCHAR(30) DEFAULT 'galatasaray',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2. Tesis Alt Sahaları
+-- 3. Tesis Alt Sahaları Tablosu
 CREATE TABLE IF NOT EXISTS `facility_fields` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `facility_id` INT NOT NULL,
@@ -31,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `facility_fields` (
     FOREIGN KEY (`facility_id`) REFERENCES `facilities`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3. Randevular
+-- 4. Randevular Tablosu
 CREATE TABLE IF NOT EXISTS `field_reservations` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `facility_id` INT NOT NULL,

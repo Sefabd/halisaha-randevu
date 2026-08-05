@@ -1,5 +1,5 @@
 <?php
-// login.php - SahaNet PRO Minimalist & Süper Lig Team Portal
+// login.php - SahaNet PRO Account Login & Registration Portal
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -10,7 +10,7 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giriş Yap | SahaNet PRO - Halı Saha Takip Platformu</title>
+    <title>Giriş & Kayıt | SahaNet PRO</title>
     
     <!-- Google Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
@@ -28,13 +28,13 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
             <i class="fa-solid fa-futbol"></i> SahaNet PRO
         </div>
         <h1 class="display-6 fw-extrabold text-dark">HALI SAHA REZERVASYON & YÖNETİMİ</h1>
-        <p class="text-muted fs-6">Minimalist, hızlı ve takımınızın renkleriyle kişiselleştirilmiş halı saha deneyimi.</p>
+        <p class="text-muted fs-6">Giriş yapın veya saniyeler içinde yeni hesabınızı oluşturun.</p>
     </div>
 
     <!-- SÜPER LİG TAKIM SEÇİCİ -->
     <div class="minimal-card p-3 mb-4 text-center">
         <label class="form-label text-muted fs-7 fw-bold mb-2 d-block text-uppercase">
-            <i class="fa-solid fa-shirt text-primary me-1"></i> Süper Lig Takımınızı Seçin (Arayüz Renkleri Özelleşir)
+            <i class="fa-solid fa-shirt text-primary me-1"></i> Süper Lig Takımınızı Seçin
         </label>
         <div class="d-flex flex-wrap justify-content-center gap-2">
             <div class="team-pill <?php echo $current_team === 'galatasaray' ? 'active' : ''; ?>" onclick="changeTeamTheme('galatasaray')">
@@ -57,99 +57,190 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
 
     <!-- Role Selection Tabs -->
     <div class="row g-3 mb-4">
-        <!-- Role 1: Oyuncu / Müşteri -->
         <div class="col-md-6">
             <div class="role-card active text-center h-100" id="cardPlayer" onclick="selectRole('player')">
                 <div class="role-icon mx-auto">
                     <i class="fa-solid fa-user-ninja"></i>
                 </div>
-                <h3 class="fw-bold text-dark fs-5 mb-1">OYUNCU / MÜŞTERİ</h3>
-                <p class="text-muted fs-7 mb-0">İl ve ilçe seçerek sahaları görün, açık saatlerde anında online randevu alın.</p>
+                <h3 class="fw-bold text-dark fs-5 mb-1">OYUNCU / MÜŞTERİ PORTALI</h3>
+                <p class="text-muted fs-7 mb-0">Halı saha kiralayın, randevularınızı takip edin.</p>
             </div>
         </div>
 
-        <!-- Role 2: Halı Saha İşletmecisi -->
         <div class="col-md-6">
             <div class="role-card text-center h-100" id="cardOwner" onclick="selectRole('owner')">
                 <div class="role-icon mx-auto">
                     <i class="fa-solid fa-stadium"></i>
                 </div>
                 <h3 class="fw-bold text-dark fs-5 mb-1">HALI SAHA İŞLETMECİSİ</h3>
-                <p class="text-muted fs-7 mb-0">Sahalarınızı, çalışma saatlerinizi düzenleyin. Elden gelenlere hızlı randevu ekleyin.</p>
+                <p class="text-muted fs-7 mb-0">Tesisinizi kaydetin, sahalarınızı yönetin.</p>
             </div>
         </div>
     </div>
 
-    <!-- Form Section -->
+    <!-- Form Container -->
     <div class="minimal-card p-4 p-md-5">
-        
-        <!-- Form: Oyuncu Girişi (City/District) -->
-        <form id="formPlayer" onsubmit="handlePlayerLogin(event)">
-            <h4 class="fw-bold text-dark fs-5 mb-3">
-                <i class="fa-solid fa-location-dot text-success me-2"></i> Konum Seçiniz
-            </h4>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label text-muted fs-7 fw-semibold">İL SEÇİMİ</label>
-                    <select class="form-select form-select-lg" name="city" id="playerCity">
-                        <option value="İstanbul" selected>İstanbul</option>
-                        <option value="Ankara">Ankara</option>
-                        <option value="İzmir">İzmir</option>
-                        <option value="Bursa">Bursa</option>
-                        <option value="Antalya">Antalya</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label text-muted fs-7 fw-semibold">İLÇE SEÇİMİ</label>
-                    <select class="form-select form-select-lg" name="district" id="playerDistrict">
-                        <option value="Kadıköy" selected>Kadıköy</option>
-                        <option value="Beşiktaş">Beşiktaş</option>
-                        <option value="Beyoğlu">Beyoğlu</option>
-                        <option value="Çankaya">Çankaya</option>
-                    </select>
-                </div>
-                <div class="col-12 mt-4">
-                    <button type="submit" class="btn btn-team w-100 py-3 fs-6 fw-bold">
-                        SAHALARI LİSTELE VE RANDEVU AL <i class="fa-solid fa-arrow-right ms-2"></i>
-                    </button>
-                </div>
-            </div>
-        </form>
+        <div id="authAlert" class="alert alert-danger bg-danger bg-opacity-10 border border-danger border-opacity-25 text-danger d-none rounded-3 mb-3 fs-7"></div>
 
-        <!-- Form: Halı Saha İşletmecisi Girişi -->
-        <form id="formOwner" class="d-none" onsubmit="handleOwnerLogin(event)">
+        <!-- ==================== OYUNCU SECTION ==================== -->
+        <div id="sectionPlayer">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="fw-bold text-dark fs-5 mb-0">
-                    <i class="fa-solid fa-lock text-warning me-2"></i> İşletmeci Girişi
-                </h4>
-                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fs-8" onclick="fillDemoOwner()">
-                    <i class="fa-solid fa-key me-1"></i> Demo Bilgisini Doldur (Kadıköy Arena)
+                <ul class="nav nav-pills" id="playerTab" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-bold" id="player-login-tab" data-bs-toggle="pill" data-bs-target="#player-login" type="button">Oyuncu Girişi</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold" id="player-register-tab" data-bs-toggle="pill" data-bs-target="#player-register" type="button">Oyuncu Kayıt Ol</button>
+                    </li>
+                </ul>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fs-8" onclick="fillDemoPlayer()">
+                    <i class="fa-solid fa-key me-1"></i> Demo Oyuncu Doldur (oyuncu1)
                 </button>
             </div>
 
-            <div id="loginAlert" class="alert alert-danger bg-danger bg-opacity-10 border border-danger border-opacity-25 text-danger d-none rounded-3 mb-3 fs-7"></div>
+            <div class="tab-content" id="playerTabContent">
+                <!-- Oyuncu Giriş -->
+                <div class="tab-pane fade show active" id="player-login">
+                    <form onsubmit="handlePlayerLogin(event)">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI *</label>
+                                <input type="text" class="form-control" name="username" id="p_login_username" required placeholder="Örn: oyuncu1">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
+                                <input type="password" class="form-control" name="password" id="p_login_password" required placeholder="••••••••">
+                            </div>
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="btn btn-team w-100 py-3 fs-6 fw-bold">
+                                    <i class="fa-solid fa-right-to-bracket me-2"></i> OYUNCU GİRİŞİ YAP
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
 
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI</label>
-                    <input type="text" class="form-control form-control-lg" name="username" id="ownerUsername" required placeholder="Örn: kadikoy_arena">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE</label>
-                    <input type="password" class="form-control form-control-lg" name="password" id="ownerPassword" required placeholder="••••••••">
-                </div>
-                <div class="col-12 mt-4">
-                    <button type="submit" class="btn btn-team w-100 py-3 fs-6 fw-bold">
-                        <i class="fa-solid fa-right-to-bracket me-2"></i> İŞLETME PANELİNE GİRİŞ YAP
-                    </button>
+                <!-- Oyuncu Kayıt -->
+                <div class="tab-pane fade" id="player-register">
+                    <form onsubmit="handlePlayerRegister(event)">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">AD SOYAD *</label>
+                                <input type="text" class="form-control" name="full_name" required placeholder="Ahmet Yılmaz">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
+                                <input type="text" class="form-control" name="phone" required placeholder="0532 555 12 34">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI *</label>
+                                <input type="text" class="form-control" name="username" required placeholder="Örn: ahmet10">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
+                                <input type="password" class="form-control" name="password" required placeholder="••••••••">
+                            </div>
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="btn btn-team w-100 py-3 fs-6 fw-bold">
+                                    <i class="fa-solid fa-user-plus me-2"></i> OYUNCU HESABI OLUŞTUR
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </form>
+        </div>
+
+        <!-- ==================== İŞLETME SECTION ==================== -->
+        <div id="sectionOwner" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <ul class="nav nav-pills" id="ownerTab" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-bold" id="owner-login-tab" data-bs-toggle="pill" data-bs-target="#owner-login" type="button">İşletmeci Girişi</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold" id="owner-register-tab" data-bs-toggle="pill" data-bs-target="#owner-register" type="button">Tesisini Kaydet</button>
+                    </li>
+                </ul>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fs-8" onclick="fillDemoOwner()">
+                    <i class="fa-solid fa-key me-1"></i> Demo İşletmeci Doldur (kadikoy_arena)
+                </button>
+            </div>
+
+            <div class="tab-content" id="ownerTabContent">
+                <!-- İşletme Giriş -->
+                <div class="tab-pane fade show active" id="owner-login">
+                    <form onsubmit="handleOwnerLogin(event)">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI *</label>
+                                <input type="text" class="form-control" name="username" id="o_login_username" required placeholder="Örn: kadikoy_arena">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
+                                <input type="password" class="form-control" name="password" id="o_login_password" required placeholder="••••••••">
+                            </div>
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="btn btn-team w-100 py-3 fs-6 fw-bold">
+                                    <i class="fa-solid fa-right-to-bracket me-2"></i> İŞLETME PANELİNE GİRİŞ YAP
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- İşletme Kayıt -->
+                <div class="tab-pane fade" id="owner-register">
+                    <form onsubmit="handleOwnerRegister(event)">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">HALI SAHA TESİS ADI *</label>
+                                <input type="text" class="form-control" name="facility_name" required placeholder="Örn: Moda Arena Halı Saha">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">YETKİLİ AD SOYAD *</label>
+                                <input type="text" class="form-control" name="owner_name" required placeholder="Mehmet Kaya">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI *</label>
+                                <input type="text" class="form-control" name="username" required placeholder="Örn: moda_arena">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
+                                <input type="password" class="form-control" name="password" required placeholder="••••••••">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">İL *</label>
+                                <input type="text" class="form-control" name="city" value="İstanbul" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">İLÇE *</label>
+                                <input type="text" class="form-control" name="district" value="Kadıköy" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
+                                <input type="text" class="form-control" name="phone" required placeholder="0532 555 12 34">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fs-7 fw-semibold">ADRES *</label>
+                                <input type="text" class="form-control" name="address" required placeholder="Moda Cad. No:12">
+                            </div>
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="btn btn-team w-100 py-3 fs-6 fw-bold">
+                                    <i class="fa-solid fa-stadium me-2"></i> TESİSİNİ KAYDET VE PANELİ AÇ
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
     </div>
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 let selectedTeam = '<?php echo htmlspecialchars($current_team); ?>';
 
@@ -159,7 +250,6 @@ function changeTeamTheme(team) {
     document.querySelectorAll('.team-pill').forEach(el => el.classList.remove('active'));
     event.currentTarget.classList.add('active');
 
-    // Save team preference via AJAX
     fetch('api/auth.php?action=set_team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -170,48 +260,68 @@ function changeTeamTheme(team) {
 function selectRole(role) {
     const cardP = document.getElementById('cardPlayer');
     const cardO = document.getElementById('cardOwner');
-    const formP = document.getElementById('formPlayer');
-    const formO = document.getElementById('formOwner');
+    const secP = document.getElementById('sectionPlayer');
+    const secO = document.getElementById('sectionOwner');
 
     if (role === 'player') {
         cardP.classList.add('active');
         cardO.classList.remove('active');
-        formP.classList.remove('d-none');
-        formO.classList.add('d-none');
+        secP.classList.remove('d-none');
+        secO.classList.add('d-none');
     } else {
         cardO.classList.add('active');
         cardP.classList.remove('active');
-        formO.classList.remove('d-none');
-        formP.classList.add('d-none');
+        secO.classList.remove('d-none');
+        secP.classList.add('d-none');
     }
 }
 
+function fillDemoPlayer() {
+    document.getElementById('p_login_username').value = 'oyuncu1';
+    document.getElementById('p_login_password').value = '123';
+}
+
 function fillDemoOwner() {
-    document.getElementById('ownerUsername').value = 'kadikoy_arena';
-    document.getElementById('ownerPassword').value = '123';
+    document.getElementById('o_login_username').value = 'kadikoy_arena';
+    document.getElementById('o_login_password').value = '123';
+}
+
+function showAlert(msg) {
+    const box = document.getElementById('authAlert');
+    box.classList.remove('d-none');
+    box.innerText = msg;
 }
 
 async function handlePlayerLogin(e) {
     e.preventDefault();
-    const city = document.getElementById('playerCity').value;
-    const district = document.getElementById('playerDistrict').value;
+    const u = document.getElementById('p_login_username').value;
+    const p = document.getElementById('p_login_password').value;
 
     const res = await fetch('api/auth.php?action=login_player', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}&team=${encodeURIComponent(selectedTeam)}`
+        body: `username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}&team=${encodeURIComponent(selectedTeam)}`
     });
     const json = await res.json();
-    if (json.status === 'success') {
-        window.location.href = json.redirect;
-    }
+    if (json.status === 'success') window.location.href = json.redirect;
+    else showAlert(json.message);
+}
+
+async function handlePlayerRegister(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    formData.append('team', selectedTeam);
+
+    const res = await fetch('api/auth.php?action=register_player', { method: 'POST', body: formData });
+    const json = await res.json();
+    if (json.status === 'success') window.location.href = json.redirect;
+    else showAlert(json.message);
 }
 
 async function handleOwnerLogin(e) {
     e.preventDefault();
-    const u = document.getElementById('ownerUsername').value;
-    const p = document.getElementById('ownerPassword').value;
-    const alertBox = document.getElementById('loginAlert');
+    const u = document.getElementById('o_login_username').value;
+    const p = document.getElementById('o_login_password').value;
 
     const res = await fetch('api/auth.php?action=login_owner', {
         method: 'POST',
@@ -219,12 +329,19 @@ async function handleOwnerLogin(e) {
         body: `username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}&team=${encodeURIComponent(selectedTeam)}`
     });
     const json = await res.json();
-    if (json.status === 'success') {
-        window.location.href = json.redirect;
-    } else {
-        alertBox.classList.remove('d-none');
-        alertBox.innerText = json.message;
-    }
+    if (json.status === 'success') window.location.href = json.redirect;
+    else showAlert(json.message);
+}
+
+async function handleOwnerRegister(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    formData.append('team', selectedTeam);
+
+    const res = await fetch('api/auth.php?action=register_owner', { method: 'POST', body: formData });
+    const json = await res.json();
+    if (json.status === 'success') window.location.href = json.redirect;
+    else showAlert(json.message);
 }
 </script>
 

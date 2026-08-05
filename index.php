@@ -1,19 +1,21 @@
 <?php
-// index.php - Oyuncu & Müşteri Halı Saha Randevu Portalı (Light Mode & Team Engine)
+// index.php - SporPin & SosyalHalıSaha Konseptli SahaNet PRO Portalı
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 $selected_city = $_SESSION['city'] ?? 'İstanbul';
 $selected_district = $_SESSION['district'] ?? 'Kadıköy';
 $current_team = $_SESSION['user_team'] ?? 'galatasaray';
+$user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
 ?>
 <!DOCTYPE html>
 <html lang="tr" data-team="<?php echo htmlspecialchars($current_team); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SahaNet PRO - Halı Saha Kirala & Abonman Ol</title>
+    <title>SahaNet PRO - Online Halı Saha Rezervasyon Platformu</title>
     
+    <!-- Google Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -21,67 +23,221 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
 </head>
 <body>
 
-<!-- Minimal Header Navbar -->
-<header class="minimal-navbar py-3 mb-4">
-    <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
-        <a href="index.php" class="d-flex align-items-center text-decoration-none gap-2">
-            <div class="brand-badge fs-5">
-                <i class="fa-solid fa-futbol"></i> SahaNet
-            </div>
-            <span class="fs-4 fw-extrabold text-dark brand-font">PRO</span>
-        </a>
+<!-- 1. SPORPIN STYLE TOP HEADER NAVBAR -->
+<header class="minimal-navbar py-3 sticky-top">
+    <div class="container px-4 d-flex align-items-center justify-content-between">
+        <!-- Logo & Süper Lig Team Selector -->
+        <div class="d-flex align-items-center gap-3">
+            <a href="index.php" class="d-flex align-items-center text-decoration-none gap-2">
+                <div class="brand-badge fs-5">
+                    <i class="fa-solid fa-futbol"></i> SahaNet
+                </div>
+                <span class="fs-4 fw-extrabold text-dark brand-font">PRO</span>
+            </a>
 
-        <!-- City & District Selector & Team Switcher -->
-        <div class="d-flex align-items-center gap-2">
             <!-- Süper Lig Team Switcher -->
-            <select class="form-select form-select-sm max-w-140" onchange="switchTeamTheme(this.value)">
+            <select class="form-select form-select-sm max-w-130 border-0 bg-light" onchange="switchTeamTheme(this.value)">
                 <option value="galatasaray" <?php echo $current_team === 'galatasaray' ? 'selected' : ''; ?>>🟡🔴 GS</option>
                 <option value="fenerbahce" <?php echo $current_team === 'fenerbahce' ? 'selected' : ''; ?>>🔵🟡 FB</option>
                 <option value="besiktas" <?php echo $current_team === 'besiktas' ? 'selected' : ''; ?>>⬛⚪ BJK</option>
                 <option value="trabzonspor" <?php echo $current_team === 'trabzonspor' ? 'selected' : ''; ?>>🟣🔴 TS</option>
                 <option value="neutral" <?php echo $current_team === 'neutral' ? 'selected' : ''; ?>>🟢⚪ Nötr</option>
             </select>
+        </div>
 
-            <select class="form-select form-select-sm max-w-140" id="portalCity" onchange="loadFacilities()">
-                <option value="İstanbul" <?php echo $selected_city === 'İstanbul' ? 'selected' : ''; ?>>İstanbul</option>
-                <option value="Ankara" <?php echo $selected_city === 'Ankara' ? 'selected' : ''; ?>>Ankara</option>
-                <option value="İzmir" <?php echo $selected_city === 'İzmir' ? 'selected' : ''; ?>>İzmir</option>
-            </select>
-            <select class="form-select form-select-sm max-w-140" id="portalDistrict" onchange="loadFacilities()">
-                <option value="Kadıköy" <?php echo $selected_district === 'Kadıköy' ? 'selected' : ''; ?>>Kadıköy</option>
-                <option value="Beşiktaş" <?php echo $selected_district === 'Beşiktaş' ? 'selected' : ''; ?>>Beşiktaş</option>
-                <option value="Çankaya" <?php echo $selected_district === 'Çankaya' ? 'selected' : ''; ?>>Çankaya</option>
-            </select>
-            <a href="login.php" class="btn btn-outline-secondary btn-sm rounded-3">
-                <i class="fa-solid fa-user-gear me-1"></i> Giriş Yap
-            </a>
+        <!-- Right Navigation Links (SporPin Header Style) -->
+        <nav class="d-none d-lg-flex align-items-center gap-4 text-muted fs-7 fw-semibold">
+            <a href="index.php" class="text-dark text-decoration-none"><i class="fa-solid fa-house me-1"></i> Ana Sayfa</a>
+            <a href="#facilitiesSection" class="text-secondary text-decoration-none"><i class="fa-solid fa-stadium me-1"></i> Sahalar</a>
+            <a href="#abonmanSection" class="text-secondary text-decoration-none"><i class="fa-solid fa-crown me-1"></i> Abonman Paketleri</a>
+            <a href="#howItWorks" class="text-secondary text-decoration-none"><i class="fa-solid fa-circle-question me-1"></i> Nasıl Çalışır</a>
+        </nav>
+
+        <!-- Auth Button -->
+        <div class="d-flex align-items-center gap-2">
+            <?php if ($user_name): ?>
+                <span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-user text-primary me-1"></i> <?php echo htmlspecialchars($user_name); ?></span>
+                <a href="api/auth.php?action=logout" class="btn btn-sm btn-outline-danger rounded-3"><i class="fa-solid fa-right-from-bracket"></i></a>
+            <?php else: ?>
+                <a href="login.php" class="btn btn-team btn-sm rounded-3">
+                    <i class="fa-solid fa-user me-1"></i> Giriş Yap / Kayıt Ol
+                </a>
+            <?php endif; ?>
         </div>
     </div>
 </header>
 
-<div class="container-fluid px-4">
-    
-    <!-- Minimal Hero Banner -->
-    <div class="minimal-card p-4 p-md-5 mb-5 text-center position-relative overflow-hidden">
-        <span class="badge bg-light text-dark border rounded-pill px-3 py-2 fs-7 mb-3 fw-bold">
-            <i class="fa-solid fa-shirt text-primary me-1"></i> SÜPER LİG TAKIM TEMANIZLA SAHA KİRALAYIN
+<!-- 2. SPORPIN STYLE BODY HERO SEARCH BANNER -->
+<section class="py-5 mb-5 bg-dark text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
+    <div class="container text-center py-4 position-relative" style="z-index: 2;">
+        <span class="badge bg-white text-dark rounded-pill px-3 py-2 fs-7 mb-3 fw-bold shadow-sm">
+            <i class="fa-solid fa-bolt text-warning me-1"></i> SPORCULARLA HALI SAHALARI BULUŞTURAN PLATFORM!
         </span>
-        <h1 class="display-6 fw-extrabold text-dark mb-2">BÖLGENDEKİ EN İYİ HALI SAHALAR</h1>
-        <p class="text-muted fs-6 max-w-700 mx-auto">İlçe seçin, tesisin işletmeci saatlerinde (Örn: 13:00 - 01:00) açık saatlerine tıklayarak anında randevunuzu oluşturun.</p>
-    </div>
+        <h1 class="display-6 fw-extrabold mb-2">Hemen Halı Saha veya VIP Saha Bul, Rezervasyonunu Yap.</h1>
+        <p class="text-muted fs-6 mb-4 max-w-700 mx-auto">İl ve ilçe seçerek açık saatleri listeleyin, online saha kiralayın.</p>
 
-    <!-- 1. TESİSLER VE SAHA SEÇİMİ SECTION -->
-    <section class="mb-5">
-        <h3 class="fw-bold text-dark mb-4 fs-4">
-            <i class="fa-solid fa-stadium text-primary me-2"></i> Bölgenizdeki Halı Saha Tesisleri
-        </h3>
+        <!-- YÜZEN 3'LÜ ARAMA KUTUSU (BODY HERO SEARCH BAR) -->
+        <div class="minimal-card p-3 max-w-900 mx-auto shadow-lg text-dark bg-white">
+            <form onsubmit="searchFacilities(event)" class="row g-2 align-items-center">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-futbol text-primary"></i></span>
+                        <select class="form-select border-0 bg-light" id="searchSportType">
+                            <option value="Halı Saha">Halı Saha</option>
+                            <option value="Kapalı Çim">Kapalı Suni Çim</option>
+                            <option value="VIP Saha">VIP Kamera Kayıtlı</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-city text-primary"></i></span>
+                        <select class="form-select border-0 bg-light" id="portalCity" onchange="searchFacilities(event)">
+                            <option value="İstanbul" <?php echo $selected_city === 'İstanbul' ? 'selected' : ''; ?>>İstanbul</option>
+                            <option value="Ankara" <?php echo $selected_city === 'Ankara' ? 'selected' : ''; ?>>Ankara</option>
+                            <option value="İzmir" <?php echo $selected_city === 'İzmir' ? 'selected' : ''; ?>>İzmir</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-location-dot text-primary"></i></span>
+                        <select class="form-select border-0 bg-light" id="portalDistrict" onchange="searchFacilities(event)">
+                            <option value="Kadıköy" <?php echo $selected_district === 'Kadıköy' ? 'selected' : ''; ?>>Kadıköy</option>
+                            <option value="Beşiktaş" <?php echo $selected_district === 'Beşiktaş' ? 'selected' : ''; ?>>Beşiktaş</option>
+                            <option value="Çankaya" <?php echo $selected_district === 'Çankaya' ? 'selected' : ''; ?>>Çankaya</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-team w-100 py-2.5 fw-bold">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> SAHA BUL
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<div class="container px-4">
+
+    <!-- 3. KOMPAKT KÜÇÜK ABONMAN PAKETLERİ SECTION -->
+    <section id="abonmanSection" class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="fw-bold text-dark mb-0 fs-5"><i class="fa-solid fa-crown text-warning me-2"></i> Abonman Paketleri</h4>
+                <span class="text-muted fs-7">Sabit gün, saat garantisi ve indirimli paketler.</span>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- 1. Aylık Fix (Kompakt Mini Kart) -->
+            <div class="col-md-4">
+                <div class="minimal-card p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="badge bg-light text-primary border fs-8 mb-1">1 AY SÜRELİ</span>
+                        <h6 class="fw-bold text-dark mb-0">AYLIK FİX PAKET</h6>
+                        <span class="text-primary fw-extrabold fs-6">4.000 TL <span class="fs-8 text-muted fw-normal">/Ay</span></span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary rounded-2" onclick="selectPlan('Aylık Fix', '4.000 TL')">Seç</button>
+                </div>
+            </div>
+
+            <!-- 2. Sezonluk Efsane VIP (Kompakt Mini Kart) -->
+            <div class="col-md-4">
+                <div class="minimal-card p-3 border-primary border-2 d-flex align-items-center justify-content-between bg-light">
+                    <div>
+                        <span class="badge bg-primary text-white fs-8 mb-1">6 AY VIP</span>
+                        <h6 class="fw-bold text-dark mb-0">SEZONLUK EFSANE</h6>
+                        <span class="text-primary fw-extrabold fs-6">21.500 TL <span class="fs-8 text-muted fw-normal">/Sezon</span></span>
+                    </div>
+                    <button class="btn btn-sm btn-team rounded-2" onclick="selectPlan('Sezonluk Efsane VIP', '21.500 TL')">VIP Seç</button>
+                </div>
+            </div>
+
+            <!-- 3. Kemik Kadro (Kompakt Mini Kart) -->
+            <div class="col-md-4">
+                <div class="minimal-card p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="badge bg-light text-dark border fs-8 mb-1">3 AY SÜRELİ</span>
+                        <h6 class="fw-bold text-dark mb-0">KEMİK KADRO</h6>
+                        <span class="text-dark fw-extrabold fs-6">11.000 TL <span class="fs-8 text-muted fw-normal">/3 Ay</span></span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary rounded-2" onclick="selectPlan('Kemik Kadro', '11.000 TL')">Seç</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. SOSYALHALISA HAKKINDA & SİSTEM AVANTAJLARI (SPORPİN İLHAMLI) -->
+    <section id="howItWorks" class="mb-5">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-5">
+                <h2 class="fw-extrabold text-dark display-6 mb-3">SahaNet PRO Nedir?</h2>
+                <p class="text-muted fs-6 mb-3">SahaNet PRO; halı saha ve spor merkezlerinin rezervasyonlarını kolaylıkla yönetebileceği ve oyuncuların saniyeler içinde boş saatleri görüp randevu alabileceği nesil bir sistemdir.</p>
+                <div class="d-flex align-items-center gap-3 mt-4">
+                    <div class="text-center">
+                        <h3 class="fw-bold text-primary mb-0">100+</h3>
+                        <span class="text-muted fs-7">Kayıtlı Saha</span>
+                    </div>
+                    <div class="border-end py-3"></div>
+                    <div class="text-center">
+                        <h3 class="fw-bold text-success mb-0">5.000+</h3>
+                        <span class="text-muted fs-7">Tamamlanan Maç</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="minimal-card p-3 h-100">
+                            <i class="fa-solid fa-calendar-check text-primary fs-3 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Rezervasyon Yönetimi</h6>
+                            <p class="text-muted fs-7 mb-0">İşletmeci çalışma saatlerini ayarlar, oyuncular anında online randevusunu oluşturur.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="minimal-card p-3 h-100">
+                            <i class="fa-solid fa-video text-success fs-3 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">HD Kamera Kayıt Sistemi</h6>
+                            <p class="text-muted fs-7 mb-0">Maçtan hemen sonra maç özetinizi izleyin, gol videolarınızı paylaşın.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="minimal-card p-3 h-100">
+                            <i class="fa-solid fa-user-plus text-warning fs-3 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Eksik Oyuncu & Rakip Bulma</h6>
+                            <p class="text-muted fs-7 mb-0">Kadronuzda adam eksikse ilan verin, anında 14 kişiyi tamamlayın.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="minimal-card p-3 h-100">
+                            <i class="fa-brands fa-whatsapp text-success fs-3 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">WhatsApp Bildirimleri</h6>
+                            <p class="text-muted fs-7 mb-0">Randevu onayınız ve maç detaylarınız anında cep telefonunuza iletilir.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. TESİSLER VE CANLI SAAT MADDESİ SECTION -->
+    <section id="facilitiesSection" class="mb-5">
+        <h4 class="fw-bold text-dark mb-3 fs-5">
+            <i class="fa-solid fa-stadium text-primary me-2"></i> Listelenen Halı Sahalar
+        </h4>
 
         <div class="row g-4" id="facilitiesGrid">
             <!-- Loaded via JS -->
         </div>
     </section>
 
-    <!-- 2. CANLI SAAT MADDESİ & TAKVİM MATRİSİ -->
+    <!-- 6. CANLI SAAT MADDESİ & TAKVİM MATRİSİ -->
     <section class="minimal-card p-4 mb-5 d-none" id="facilityTimelineSection">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
@@ -104,63 +260,6 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
                     <!-- Fields dynamically generated -->
                 </tbody>
             </table>
-        </div>
-    </section>
-
-    <!-- 3. ABONMAN PAKETLERİ SECTION -->
-    <section id="abonmanSection" class="mb-5">
-        <div class="text-center mb-4">
-            <span class="badge bg-light text-dark border rounded-pill px-3 py-2 fs-7 mb-2 fw-bold">
-                <i class="fa-solid fa-crown me-1"></i> PAKET KİRALAMA
-            </span>
-            <h2 class="display-6 fw-extrabold text-dark">ABONMAN PAKETLERİ</h2>
-            <p class="text-muted fs-6">Sabit gün ve saat garantisi, drone maç özetleri ve VIP ayrıcalıklar.</p>
-        </div>
-
-        <div class="subscription-grid">
-            <!-- 1. Aylık Fix Paket -->
-            <div class="sub-card">
-                <h3 class="fw-bold text-dark fs-4 mb-1">AYLIK FİX PAKET</h3>
-                <div class="text-muted fs-7 fw-semibold">1 AY SÜRELİ</div>
-                <div class="fs-3 fw-extrabold text-dark my-3">4.000 TL <span class="fs-7 text-muted fw-normal">/ Ay</span></div>
-                <ul class="list-unstyled text-muted fs-7 mb-4">
-                    <li class="mb-2"><i class="fa-solid fa-check text-primary me-2"></i>Sabit Gün ve Saat Garantisi</li>
-                    <li class="mb-2"><i class="fa-solid fa-check text-primary me-2"></i>%10 Abonman İndirimi</li>
-                    <li><i class="fa-solid fa-check text-primary me-2"></i>1 Gün Önceden İptal Hakkı</li>
-                </ul>
-                <button class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-bold" onclick="selectPlan('Aylık Fix', '4.000 TL')">Hemen Katıl</button>
-            </div>
-
-            <!-- 2. Sezonluk Efsane VIP -->
-            <div class="sub-card sub-card-vip">
-                <div class="vip-badge"><i class="fa-solid fa-crown me-1"></i> MOST POPULAR VIP</div>
-                <h3 class="fw-bold text-dark fs-3 mb-1">SEZONLUK EFSANE</h3>
-                <div class="text-primary fs-7 fw-bold">6 AY SÜRELİ - VIP</div>
-                <div class="fs-2 fw-extrabold text-primary my-3">21.500 TL <span class="fs-7 text-muted fw-normal">/ Sezon</span></div>
-                <ul class="list-unstyled text-muted fs-7 mb-4">
-                    <li class="mb-2"><i class="fa-solid fa-check text-primary me-2"></i>VIP Sabit Saat Garantisi</li>
-                    <li class="mb-2"><i class="fa-solid fa-check text-primary me-2"></i>Drone & Kamera Maç Özeti</li>
-                    <li class="mb-2"><i class="fa-solid fa-check text-primary me-2"></i>Eksik Oyuncu Bulma Desteği</li>
-                    <li><i class="fa-solid fa-check text-primary me-2"></i>Turnuvalara Öncelikli Kayıt</li>
-                </ul>
-                <button class="btn btn-team w-100 rounded-3 py-2.5 fw-bold" onclick="selectPlan('Sezonluk Efsane VIP', '21.500 TL')">
-                    VIP ÜYE OL
-                </button>
-            </div>
-
-            <!-- 3. Kemik Kadro -->
-            <div class="sub-card">
-                <h3 class="fw-bold text-dark fs-4 mb-1">KEMİK KADRO</h3>
-                <div class="text-muted fs-7 fw-semibold">3 AY SÜRELİ</div>
-                <div class="fs-3 fw-extrabold text-dark my-3">11.000 TL <span class="fs-7 text-muted fw-normal">/ 3 Ay</span></div>
-                <ul class="list-unstyled text-muted fs-7 mb-4">
-                    <li class="mb-2"><i class="fa-solid fa-check text-primary me-2"></i>Sabit Gün ve Saat Garantisi</li>
-                    <li class="mb-2"><i class="fa-solid fa-check text-primary me-2"></i>%15 Abonman İndirimi</li>
-                    <li class="mb-2"><i class="fa-solid fa-check text-primary me-2"></i>HD Maç Kaydı</li>
-                    <li><i class="fa-solid fa-check text-primary me-2"></i>Dönem Sonu 1 Bedava Maç</li>
-                </ul>
-                <button class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-bold" onclick="selectPlan('Kemik Kadro', '11.000 TL')">Paketi Seç</button>
-            </div>
         </div>
     </section>
 
@@ -247,6 +346,11 @@ function switchTeamTheme(team) {
 
 let currentFacilities = [];
 let activeFacility = null;
+
+async function searchFacilities(e) {
+    if (e) e.preventDefault();
+    await loadFacilities();
+}
 
 async function loadFacilities() {
     const city = document.getElementById('portalCity').value;
@@ -369,8 +473,8 @@ function openPlayerBookModal(facId, fieldId, fieldName, date, time, fee) {
 }
 
 function selectPlan(planName, price) {
-    alert(`[${planName}] seçildi! Lütfen önce istediğiniz halı sahadan boş saatinizi seçiniz.`);
-    document.getElementById('facilitiesGrid').scrollIntoView({ behavior: 'smooth' });
+    alert(`[${planName}] seçildi! Lütfen önce aşağıdan sahanızı ve boş saatinizi seçiniz.`);
+    document.getElementById('facilitiesSection').scrollIntoView({ behavior: 'smooth' });
 }
 
 async function handlePlayerBook(e) {
