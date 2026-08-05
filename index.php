@@ -45,11 +45,10 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
             </select>
         </div>
 
-        <!-- Right Navigation Links (SporPin Header Style) -->
+        <!-- Right Navigation Links -->
         <nav class="d-none d-lg-flex align-items-center gap-4 text-muted fs-7 fw-semibold">
             <a href="index.php" class="text-dark text-decoration-none"><i class="fa-solid fa-house me-1"></i> Ana Sayfa</a>
             <a href="#facilitiesSection" class="text-secondary text-decoration-none"><i class="fa-solid fa-stadium me-1"></i> Sahalar</a>
-            <a href="#abonmanSection" class="text-secondary text-decoration-none"><i class="fa-solid fa-crown me-1"></i> Abonman Paketleri</a>
             <a href="#howItWorks" class="text-secondary text-decoration-none"><i class="fa-solid fa-circle-question me-1"></i> Nasıl Çalışır</a>
         </nav>
 
@@ -67,51 +66,57 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
     </div>
 </header>
 
-<!-- 2. SPORPIN STYLE BODY HERO SEARCH BANNER -->
+<!-- 2. SPORPIN STYLE BODY HERO SEARCH BANNER WITH 5 CITIES & ALL DISTRICTS -->
 <section class="py-5 mb-5 bg-dark text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
     <div class="container text-center py-4 position-relative" style="z-index: 2;">
         <span class="badge bg-white text-dark rounded-pill px-3 py-2 fs-7 mb-3 fw-bold shadow-sm">
             <i class="fa-solid fa-bolt text-warning me-1"></i> SPORCULARLA HALI SAHALARI BULUŞTURAN PLATFORM!
         </span>
-        <h1 class="display-6 fw-extrabold mb-2">Hemen Halı Saha veya VIP Saha Bul, Rezervasyonunu Yap.</h1>
-        <p class="text-muted fs-6 mb-4 max-w-700 mx-auto">İl ve ilçe seçerek açık saatleri listeleyin, online saha kiralayın.</p>
+        <h1 class="display-6 fw-extrabold mb-2">Hemen Saha veya Kort Bul, Online Rezervasyon Yap.</h1>
+        <p class="text-muted fs-6 mb-4 max-w-700 mx-auto">5 il ve tüm ilçelerinde spor tesislerini filtreleyin, açık saatleri görüp anında randevu alın.</p>
 
-        <!-- YÜZEN 3'LÜ ARAMA KUTUSU (BODY HERO SEARCH BAR) -->
-        <div class="minimal-card p-3 max-w-900 mx-auto shadow-lg text-dark bg-white">
+        <!-- YÜZEN 3'LÜ ARAMA KUTUSU -->
+        <div class="minimal-card p-3 max-w-950 mx-auto shadow-lg text-dark bg-white">
             <form onsubmit="searchFacilities(event)" class="row g-2 align-items-center">
+                
+                <!-- 1. SPOR TİPİ -->
                 <div class="col-md-3">
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0"><i class="fa-solid fa-futbol text-primary"></i></span>
                         <select class="form-select border-0 bg-light" id="searchSportType">
-                            <option value="Halı Saha">Halı Saha</option>
-                            <option value="Kapalı Çim">Kapalı Suni Çim</option>
-                            <option value="VIP Saha">VIP Kamera Kayıtlı</option>
+                            <option value="Halı Saha">⚽ Halı Saha</option>
+                            <option value="Basketbol Sahası">🏀 Basketbol Sahası</option>
+                            <option value="Tenis Kortu">🎾 Tenis Kortu</option>
+                            <option value="Voleybol Sahası">🏐 Voleybol Sahası</option>
                         </select>
                     </div>
                 </div>
 
+                <!-- 2. DİNAMİK İL SEÇİMİ (5 İL) -->
                 <div class="col-md-3">
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0"><i class="fa-solid fa-city text-primary"></i></span>
-                        <select class="form-select border-0 bg-light" id="portalCity" onchange="searchFacilities(event)">
-                            <option value="İstanbul" <?php echo $selected_city === 'İstanbul' ? 'selected' : ''; ?>>İstanbul</option>
-                            <option value="Ankara" <?php echo $selected_city === 'Ankara' ? 'selected' : ''; ?>>Ankara</option>
-                            <option value="İzmir" <?php echo $selected_city === 'İzmir' ? 'selected' : ''; ?>>İzmir</option>
+                        <select class="form-select border-0 bg-light" id="portalCity" onchange="onCityChange()">
+                            <option value="İstanbul" selected>İstanbul</option>
+                            <option value="Ankara">Ankara</option>
+                            <option value="İzmir">İzmir</option>
+                            <option value="Bursa">Bursa</option>
+                            <option value="Antalya">Antalya</option>
                         </select>
                     </div>
                 </div>
 
+                <!-- 3. İLE GÖRE DİNAMİK İLÇE SEÇİMİ -->
                 <div class="col-md-3">
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0"><i class="fa-solid fa-location-dot text-primary"></i></span>
-                        <select class="form-select border-0 bg-light" id="portalDistrict" onchange="searchFacilities(event)">
-                            <option value="Kadıköy" <?php echo $selected_district === 'Kadıköy' ? 'selected' : ''; ?>>Kadıköy</option>
-                            <option value="Beşiktaş" <?php echo $selected_district === 'Beşiktaş' ? 'selected' : ''; ?>>Beşiktaş</option>
-                            <option value="Çankaya" <?php echo $selected_district === 'Çankaya' ? 'selected' : ''; ?>>Çankaya</option>
+                        <select class="form-select border-0 bg-light" id="portalDistrict">
+                            <!-- Populated dynamically via JS -->
                         </select>
                     </div>
                 </div>
 
+                <!-- 4. SAHA BUL BUTONU -->
                 <div class="col-md-3">
                     <button type="submit" class="btn btn-team w-100 py-2.5 fw-bold">
                         <i class="fa-solid fa-magnifying-glass me-1"></i> SAHA BUL
@@ -124,60 +129,29 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
 
 <div class="container px-4">
 
-    <!-- 3. KOMPAKT KÜÇÜK ABONMAN PAKETLERİ SECTION -->
-    <section id="abonmanSection" class="mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+    <!-- 3. ALT ALTA TESİSLER LİSTESİ (LEFT: SAHALAR & MATRİS | RIGHT: TESİS BİLGİLERİ VE TESİSE ÖZEL ABONMANLIK) -->
+    <section id="facilitiesSection" class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h4 class="fw-bold text-dark mb-0 fs-5"><i class="fa-solid fa-crown text-warning me-2"></i> Abonman Paketleri</h4>
-                <span class="text-muted fs-7">Sabit gün, saat garantisi ve indirimli paketler.</span>
+                <h4 class="fw-bold text-dark mb-0 fs-4">
+                    <i class="fa-solid fa-stadium text-primary me-2"></i> Bulunan Spor Tesisleri
+                </h4>
+                <span class="text-muted fs-7">Saha bilgilerini inceleyin, açık saatlerde randevu alın veya bu tesise özel abonman olun.</span>
             </div>
         </div>
 
-        <div class="row g-3">
-            <!-- 1. Aylık Fix (Kompakt Mini Kart) -->
-            <div class="col-md-4">
-                <div class="minimal-card p-3 d-flex align-items-center justify-content-between">
-                    <div>
-                        <span class="badge bg-light text-primary border fs-8 mb-1">1 AY SÜRELİ</span>
-                        <h6 class="fw-bold text-dark mb-0">AYLIK FİX PAKET</h6>
-                        <span class="text-primary fw-extrabold fs-6">4.000 TL <span class="fs-8 text-muted fw-normal">/Ay</span></span>
-                    </div>
-                    <button class="btn btn-sm btn-outline-secondary rounded-2" onclick="selectPlan('Aylık Fix', '4.000 TL')">Seç</button>
-                </div>
-            </div>
-
-            <!-- 2. Sezonluk Efsane VIP (Kompakt Mini Kart) -->
-            <div class="col-md-4">
-                <div class="minimal-card p-3 border-primary border-2 d-flex align-items-center justify-content-between bg-light">
-                    <div>
-                        <span class="badge bg-primary text-white fs-8 mb-1">6 AY VIP</span>
-                        <h6 class="fw-bold text-dark mb-0">SEZONLUK EFSANE</h6>
-                        <span class="text-primary fw-extrabold fs-6">21.500 TL <span class="fs-8 text-muted fw-normal">/Sezon</span></span>
-                    </div>
-                    <button class="btn btn-sm btn-team rounded-2" onclick="selectPlan('Sezonluk Efsane VIP', '21.500 TL')">VIP Seç</button>
-                </div>
-            </div>
-
-            <!-- 3. Kemik Kadro (Kompakt Mini Kart) -->
-            <div class="col-md-4">
-                <div class="minimal-card p-3 d-flex align-items-center justify-content-between">
-                    <div>
-                        <span class="badge bg-light text-dark border fs-8 mb-1">3 AY SÜRELİ</span>
-                        <h6 class="fw-bold text-dark mb-0">KEMİK KADRO</h6>
-                        <span class="text-dark fw-extrabold fs-6">11.000 TL <span class="fs-8 text-muted fw-normal">/3 Ay</span></span>
-                    </div>
-                    <button class="btn btn-sm btn-outline-secondary rounded-2" onclick="selectPlan('Kemik Kadro', '11.000 TL')">Seç</button>
-                </div>
-            </div>
+        <!-- Stacked Facilities Container -->
+        <div class="d-flex flex-column gap-4" id="stackedFacilitiesList">
+            <!-- Loaded dynamically via JS -->
         </div>
     </section>
 
-    <!-- 4. SOSYALHALISA HAKKINDA & SİSTEM AVANTAJLARI (SPORPİN İLHAMLI) -->
+    <!-- 4. SPORPİN İLHAMLI SİSTEM AVANTAJLARI -->
     <section id="howItWorks" class="mb-5">
         <div class="row g-4 align-items-center">
             <div class="col-lg-5">
                 <h2 class="fw-extrabold text-dark display-6 mb-3">SahaNet PRO Nedir?</h2>
-                <p class="text-muted fs-6 mb-3">SahaNet PRO; halı saha ve spor merkezlerinin rezervasyonlarını kolaylıkla yönetebileceği ve oyuncuların saniyeler içinde boş saatleri görüp randevu alabileceği nesil bir sistemdir.</p>
+                <p class="text-muted fs-6 mb-3">SahaNet PRO; halı saha, tenis kortu, basketbol ve voleybol gibi spor merkezlerinin saniyeler içinde açık saatlerini görüp online randevu ve tesise özel abonman alabildiğiniz nesil bir sistemdir.</p>
                 <div class="d-flex align-items-center gap-3 mt-4">
                     <div class="text-center">
                         <h3 class="fw-bold text-primary mb-0">100+</h3>
@@ -197,7 +171,7 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
                         <div class="minimal-card p-3 h-100">
                             <i class="fa-solid fa-calendar-check text-primary fs-3 mb-2"></i>
                             <h6 class="fw-bold text-dark mb-1">Rezervasyon Yönetimi</h6>
-                            <p class="text-muted fs-7 mb-0">İşletmeci çalışma saatlerini ayarlar, oyuncular anında online randevusunu oluşturur.</p>
+                            <p class="text-muted fs-7 mb-0">İşletmeci açık saatleri belirler, oyuncular anında randevu alır.</p>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -209,57 +183,20 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
                     </div>
                     <div class="col-md-6">
                         <div class="minimal-card p-3 h-100">
-                            <i class="fa-solid fa-user-plus text-warning fs-3 mb-2"></i>
-                            <h6 class="fw-bold text-dark mb-1">Eksik Oyuncu & Rakip Bulma</h6>
-                            <p class="text-muted fs-7 mb-0">Kadronuzda adam eksikse ilan verin, anında 14 kişiyi tamamlayın.</p>
+                            <i class="fa-solid fa-crown text-warning fs-3 mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">Tesise Özel Abonmanlık</h6>
+                            <p class="text-muted fs-7 mb-0">Sevdiğiniz tesise özel aylık ve sezonluk sabit saat garantili abonman olun.</p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="minimal-card p-3 h-100">
                             <i class="fa-brands fa-whatsapp text-success fs-3 mb-2"></i>
                             <h6 class="fw-bold text-dark mb-1">WhatsApp Bildirimleri</h6>
-                            <p class="text-muted fs-7 mb-0">Randevu onayınız ve maç detaylarınız anında cep telefonunuza iletilir.</p>
+                            <p class="text-muted fs-7 mb-0">Randevu detaylarınız anında cep telefonunuza iletilir.</p>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- 5. TESİSLER VE CANLI SAAT MADDESİ SECTION -->
-    <section id="facilitiesSection" class="mb-5">
-        <h4 class="fw-bold text-dark mb-3 fs-5">
-            <i class="fa-solid fa-stadium text-primary me-2"></i> Listelenen Halı Sahalar
-        </h4>
-
-        <div class="row g-4" id="facilitiesGrid">
-            <!-- Loaded via JS -->
-        </div>
-    </section>
-
-    <!-- 6. CANLI SAAT MADDESİ & TAKVİM MATRİSİ -->
-    <section class="minimal-card p-4 mb-5 d-none" id="facilityTimelineSection">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-                <h4 class="fw-bold text-dark mb-0 fs-5" id="selectedFacilityTitle">Tesis Sahaları & Açık Saatler</h4>
-                <span class="text-muted fs-7" id="selectedFacilityHoursInfo">Açık saatler listelenmektedir.</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <input type="date" class="form-control form-control-sm max-w-160" id="timelineDate" onchange="loadFacilityTimeline()">
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-borderless text-center align-middle m-0">
-                <thead class="border-bottom text-muted fs-7">
-                    <tr id="timelineHeaderRow">
-                        <!-- Hours dynamically generated based on facility open/close time -->
-                    </tr>
-                </thead>
-                <tbody id="timelineBodyRows">
-                    <!-- Fields dynamically generated -->
-                </tbody>
-            </table>
         </div>
     </section>
 
@@ -270,7 +207,7 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header border-bottom">
-                <h5 class="modal-title fw-bold" id="playerModalTitle"><i class="fa-solid fa-futbol text-primary me-2"></i> Halı Saha Randevusu Al</h5>
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-futbol text-primary me-2"></i> Halı Saha Randevusu Al</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="playerBookForm" onsubmit="handlePlayerBook(event)">
@@ -327,13 +264,71 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
     </div>
 </div>
 
+<!-- Modal: TESİSE ÖZEL ABONMANLIK MODALI -->
+<div class="modal fade" id="facilitySubModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="facSubModalTitle"><i class="fa-solid fa-crown text-warning me-2"></i> Tesise Özel Abonman Ol</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="handleFacilitySubscription(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="facSubId">
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-7 fw-semibold">TESİS ADI</label>
+                        <input type="text" class="form-control fw-bold" id="facSubName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-7 fw-semibold">ABONMAN PAKETİ SEÇİN</label>
+                        <select class="form-select" id="facSubTierSelect">
+                            <option value="Aylık Fix (4.000 TL/Ay)">🔵 Aylık Fix Paket - 4.000 TL / Ay (%10 İndirim + Sabit Saat)</option>
+                            <option value="Sezonluk Efsane VIP (21.500 TL/Sezon)" selected>👑 Sezonluk Efsane VIP - 21.500 TL / Sezon (Drone Özet + VIP Garantili)</option>
+                            <option value="Kemik Kadro (11.000 TL/3 Ay)">🟡 Kemik Kadro Paket - 11.000 TL / 3 Ay (%15 İndirim + 1 Bedava Maç)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-7 fw-semibold">TAKIM KAPTANI AD SOYAD *</label>
+                        <input type="text" class="form-control" id="facSubCaptain" required placeholder="Ahmet Yılmaz">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
+                        <input type="text" class="form-control" id="facSubPhone" required placeholder="0532 555 12 34">
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-team fw-bold">Abonmanlığı Başlat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// 5 İL VE TÜM İLÇELERİ DİNAMİK DICTIONARY
+const CITIES_DISTRICTS = {
+    'İstanbul': ['Tüm İlçeler', 'Kadıköy', 'Beşiktaş', 'Üsküdar', 'Şişli', 'Beyoğlu', 'Maltepe', 'Ataşehir', 'Ümraniye', 'Bakırköy', 'Fatih', 'Pendik', 'Sarıyer'],
+    'Ankara': ['Tüm İlçeler', 'Çankaya', 'Keçiören', 'Yenimahalle', 'Mamak', 'Etimesgut', 'Sincan', 'Gölbaşı'],
+    'İzmir': ['Tüm İlçeler', 'Konak', 'Karşıyaka', 'Bornova', 'Buca', 'Alsancak', 'Çiğli', 'Gaziemir'],
+    'Bursa': ['Tüm İlçeler', 'Nilüfer', 'Osmangazi', 'Yıldırım', 'Mudanya'],
+    'Antalya': ['Tüm İlçeler', 'Muratpaşa', 'Konyaaltı', 'Kepez', 'Alanya']
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+    onCityChange('<?php echo htmlspecialchars($selected_district); ?>');
     loadFacilities();
-    const todayStr = new Date().toISOString().split('T')[0];
-    document.getElementById('timelineDate').value = todayStr;
 });
+
+function onCityChange(defaultDistrict = null) {
+    const city = document.getElementById('portalCity').value;
+    const distSelect = document.getElementById('portalDistrict');
+    const districts = CITIES_DISTRICTS[city] || ['Tüm İlçeler'];
+
+    distSelect.innerHTML = districts.map(d => `<option value="${d}" ${d === defaultDistrict ? 'selected' : ''}>${d}</option>`).join('');
+    loadFacilities();
+}
 
 function switchTeamTheme(team) {
     document.documentElement.setAttribute('data-team', team);
@@ -345,7 +340,6 @@ function switchTeamTheme(team) {
 }
 
 let currentFacilities = [];
-let activeFacility = null;
 
 async function searchFacilities(e) {
     if (e) e.preventDefault();
@@ -354,110 +348,96 @@ async function searchFacilities(e) {
 
 async function loadFacilities() {
     const city = document.getElementById('portalCity').value;
-    const district = document.getElementById('portalDistrict').value;
+    const districtSelect = document.getElementById('portalDistrict').value;
+    const district = (districtSelect === 'Tüm İlçeler') ? '' : districtSelect;
 
     const res = await fetch(`api/facility.php?action=list_public&city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}`);
     const json = await res.json();
 
-    const grid = document.getElementById('facilitiesGrid');
+    const listContainer = document.getElementById('stackedFacilitiesList');
     if (json.status === 'success') {
         currentFacilities = json.data;
 
         if (currentFacilities.length === 0) {
-            grid.innerHTML = `<div class="col-12 text-center text-muted py-5">Seçilen il/ilçede kayıtlı tesis bulunamadı.</div>`;
-            document.getElementById('facilityTimelineSection').classList.add('d-none');
+            listContainer.innerHTML = `<div class="minimal-card p-5 text-center text-muted">Seçilen il/ilçede kayıtlı tesis bulunamadı. Lütfen başka bir il veya ilçe seçiniz.</div>`;
             return;
         }
 
+        const todayStr = new Date().toISOString().split('T')[0];
+
         let html = '';
-        currentFacilities.forEach((fac, idx) => {
-            html += `<div class="col-md-6 col-lg-4">
-                <div class="facility-card h-100 d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h4 class="fw-bold text-dark fs-5 mb-0">${escapeHtml(fac.name)}</h4>
-                            <span class="badge bg-light text-dark border fw-bold fs-8"><i class="fa-solid fa-clock me-1 text-primary"></i>${fac.open_time} - ${fac.close_time}</span>
+        currentFacilities.forEach((fac) => {
+            const openH = parseInt(fac.open_time || '13');
+            let closeH = parseInt(fac.close_time || '01');
+            if (closeH <= openH) closeH += 24;
+
+            const hours = [];
+            for (let h = openH; h < closeH; h++) {
+                const realH = h % 24;
+                hours.push((realH < 10 ? '0' : '') + realH + ':00');
+            }
+
+            html += `<div class="minimal-card p-4">
+                <div class="row g-4">
+                    
+                    <!-- LEFT COLUMN (70%): SAHALAR, AÇIK SAATLER VE MATRİS -->
+                    <div class="col-lg-8 border-end border-light">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4 class="fw-bold text-dark fs-4 mb-0"><i class="fa-solid fa-stadium text-primary me-2"></i>${escapeHtml(fac.name)}</h4>
+                            <span class="badge bg-light text-dark border"><i class="fa-solid fa-clock me-1 text-primary"></i>Açık Saatler: ${fac.open_time} - ${fac.close_time}</span>
                         </div>
-                        <p class="text-muted fs-7 mb-2"><i class="fa-solid fa-location-dot text-danger me-1"></i>${escapeHtml(fac.address)}</p>
-                        <p class="text-muted fs-7 mb-3"><i class="fa-solid fa-phone text-success me-1"></i>${escapeHtml(fac.phone)}</p>
-                        
                         <div class="d-flex flex-wrap gap-1 mb-3">
-                            ${fac.fields.map(f => `<span class="badge bg-light text-dark border fs-8">${escapeHtml(f.field_name)}</span>`).join('')}
+                            ${fac.fields.map(f => `<span class="badge bg-light text-dark border fs-8"><i class="fa-solid fa-futbol text-success me-1"></i>${escapeHtml(f.field_name)}</span>`).join('')}
+                        </div>
+
+                        <!-- SAAT MATRİSİ -->
+                        <div class="table-responsive">
+                            <table class="table table-borderless text-center align-middle m-0 fs-8">
+                                <thead>
+                                    <tr class="text-muted border-bottom">
+                                        <th class="text-start">SAHA</th>
+                                        ${hours.map(h => `<th>${h}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${fac.fields.map(field => `
+                                        <tr>
+                                            <td class="fw-bold text-dark text-start py-2">${escapeHtml(field.field_name)}</td>
+                                            ${hours.map(h => `
+                                                <td>
+                                                    <div class="slot-badge slot-free" onclick="openPlayerBookModal(${fac.id}, ${field.id}, '${escapeHtml(field.field_name)}', '${todayStr}', '${h}', ${field.hourly_fee})">
+                                                        +${h}
+                                                    </div>
+                                                </td>
+                                            `).join('')}
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <button class="btn btn-team w-100 py-2 fs-7 fw-bold" onclick="selectFacility(${fac.id})">
-                        <i class="fa-solid fa-calendar-days me-1"></i> SAHALARI VE SAATLERİ GÖR
-                    </button>
+
+                    <!-- RIGHT COLUMN (30%): ADRES, İLETİŞİM VE TESİSE ÖZEL ABONMAN OL BUTONU -->
+                    <div class="col-lg-4 d-flex flex-column justify-content-between ps-lg-4">
+                        <div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold mb-2">${escapeHtml(fac.city)} / ${escapeHtml(fac.district)}</span>
+                            <p class="text-muted fs-7 mb-2"><i class="fa-solid fa-location-dot text-danger me-2"></i>${escapeHtml(fac.address)}</p>
+                            <p class="text-muted fs-7 mb-3"><i class="fa-solid fa-phone text-success me-2"></i>${escapeHtml(fac.phone)}</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-team w-100 py-2.5 fw-bold mb-2" onclick="openFacilitySubModal(${fac.id}, '${escapeHtml(fac.name)}')">
+                                <i class="fa-solid fa-crown me-1"></i> TESİSE ÖZEL ABONMAN OL
+                            </button>
+                            <span class="text-muted fs-8 d-block text-center"><i class="fa-solid fa-shield-halved text-success me-1"></i> Sabit Gün & Saat Garantili</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>`;
         });
-        grid.innerHTML = html;
 
-        if (currentFacilities.length > 0) {
-            selectFacility(currentFacilities[0].id);
-        }
+        listContainer.innerHTML = html;
     }
-}
-
-function selectFacility(id) {
-    activeFacility = currentFacilities.find(f => f.id == id);
-    if (!activeFacility) return;
-
-    document.getElementById('facilityTimelineSection').classList.remove('d-none');
-    document.getElementById('selectedFacilityTitle').innerText = `${activeFacility.name} - Sahalar ve Çalışma Saatleri`;
-    document.getElementById('selectedFacilityHoursInfo').innerText = `İşletmenin Belirlediği Açık Saatler: ${activeFacility.open_time} - ${activeFacility.close_time}`;
-
-    loadFacilityTimeline();
-    document.getElementById('facilityTimelineSection').scrollIntoView({ behavior: 'smooth' });
-}
-
-async function loadFacilityTimeline() {
-    if (!activeFacility) return;
-    const date = document.getElementById('timelineDate').value;
-
-    const res = await fetch(`api/reservations.php?action=list&facility_id=${activeFacility.id}`);
-    const json = await res.json();
-    const reservations = json.data || [];
-
-    const openH = parseInt(activeFacility.open_time || '13');
-    let closeH = parseInt(activeFacility.close_time || '01');
-    if (closeH <= openH) closeH += 24;
-
-    const hours = [];
-    for (let h = openH; h < closeH; h++) {
-        const realH = h % 24;
-        hours.push((realH < 10 ? '0' : '') + realH + ':00');
-    }
-
-    const headerRow = document.getElementById('timelineHeaderRow');
-    let hHtml = `<th class="text-start">SAHA ADI</th>`;
-    hours.forEach(h => hHtml += `<th>${h}</th>`);
-    headerRow.innerHTML = hHtml;
-
-    const bodyRows = document.getElementById('timelineBodyRows');
-    let bHtml = '';
-
-    activeFacility.fields.forEach(field => {
-        bHtml += `<tr><td class="fw-bold text-dark text-start"><i class="fa-solid fa-futbol text-primary me-2"></i>${escapeHtml(field.field_name)}</td>`;
-
-        hours.forEach(h => {
-            const isBooked = reservations.some(r => r.field_id == field.id && r.reservation_date === date && r.reservation_time === h && r.status !== 'İptal');
-
-            if (isBooked) {
-                bHtml += `<td><div class="slot-badge slot-busy"><i class="fa-solid fa-lock me-1"></i>DOLU</div></td>`;
-            } else {
-                bHtml += `<td>
-                    <div class="slot-badge slot-free" onclick="openPlayerBookModal(${activeFacility.id}, ${field.id}, '${escapeHtml(field.field_name)}', '${date}', '${h}', ${field.hourly_fee})">
-                        <i class="fa-solid fa-plus me-1"></i>${h}
-                    </div>
-                </td>`;
-            }
-        });
-
-        bHtml += `</tr>`;
-    });
-
-    bodyRows.innerHTML = bHtml;
 }
 
 function openPlayerBookModal(facId, fieldId, fieldName, date, time, fee) {
@@ -472,9 +452,20 @@ function openPlayerBookModal(facId, fieldId, fieldName, date, time, fee) {
     new bootstrap.Modal(document.getElementById('playerModal')).show();
 }
 
-function selectPlan(planName, price) {
-    alert(`[${planName}] seçildi! Lütfen önce aşağıdan sahanızı ve boş saatinizi seçiniz.`);
-    document.getElementById('facilitiesSection').scrollIntoView({ behavior: 'smooth' });
+function openFacilitySubModal(facId, facName) {
+    document.getElementById('facSubId').value = facId;
+    document.getElementById('facSubName').value = facName;
+    new bootstrap.Modal(document.getElementById('facilitySubModal')).show();
+}
+
+function handleFacilitySubscription(e) {
+    e.preventDefault();
+    const facName = document.getElementById('facSubName').value;
+    const tier = document.getElementById('facSubTierSelect').value;
+    const captain = document.getElementById('facSubCaptain').value;
+
+    alert(`🎉 TEBRİKLER!\n${facName} tesisi için [${tier}] abonmanlık talebiniz oluşturuldu.\nKaptan: ${captain}\nİşletmeci sizinle en kısa sürede iletişime geçecektir.`);
+    bootstrap.Modal.getInstance(document.getElementById('facilitySubModal')).hide();
 }
 
 async function handlePlayerBook(e) {
@@ -487,7 +478,7 @@ async function handlePlayerBook(e) {
     if (json.status === 'success') {
         alert('🎉 Randevunuz başarıyla oluşturuldu!');
         bootstrap.Modal.getInstance(document.getElementById('playerModal')).hide();
-        loadFacilityTimeline();
+        loadFacilities();
     } else {
         alert(json.message);
     }
