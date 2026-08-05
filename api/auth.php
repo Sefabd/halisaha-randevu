@@ -1,11 +1,12 @@
 <?php
-// api/auth.php - Authentication, Email Registration, Email Link Password Reset & User Reservations API
+// api/auth.php - Authentication, Email Registration, Real SMTP Email Link Password Reset & User Reservations API
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 header('Content-Type: application/json; charset=utf-8');
 
 $pdo = require __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../helpers/mailer.php';
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
@@ -130,7 +131,6 @@ try {
 
         $fac_id = $pdo->lastInsertId();
 
-        // Seed default field
         $insField = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee, status) VALUES (?, ?, ?, ?, ?)");
         $insField->execute([$fac_id, 'Saha 1', 'Kapalı Futbol Sahası', 1200.00, 'Aktif']);
 
@@ -147,7 +147,7 @@ try {
         exit;
     }
 
-    // 3. SEND EMAIL PASSWORD RESET LINK
+    // 3. SEND EMAIL PASSWORD RESET LINK (REAL SMTP + SIMULATION BACKUP)
     if ($action === 'send_reset_email') {
         $email_or_user = trim($_POST['email'] ?? '');
 
@@ -158,23 +158,26 @@ try {
 
         $target_email = '';
         $account_type = 'player';
+        $user_display_name = '';
 
         // Search in users
-        $stmt = $pdo->prepare("SELECT email FROM users WHERE email = ? OR username = ?");
+        $stmt = $pdo->prepare("SELECT email, full_name FROM users WHERE email = ? OR username = ?");
         $stmt->execute([$email_or_user, $email_or_user]);
         $u = $stmt->fetch();
 
         if ($u) {
             $target_email = $u['email'];
+            $user_display_name = $u['full_name'];
             $account_type = 'player';
         } else {
             // Search in facilities
-            $stmtFac = $pdo->prepare("SELECT email FROM facilities WHERE email = ? OR username = ?");
+            $stmtFac = $pdo->prepare("SELECT email, owner_name FROM facilities WHERE email = ? OR username = ?");
             $stmtFac->execute([$email_or_user, $email_or_user]);
             $f = $stmtFac->fetch();
 
             if ($f) {
                 $target_email = $f['email'];
+                $user_display_name = $f['owner_name'];
                 $account_type = 'owner';
             }
         }
@@ -199,16 +202,43 @@ try {
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
         $reset_link = "{$protocol}://{$host}/reset_password.php?token={$token}";
 
+        // Construct HTML email for real SMTP sending
+        $htmlContent = "
+        <div style='font-family: Arial, sans-serif; max-width: 550px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background: #ffffff;'>
+            <div style='text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 20px;'>
+                <h2 style='color: #0f172a; margin: 0;'>⚽ SahaNet PRO</h2>
+                <span style='color: #64748b; font-size: 13px;'>Online Spor Tesisleri Kiralama Portalı</span>
+            </div>
+            <p style='font-size: 15px; color: #334155;'>Merhaba <strong>" . htmlspecialchars($user_display_name) . "</strong>,</p>
+            <p style='font-size: 14px; color: #475569;'>SahaNet PRO hesabınız için bir şifre sıfırlama talebinde bulundunuz. Yeni şifrenizi belirlemek için aşağıdaki yeşil butona tıklayabilirsiniz:</p>
+            <div style='text-align: center; margin: 28px 0;'>
+                <a href='{$reset_link}' style='background-color: #10b981; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 15px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);'>👉 ŞİFREMİ SIFIRLA</a>
+            </div>
+            <p style='font-size: 12px; color: #94a3b8; line-height: 1.5;'>Butona tıklayamıyorsanız tarayıcınıza şu bağlantıyı kopyalayabilirsiniz:<br><a href='{$reset_link}' style='color: #0284c7;'>{$reset_link}</a></p>
+            <hr style='border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;'>
+            <p style='font-size: 11px; color: #94a3b8; text-align: center; margin: 0;'>Bu talebi siz yapmadıysanız e-postayı güvenle göz ardı edebilirsiniz.</p>
+        </div>";
+
+        // Try sending via real SMTP
+        $smtpResult = send_smtp_email($target_email, 'SahaNet PRO - Şifre Sıfırlama Bağlantınız', $htmlContent);
+
+        if ($smtpResult['success']) {
+            $msg = "📧 GERÇEK E-POSTA GÖNDERİLDİ!\nŞifre sıfırlama bağlantısı {$target_email} Gmail adresinize ulaştırıldı. Lütfen gelen kutunuzu (veya spam klasörünü) kontrol ediniz.";
+        } else {
+            $msg = "📧 E-Posta bağlantısı oluşturuldu! (Gmail SMTP şifresi yapılandırılmadıysa aşağıdaki simüle mail butonuna tıklayabilirsiniz)";
+        }
+
         echo json_encode([
             'status' => 'success',
             'email' => $target_email,
             'reset_link' => $reset_link,
-            'message' => "📧 E-Posta Gönderildi! Şifre sıfırlama bağlantınız {$target_email} adresinize ulaştırıldı."
+            'smtp_sent' => $smtpResult['success'],
+            'message' => $msg
         ]);
         exit;
     }
 
-    // 4. RESET PASSWORD WITH TOKEN (USED BY reset_password.php)
+    // 4. RESET PASSWORD WITH TOKEN
     if ($action === 'reset_password_with_token') {
         $token = trim($_POST['token'] ?? '');
         $new_password = trim($_POST['new_password'] ?? '');
@@ -237,7 +267,6 @@ try {
             $up->execute([$newHash, $row['email']]);
         }
 
-        // Delete used token
         $del = $pdo->prepare("DELETE FROM password_resets WHERE token = ?");
         $del->execute([$token]);
 
