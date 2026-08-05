@@ -1,5 +1,5 @@
 <?php
-// api/facility.php - Facility Public Discovery & Owner Management API with Sport Type Filtering
+// api/facility.php - Facility Public Discovery & Owner Management API with Smart Sport Filtering
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -34,17 +34,22 @@ try {
         $stmt->execute($params);
         $facilities = $stmt->fetchAll();
 
-        // Attach fields to each facility with optional sport_type filtering
+        // Attach fields to each facility with smart sport_type filtering
         $result = [];
         foreach ($facilities as $fac) {
             $fieldSql = "SELECT id, field_name, field_type, hourly_fee, status FROM facility_fields WHERE facility_id = ? AND status = 'Aktif'";
             $fieldParams = [$fac['id']];
 
             if (!empty($sport_type) && $sport_type !== 'Tümü') {
-                $cleanSport = str_replace([' Sahası', ' Kortu'], '', $sport_type);
-                $fieldSql .= " AND (field_name LIKE ? OR field_type LIKE ?)";
-                $fieldParams[] = "%{$cleanSport}%";
-                $fieldParams[] = "%{$cleanSport}%";
+                if (mb_strpos($sport_type, 'Halı') !== false || mb_strpos($sport_type, 'Futbol') !== false) {
+                    // Match "Futbol", "Halı", or standard "Saha 1", "Saha 2"
+                    $fieldSql .= " AND (field_name LIKE '%Futbol%' OR field_type LIKE '%Futbol%' OR field_name LIKE '%Halı%' OR field_name LIKE 'Saha%')";
+                } else {
+                    $cleanSport = str_replace([' Sahası', ' Kortu'], '', $sport_type);
+                    $fieldSql .= " AND (field_name LIKE ? OR field_type LIKE ?)";
+                    $fieldParams[] = "%{$cleanSport}%";
+                    $fieldParams[] = "%{$cleanSport}%";
+                }
             }
 
             $stmtFields = $pdo->prepare($fieldSql);
