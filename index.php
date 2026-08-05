@@ -58,7 +58,7 @@ $current_hour = (int)date('H');
                     <option value="neutral" <?php echo $current_team === 'neutral' ? 'selected' : ''; ?>>🟢⚪ Yeşil</option>
                 </select>
 
-                <!-- Clean User Name Badge (without (OYUNCU) suffix) -->
+                <!-- Clean User Name Badge -->
                 <span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-user text-primary me-1"></i> <?php echo htmlspecialchars($user_name_upper); ?></span>
                 <a href="api/auth.php?action=logout" class="btn btn-sm btn-outline-danger rounded-3" title="Çıkış Yap"><i class="fa-solid fa-right-from-bracket"></i> Çıkış</a>
             <?php else: ?>
@@ -197,7 +197,7 @@ $current_hour = (int)date('H');
                         <i class="fa-solid fa-sliders text-primary me-2"></i> Arama & Filtre Özeti
                     </h5>
 
-                    <!-- TESİS ADI İLE CANLI ARAMA INPUT (BURAYA TAŞINDI) -->
+                    <!-- TESİS ADI İLE CANLI ARAMA INPUT -->
                     <div class="mb-3">
                         <label class="form-label text-muted fs-8 fw-bold">TESİS ADI İLE CANLI ARA</label>
                         <div class="input-group">
@@ -472,6 +472,8 @@ function renderFacilitiesList(facilities) {
 
     let html = '';
     facilities.forEach((fac) => {
+        const featList = fac.features_array || ["HD Kamera Kaydı", "Ücretsiz Su & İkram", "Soyunma Odası & Duş"];
+
         html += `<div class="minimal-card p-4">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
                 <div>
@@ -494,15 +496,14 @@ function renderFacilitiesList(facilities) {
                     else if (field_name_has(f, 'Voleybol')) icon = '🏐';
 
                     const coverBadge = isCovered ? '🏢 Kapalı' : '☀️ Açık';
-                    return `<span class="badge bg-light text-dark border fs-8">${icon} ${escapeHtml(f.field_name)} <span class="text-muted">(${coverBadge})</span> <strong class="text-primary">(₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')})</strong></span>`;
+                    const statusText = (f.status === 'Pasif') ? ' <span class="text-danger fw-bold">(TADİLATTA)</span>' : '';
+                    return `<span class="badge bg-light text-dark border fs-8">${icon} ${escapeHtml(f.field_name)} <span class="text-muted">(${coverBadge})</span>${statusText} <strong class="text-primary">(₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')})</strong></span>`;
                 }).join('')}
             </div>
 
-            <!-- Feature Icons -->
+            <!-- Dynamic Feature Badges -->
             <div class="d-flex flex-wrap gap-3 fs-8 text-muted border-top pt-3">
-                <span><i class="fa-solid fa-video text-success me-1"></i> HD Kamera Kaydı var</span>
-                <span><i class="fa-solid fa-bottle-water text-info me-1"></i> Ücretsiz İkram</span>
-                <span><i class="fa-solid fa-shower text-primary me-1"></i> Soyunma Odası & Duş</span>
+                ${featList.map(ft => `<span><i class="fa-solid fa-check text-success me-1"></i>${escapeHtml(ft)}</span>`).join('')}
             </div>
 
             <!-- Action Buttons -->
@@ -515,7 +516,7 @@ function renderFacilitiesList(facilities) {
                 </button>
             </div>
 
-            <!-- INLINE SLIDE-DOWN ACCORDION RESERVATION DRAWER WITH TÜRKÇE GÜN İSMİ (ÇARŞAMBA VB.) -->
+            <!-- INLINE SLIDE-DOWN ACCORDION RESERVATION DRAWER -->
             <div id="drawer-fac-${fac.id}" class="facility-accordion-drawer d-none">
                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3 pb-2 border-bottom">
                     <div>
@@ -541,7 +542,6 @@ function field_name_has(f, word) {
 
 function onDrawerDateInput(facId, inputEl) {
     const val = inputEl.value;
-    // FIX: Only validate when date string is full 10 chars (YYYY-MM-DD) to prevent early popping while typing 06!
     if (!val || val.length !== 10) return;
 
     if (val < TODAY_STR) {
@@ -580,6 +580,22 @@ async function renderInlineDrawerTimeline(facId) {
     const dayLabel = document.getElementById(`day-label-fac-${facId}`);
     if (dayLabel) dayLabel.innerText = formatTurkishDate(date);
 
+    // CHECK IF FACILITY IS CLOSED ON THIS DATE
+    const closedDates = fac.closed_dates_array || [];
+    const isFacilityClosed = closedDates.some(cd => (isObject(cd) ? cd.date : cd) === date);
+
+    if (isFacilityClosed) {
+        const closedInfo = closedDates.find(cd => (isObject(cd) ? cd.date : cd) === date);
+        const reason = isObject(closedInfo) ? closedInfo.reason : 'Tadilat / Özel İzin';
+        document.getElementById(`timeline-container-${facId}`).innerHTML = `
+            <div class="p-4 text-center text-danger bg-danger bg-opacity-10 rounded-3 border border-danger">
+                <i class="fa-solid fa-ban display-5 mb-2 d-block"></i>
+                <h5 class="fw-bold">Tesis Bu Tarihte Hizmete Kapalıdır</h5>
+                <p class="mb-0 fs-7 text-dark">Neden: <strong>${escapeHtml(reason)}</strong>. Lütfen başka bir gün için randevu saati seçiniz.</p>
+            </div>`;
+        return;
+    }
+
     const res = await fetch(`api/reservations.php?action=list&facility_id=${facId}`);
     const json = await res.json();
     const reservations = json.data || [];
@@ -606,6 +622,11 @@ async function renderInlineDrawerTimeline(facId) {
         hHtml += `<tr><td class="fw-bold text-dark text-start py-2">${icon} ${escapeHtml(field.field_name)}</td>`;
 
         hours.forEach(h => {
+            if (field.status === 'Pasif') {
+                hHtml += `<td><div class="slot-badge bg-danger bg-opacity-10 text-danger border border-danger" style="cursor:not-allowed;" title="Saha Tadilatta"><i class="fa-solid fa-wrench me-1"></i>TADİLAT</div></td>`;
+                return;
+            }
+
             const hourNum = parseInt(h.split(':')[0]);
             const isToday = (date === TODAY_STR);
             const isPastHourToday = isToday && (hourNum <= CURRENT_HOUR);
@@ -629,6 +650,10 @@ async function renderInlineDrawerTimeline(facId) {
 
     hHtml += `</tbody></table>`;
     document.getElementById(`timeline-container-${facId}`).innerHTML = hHtml;
+}
+
+function isObject(val) {
+    return val !== null && typeof val === 'object';
 }
 
 function handleSlotClick(facId, fieldId, fieldName, date, time, fee) {
