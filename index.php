@@ -58,8 +58,11 @@ $current_hour = (int)date('H');
                     <option value="neutral" <?php echo $current_team === 'neutral' ? 'selected' : ''; ?>>🟢⚪ Yeşil</option>
                 </select>
 
-                <!-- Clean User Name Badge -->
-                <span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-user text-primary me-1"></i> <?php echo htmlspecialchars($user_name_upper); ?></span>
+                <!-- Clean User Name Badge (Clickable for Profile & Password & My Reservations) -->
+                <button class="badge bg-light text-dark border p-2 btn btn-link text-decoration-none cursor-pointer" onclick="openUserProfileModal()">
+                    <i class="fa-solid fa-user-gear text-primary me-1"></i> <?php echo htmlspecialchars($user_name_upper); ?>
+                </button>
+
                 <a href="api/auth.php?action=logout" class="btn btn-sm btn-outline-danger rounded-3" title="Çıkış Yap"><i class="fa-solid fa-right-from-bracket"></i> Çıkış</a>
             <?php else: ?>
                 <a href="login.php" class="btn btn-team btn-sm rounded-3">
@@ -241,6 +244,83 @@ $current_hour = (int)date('H');
 
 </div>
 
+<!-- Modal: KULLANICI PROFİLİ, ŞİFRE DEĞİŞTİRME VE RANDEVULARIM -->
+<div class="modal fade" id="userProfileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-circle text-primary me-2"></i> Kullanıcı Hesabı & Profilim</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <ul class="nav nav-tabs mb-3" id="profileTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-bold fs-7" data-bs-toggle="tab" data-bs-target="#tabProfile">
+                            <i class="fa-solid fa-user me-1 text-primary"></i> Profil Bilgilerim & Şifre Değiştir
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold fs-7" data-bs-toggle="tab" data-bs-target="#tabMyReservations" onclick="loadMyReservations()">
+                            <i class="fa-solid fa-calendar-check me-1 text-success"></i> Randevularım
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- TAB 1: PROFİL VE ŞİFRE DÜZENLE -->
+                    <div class="tab-pane fade show active" id="tabProfile">
+                        <form onsubmit="handleUpdateProfile(event)">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted fs-7 fw-semibold">AD SOYAD</label>
+                                    <input type="text" class="form-control fw-bold" id="profileFullName" name="full_name" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted fs-7 fw-semibold">TELEFON NUMARASI</label>
+                                    <input type="text" class="form-control" id="profilePhone" name="phone" required>
+                                </div>
+                                <div class="col-12 border-top pt-3">
+                                    <h6 class="fw-bold text-dark fs-7 mb-2"><i class="fa-solid fa-key me-1 text-warning"></i> Şifre Değiştir (İsteğe Bağlı)</h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted fs-7 fw-semibold">MEVCUT ŞİFRE</label>
+                                    <input type="password" class="form-control" name="current_password" placeholder="Şifrenizi değiştirmek için mevcut şifrenizi girin">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted fs-7 fw-semibold">YENİ ŞİFRE</label>
+                                    <input type="password" class="form-control" name="new_password" placeholder="Yeni şifreniz">
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button type="submit" class="btn btn-team fw-bold">Bilgileri Güncelle</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- TAB 2: RANDEVULARIM -->
+                    <div class="tab-pane fade" id="tabMyReservations">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle fs-7 m-0">
+                                <thead class="table-light text-muted border-bottom">
+                                    <tr>
+                                        <th>TESİS ADI</th>
+                                        <th>SAHA</th>
+                                        <th>TARİH</th>
+                                        <th>SAAT</th>
+                                        <th>ÜCRET</th>
+                                        <th class="text-end">İŞLEMLER</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="myReservationsList"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: GİRİŞ YAPMALISINIZ UYARI MODALI -->
 <div class="modal fade" id="authRequiredModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -376,7 +456,7 @@ const CITIES_DISTRICTS = {
 };
 
 const TURKISH_DAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-const TURKISH_MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylul', 'Ekim', 'Kasım', 'Aralık'];
+const TURKISH_MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 
 function formatTurkishDate(dateStr) {
     if (!dateStr || dateStr.length !== 10) return '';
@@ -414,6 +494,66 @@ function switchTeamTheme(team) {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `team=${encodeURIComponent(team)}`
     });
+}
+
+async function openUserProfileModal() {
+    const res = await fetch('api/auth.php?action=get_user_profile');
+    const json = await res.json();
+    if (json.status === 'success') {
+        document.getElementById('profileFullName').value = json.profile.full_name || '';
+        document.getElementById('profilePhone').value = json.profile.phone || '';
+        renderMyReservations(json.reservations || []);
+        new bootstrap.Modal(document.getElementById('userProfileModal')).show();
+    }
+}
+
+async function handleUpdateProfile(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch('api/auth.php?action=update_profile', { method: 'POST', body: formData });
+    const json = await res.json();
+    alert(json.message);
+    if (json.status === 'success') location.reload();
+}
+
+async function loadMyReservations() {
+    const res = await fetch('api/auth.php?action=get_user_profile');
+    const json = await res.json();
+    if (json.status === 'success') {
+        renderMyReservations(json.reservations || []);
+    }
+}
+
+function renderMyReservations(list) {
+    const tbody = document.getElementById('myReservationsList');
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Henüz kayıtlı randevunuz bulunmuyor.</td></tr>`;
+        return;
+    }
+    let html = '';
+    list.forEach(r => {
+        html += `<tr>
+            <td class="fw-bold text-dark">${escapeHtml(r.facility_name)}</td>
+            <td><span class="badge bg-light text-dark border">${escapeHtml(r.field_name)}</span></td>
+            <td class="text-primary fw-semibold">${r.reservation_date}</td>
+            <td class="fw-bold text-dark">${r.reservation_time}</td>
+            <td class="text-success fw-bold">₺${parseFloat(r.fee).toLocaleString('tr-TR')}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-danger" onclick="cancelMyReservation(${r.id})">İptal Et</button>
+            </td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+async function cancelMyReservation(id) {
+    if (!confirm('Randevunuzu iptal etmek istediğinize emin misiniz?')) return;
+    const formData = new FormData();
+    formData.append('id', id);
+
+    const res = await fetch('api/reservations.php?action=delete', { method: 'POST', body: formData });
+    const json = await res.json();
+    if (json.status === 'success') loadMyReservations();
 }
 
 let currentFacilities = [];
@@ -560,7 +700,6 @@ function field_name_has(f, word) {
     return f.field_name.includes(word) || (f.field_type && f.field_type.includes(word));
 }
 
-// TARİH SEÇERKEN YAZMA ERKEN UYARI BUG FIX (ONCHANGE + YIL 2026 KONTROLÜ)
 function onDrawerDateChange(facId, inputEl) {
     const val = inputEl.value;
     if (!val || val.length !== 10) return;
@@ -595,7 +734,21 @@ async function toggleAccordionDrawer(facId) {
     await renderInlineDrawerTimeline(facId);
 }
 
-// KRONOLOJİK SAAT DİZİLİMİ (00:00 - 23:00) VE TARİH ARALIĞI FIX
+function isSlotClosedByRange(dateStr, timeStr, fieldObj) {
+    if (!fieldObj) return false;
+    const range = fieldObj.closed_range_obj;
+
+    if (fieldObj.status === 'Pasif' && (!range || !range.start_date)) return true;
+    if (!range || !range.start_date) return false;
+
+    const slotDt = `${dateStr} ${timeStr}`;
+    const startDt = `${range.start_date} ${range.start_time || '00:00'}`;
+    const endDt = `${range.end_date || range.start_date} ${range.end_time || '23:59'}`;
+
+    return (slotDt >= startDt && slotDt <= endDt);
+}
+
+// KRONOLOJİK SAAT DİZİLİMİ VE HASSAS SAAT ARALIKLI KAPAMA CONTROL
 async function renderInlineDrawerTimeline(facId) {
     const fac = currentFacilities.find(f => f.id == facId);
     if (!fac) return;
@@ -640,7 +793,6 @@ async function renderInlineDrawerTimeline(facId) {
     for (let h = openH; h < closeH; h++) {
         hourNumbers.push(h % 24);
     }
-    // Kronolojik Sıralama
     hourNumbers.sort((a, b) => a - b);
 
     const hours = hourNumbers.map(h => (h < 10 ? '0' : '') + h + ':00');
@@ -657,20 +809,10 @@ async function renderInlineDrawerTimeline(facId) {
         hHtml += `<tr><td class="fw-bold text-dark text-start py-2">${icon} ${escapeHtml(field.field_name)}</td>`;
 
         hours.forEach(h => {
-            // SAHA ÖZEL KAPALI ARALIK KONTROLÜ
-            const range = field.closed_range_obj || {};
-            let isFieldClosedNow = (field.status === 'Pasif');
-            let closeReasonText = 'Saha Kapalı';
+            const isClosedSlot = isSlotClosedByRange(date, h, field);
 
-            if (range.start_date && range.end_date) {
-                if (date >= range.start_date && date <= range.end_date) {
-                    isFieldClosedNow = true;
-                    closeReasonText = range.reason || 'Kapalı';
-                }
-            }
-
-            if (isFieldClosedNow) {
-                hHtml += `<td><div class="slot-badge bg-danger bg-opacity-10 text-danger border border-danger" style="cursor:not-allowed;" title="${escapeHtml(closeReasonText)}"><i class="fa-solid fa-ban me-1"></i>KAPALI</div></td>`;
+            if (isClosedSlot) {
+                hHtml += `<td><div class="slot-badge bg-danger bg-opacity-10 text-danger border border-danger" style="cursor:not-allowed;" title="Kapalı"><i class="fa-solid fa-ban me-1"></i>KAPALI</div></td>`;
                 return;
             }
 

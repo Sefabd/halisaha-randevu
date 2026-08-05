@@ -1,5 +1,5 @@
 <?php
-// api/facility.php - Facility Public Discovery & Owner Management API with Field-Specific Closed Date/Time Ranges
+// api/facility.php - Facility Discovery & Owner Profile API with Dynamic Facility-Level Features
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -10,7 +10,7 @@ $pdo = require __DIR__ . '/../config/db.php';
 $action = $_GET['action'] ?? '';
 
 try {
-    // 1. PUBLIC LISTING WITH SPORT TYPE & CITY/DISTRICT & FEATURE FILTERS
+    // 1. PUBLIC LISTING WITH SPORT TYPE & CITY/DISTRICT & DYNAMIC FACILITY FEATURES
     if ($action === 'list_public') {
         $city = trim($_GET['city'] ?? '');
         $district = trim($_GET['district'] ?? '');
@@ -62,20 +62,15 @@ try {
             $fac_features = json_decode($fac['features'] ?? '[]', true) ?: [];
             $fac['features_array'] = $fac_features;
 
-            // Two-Way Feature Filter check (Camera, Water, Shower, Shoes)
+            // DYNAMIC FACILITY-LEVEL FEATURE FILTERING (Camera, Water, Shower, Shoes)
             if (!empty($req_feature_list)) {
                 $has_all_features = true;
                 foreach ($req_feature_list as $rf) {
                     $rf = trim($rf);
                     if (empty($rf)) continue;
                     if (!in_array($rf, $fac_features)) {
-                        // Check if any field has this feature
-                        $field_has = false;
-                        foreach ($fields as $f) {
-                            $ffeats = json_decode($f['features'] ?? '[]', true) ?: [];
-                            if (in_array($rf, $ffeats)) { $field_has = true; break; }
-                        }
-                        if (!$field_has) { $has_all_features = false; break; }
+                        $has_all_features = false;
+                        break;
                     }
                 }
                 if (!$has_all_features) continue;
@@ -111,6 +106,7 @@ try {
         $facility = $stmt->fetch();
 
         $facility['closed_dates_array'] = json_decode($facility['closed_dates'] ?? '[]', true) ?: [];
+        $facility['features_array'] = json_decode($facility['features'] ?? '[]', true) ?: [];
 
         $stmtFields = $pdo->prepare("SELECT * FROM facility_fields WHERE facility_id = ?");
         $stmtFields->execute([$facility_id]);
@@ -125,7 +121,7 @@ try {
         exit;
     }
 
-    // 3. UPDATE OWNER FACILITY PROFILE
+    // 3. UPDATE OWNER FACILITY PROFILE (SAVING FACILITY FEATURES)
     if ($action === 'update_profile') {
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
             echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);
@@ -143,6 +139,12 @@ try {
         $open_time_weekend = trim($_POST['open_time_weekend'] ?? '09:00');
         $close_time_weekend = trim($_POST['close_time_weekend'] ?? '03:00');
 
+        // Features Array from Facility Settings Form
+        $features = $_POST['features'] ?? [];
+        if (!is_array($features)) $features = [];
+        $features_json = json_encode(array_values($features), JSON_UNESCAPED_UNICODE);
+
+        // Closed Date Range
         $start_date = trim($_POST['closed_start_date'] ?? '');
         $end_date = trim($_POST['closed_end_date'] ?? '');
         $closed_reason = trim($_POST['closed_reason'] ?? 'Tesis Kapalı');
@@ -158,14 +160,14 @@ try {
 
         $closed_json = json_encode(array_values($existing), JSON_UNESCAPED_UNICODE);
 
-        $up = $pdo->prepare("UPDATE facilities SET name = ?, city = ?, district = ?, address = ?, phone = ?, open_time = ?, close_time = ?, open_time_weekend = ?, close_time_weekend = ?, closed_dates = ? WHERE id = ?");
-        $up->execute([$name, $city, $district, $address, $phone, $open_time, $close_time, $open_time_weekend, $close_time_weekend, $closed_json, $facility_id]);
+        $up = $pdo->prepare("UPDATE facilities SET name = ?, city = ?, district = ?, address = ?, phone = ?, open_time = ?, close_time = ?, open_time_weekend = ?, close_time_weekend = ?, closed_dates = ?, features = ? WHERE id = ?");
+        $up->execute([$name, $city, $district, $address, $phone, $open_time, $close_time, $open_time_weekend, $close_time_weekend, $closed_json, $features_json, $facility_id]);
 
         $_SESSION['facility_name'] = $name;
         $_SESSION['city'] = $city;
         $_SESSION['district'] = $district;
 
-        echo json_encode(['status' => 'success', 'message' => 'Tesis profili ve kapalı tarihler güncellendi.']);
+        echo json_encode(['status' => 'success', 'message' => 'Tesis profili, çalışma saatleri ve imkanları güncellendi.']);
         exit;
     }
 
@@ -247,21 +249,17 @@ try {
         $hourly_fee = floatval($_POST['hourly_fee'] ?? 1200.00);
         $status = trim($_POST['status'] ?? 'Aktif');
 
-        $features = $_POST['features'] ?? [];
-        if (!is_array($features)) $features = [];
-        $features_json = json_encode(array_values($features), JSON_UNESCAPED_UNICODE);
-
         if (empty($field_name)) {
             echo json_encode(['status' => 'error', 'message' => 'Saha adı boş olamaz']);
             exit;
         }
 
         if ($field_id > 0) {
-            $up = $pdo->prepare("UPDATE facility_fields SET field_name = ?, field_type = ?, hourly_fee = ?, status = ?, features = ? WHERE id = ? AND facility_id = ?");
-            $up->execute([$field_name, $field_type, $hourly_fee, $status, $features_json, $field_id, $facility_id]);
+            $up = $pdo->prepare("UPDATE facility_fields SET field_name = ?, field_type = ?, hourly_fee = ?, status = ? WHERE id = ? AND facility_id = ?");
+            $up->execute([$field_name, $field_type, $hourly_fee, $status, $field_id, $facility_id]);
         } else {
-            $ins = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee, status, features) VALUES (?, ?, ?, ?, ?, ?)");
-            $ins->execute([$facility_id, $field_name, $field_type, $hourly_fee, $status, $features_json]);
+            $ins = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee, status) VALUES (?, ?, ?, ?, ?)");
+            $ins->execute([$facility_id, $field_name, $field_type, $hourly_fee, $status]);
         }
 
         echo json_encode(['status' => 'success', 'message' => 'Saha kaydedildi.']);

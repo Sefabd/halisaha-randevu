@@ -1,5 +1,5 @@
 <?php
-// owner_dashboard.php - Tesis İşletmecisi Paneli (Kolon Sıralama, Tarih/Saat Aralıklı Saha Kapama & Saha Filtresi)
+// owner_dashboard.php - Tesis İşletmecisi Paneli (Tesis Seviyesi İmkanlar & Hassas Saat Aralıklı Saha Kapama)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -97,7 +97,7 @@ $current_hour = (int)date('H');
         </div>
     </div>
 
-    <!-- KRONOLOJİK KONTROL EDİLMİŞ CANLI SAAT MATRİSİ (00:00 - 23:00) -->
+    <!-- KRONOLOJİK CANLI SAAT MATRİSİ -->
     <section class="minimal-card p-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
@@ -125,7 +125,7 @@ $current_hour = (int)date('H');
     </section>
 
     <div class="row g-4 mb-4">
-        <!-- 1. GELİŞMİŞ TESİS & ÇALIŞMA SAATLERİ -->
+        <!-- 1. GELİŞMİŞ TESİS & ÇALIŞMA SAATLERİ (TESİS SEVİYESİ İMKANLAR FORMU) -->
         <div class="col-lg-5">
             <div class="minimal-card p-4 h-100">
                 <h5 class="fw-bold text-dark mb-3">
@@ -191,6 +191,37 @@ $current_hour = (int)date('H');
                             </select>
                         </div>
 
+                        <!-- TESİS SEVİYESİ İMKANLAR VE ÖZELLİKLER FORMU -->
+                        <div class="col-12 border-top pt-3">
+                            <label class="form-label text-dark fs-8 fw-bold mb-2"><i class="fa-solid fa-list-check text-primary me-1"></i> TESİS İMKANLARI VE HİZMETLERİ</label>
+                            <div class="row g-2 fs-7">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="features[]" value="HD Kamera Kaydı" id="fac_feat_camera" checked>
+                                        <label class="form-check-label" for="fac_feat_camera"><i class="fa-solid fa-video text-success me-1"></i> HD Kamera Kaydı</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="features[]" value="Ücretsiz Su & İkram" id="fac_feat_water" checked>
+                                        <label class="form-check-label" for="fac_feat_water"><i class="fa-solid fa-bottle-water text-info me-1"></i> Ücretsiz Su & İkram</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="features[]" value="Soyunma Odası & Duş" id="fac_feat_shower" checked>
+                                        <label class="form-check-label" for="fac_feat_shower"><i class="fa-solid fa-shower text-primary me-1"></i> Soyunma Odası & Duş</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="features[]" value="Krampon / Ayakkabı Kiralama" id="fac_feat_shoes">
+                                        <label class="form-check-label" for="fac_feat_shoes"><i class="fa-solid fa-shoe-prints text-warning me-1"></i> Krampon Kiralama</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- ÖNCEDEN KAPALI GÜN / TARİH ARALIĞI EKLEME -->
                         <div class="col-12 border-top pt-3">
                             <label class="form-label text-danger fs-8 fw-bold mb-1"><i class="fa-solid fa-ban me-1"></i> TESİS KAPALI TARİH ARALIĞI EKLE</label>
@@ -222,7 +253,7 @@ $current_hour = (int)date('H');
             </div>
         </div>
 
-        <!-- 2. SAHALARIM YÖNETİM KARTI (DURUMU AYARLA MODALI İLE) -->
+        <!-- 2. SAHALARIM YÖNETİM KARTI -->
         <div class="col-lg-7">
             <div class="minimal-card p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -266,7 +297,6 @@ $current_hour = (int)date('H');
 
             <!-- CANLI ARAMA KUTUSU VE SAHA FİLTRESİ DROPDOWN'U -->
             <div class="d-flex flex-wrap align-items-center gap-2">
-                <!-- SAHA FİLTRESİ DROPDOWN -->
                 <select class="form-select form-select-sm max-w-180 border-primary fw-bold" id="filterReservationField" onchange="filterReservations()">
                     <option value="all">Tüm Sahalar</option>
                 </select>
@@ -407,9 +437,9 @@ $current_hour = (int)date('H');
     </div>
 </div>
 
-<!-- Modal: Saha Ekle / Düzenle -->
+<!-- Modal: Saha Ekle / Düzenle (Özelllik Tik Kutuları Tesis Ayarlarına Taşındı) -->
 <div class="modal fade" id="fieldModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-bold" id="fieldModalTitle">Yeni Saha Ekle</h5>
@@ -419,12 +449,12 @@ $current_hour = (int)date('H');
                 <div class="modal-body p-4">
                     <input type="hidden" name="field_id" id="modal_field_id" value="0">
                     
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
+                    <div class="row g-3">
+                        <div class="col-12">
                             <label class="form-label text-muted fs-7 fw-semibold">SAHA ADI *</label>
                             <input type="text" class="form-control" name="field_name" id="modal_field_name" required placeholder="Örn: Futbol Sahası 1">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label class="form-label text-muted fs-7 fw-semibold">SAHA TİPİ</label>
                             <select class="form-select" name="field_type" id="modal_field_type">
                                 <option value="Kapalı Futbol Sahası">⚽ Kapalı Futbol Sahası</option>
@@ -433,47 +463,16 @@ $current_hour = (int)date('H');
                                 <option value="Açık Tenis Kortu">🎾 Açık Tenis Kortu</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label class="form-label text-muted fs-7 fw-semibold">SAATLİK ÜCRET (TL) *</label>
                             <input type="number" step="0.01" class="form-control" name="hourly_fee" id="modal_hourly_fee" required value="1200.00">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label class="form-label text-muted fs-7 fw-semibold">SAHA DURUMU</label>
                             <select class="form-select" name="status" id="modal_field_status">
                                 <option value="Aktif" selected>✅ Aktif (Açık)</option>
                                 <option value="Pasif">🔴 Kapalı</option>
                             </select>
-                        </div>
-                    </div>
-
-                    <!-- ÖZELLİK CHECKBOX'LARI -->
-                    <div class="border-top pt-3">
-                        <label class="form-label text-dark fs-7 fw-bold mb-2"><i class="fa-solid fa-list-check text-primary me-1"></i> SAHA ÖZELLİKLERİ VE İMKANLAR</label>
-                        <div class="row g-2 fs-7">
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="features[]" value="HD Kamera Kaydı" id="feat_camera" checked>
-                                    <label class="form-check-label" for="feat_camera"><i class="fa-solid fa-video text-success me-1"></i> HD Kamera Kaydı var</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="features[]" value="Ücretsiz Su & İkram" id="feat_water" checked>
-                                    <label class="form-check-label" for="feat_water"><i class="fa-solid fa-bottle-water text-info me-1"></i> Ücretsiz Su & İkram</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="features[]" value="Soyunma Odası & Duş" id="feat_shower" checked>
-                                    <label class="form-check-label" for="feat_shower"><i class="fa-solid fa-shower text-primary me-1"></i> Soyunma Odası & Duş</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="features[]" value="Krampon / Ayakkabı Kiralama" id="feat_shoes">
-                                    <label class="form-check-label" for="feat_shoes"><i class="fa-solid fa-shoe-prints text-warning me-1"></i> Krampon / Ayakkabı Kiralama</label>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -608,6 +607,13 @@ async function loadOwnerFacility() {
         document.getElementById('fac_close_time').value = json.facility.close_time || '01:00';
         document.getElementById('fac_open_time_weekend').value = json.facility.open_time_weekend || '09:00';
         document.getElementById('fac_close_time_weekend').value = json.facility.close_time_weekend || '03:00';
+
+        // Set facility feature checkboxes
+        const facFeats = json.facility.features_array || [];
+        document.getElementById('fac_feat_camera').checked = facFeats.includes('HD Kamera Kaydı');
+        document.getElementById('fac_feat_water').checked = facFeats.includes('Ücretsiz Su & İkram');
+        document.getElementById('fac_feat_shower').checked = facFeats.includes('Soyunma Odası & Duş');
+        document.getElementById('fac_feat_shoes').checked = facFeats.includes('Krampon / Ayakkabı Kiralama');
 
         renderClosedDatesBadges(json.facility.closed_dates_array || []);
         renderOwnerFields(json.fields);
@@ -749,7 +755,24 @@ function onMatrixDateInput(inputEl) {
     renderOwnerMatrix();
 }
 
-// KRONOLOJİK SAAT DİZİLİMİ (00:00, 01:00, ..., 11:00, ..., 23:00)
+// HASSAS SAAT ARALIKLI KAPAMA MANTIĞI (SADECE BELİRTİLEN SAATLER KAPALI)
+function isSlotClosedByRange(dateStr, timeStr, fieldObj) {
+    if (!fieldObj) return false;
+    const range = fieldObj.closed_range_obj;
+
+    // Direct passive with no date range
+    if (fieldObj.status === 'Pasif' && (!range || !range.start_date)) return true;
+
+    if (!range || !range.start_date) return false;
+
+    const slotDt = `${dateStr} ${timeStr}`;
+    const startDt = `${range.start_date} ${range.start_time || '00:00'}`;
+    const endDt = `${range.end_date || range.start_date} ${range.end_time || '23:59'}`;
+
+    return (slotDt >= startDt && slotDt <= endDt);
+}
+
+// KRONOLOJİK SAAT DİZİLİMİ VE HASSAS KAPAMA MATRİSİ
 function renderOwnerMatrix() {
     if (!ownerFacilityData || ownerFieldsData.length === 0) return;
     const dateInput = document.getElementById('matrixDate');
@@ -763,7 +786,6 @@ function renderOwnerMatrix() {
     for (let h = openH; h < closeH; h++) {
         hourNumbers.push(h % 24);
     }
-    // Kronolojik Sıralama
     hourNumbers.sort((a, b) => a - b);
 
     const hours = hourNumbers.map(h => (h < 10 ? '0' : '') + h + ':00');
@@ -784,8 +806,10 @@ function renderOwnerMatrix() {
         bHtml += `<tr><td class="fw-bold text-dark text-start py-2">${icon} ${escapeHtml(field.field_name)}</td>`;
 
         hours.forEach(h => {
-            if (field.status === 'Pasif') {
-                bHtml += `<td><div class="slot-badge bg-danger bg-opacity-10 text-danger border border-danger" style="cursor:not-allowed;">KAPALI</div></td>`;
+            const isClosedSlot = isSlotClosedByRange(date, h, field);
+
+            if (isClosedSlot) {
+                bHtml += `<td><div class="slot-badge bg-danger bg-opacity-10 text-danger border border-danger" style="cursor:not-allowed;" title="Kapalı">KAPALI</div></td>`;
                 return;
             }
 
@@ -884,11 +908,6 @@ function openAddFieldModal() {
     document.getElementById('modal_field_name').value = '';
     document.getElementById('modal_field_status').value = 'Aktif';
     document.getElementById('fieldModalTitle').innerText = 'Yeni Saha Ekle';
-    
-    document.getElementById('feat_camera').checked = true;
-    document.getElementById('feat_water').checked = true;
-    document.getElementById('feat_shower').checked = true;
-    document.getElementById('feat_shoes').checked = false;
 
     new bootstrap.Modal(document.getElementById('fieldModal')).show();
 }
@@ -903,12 +922,6 @@ function editField(id) {
     document.getElementById('modal_hourly_fee').value = f.hourly_fee;
     document.getElementById('modal_field_status').value = f.status || 'Aktif';
     document.getElementById('fieldModalTitle').innerText = 'Sahayı Düzenle';
-
-    const feats = f.features_array || [];
-    document.getElementById('feat_camera').checked = feats.includes('HD Kamera Kaydı');
-    document.getElementById('feat_water').checked = feats.includes('Ücretsiz Su & İkram');
-    document.getElementById('feat_shower').checked = feats.includes('Soyunma Odası & Duş');
-    document.getElementById('feat_shoes').checked = feats.includes('Krampon / Ayakkabı Kiralama');
 
     new bootstrap.Modal(document.getElementById('fieldModal')).show();
 }
@@ -1001,7 +1014,6 @@ function computeMatchStatusBadge(resDate, resTime) {
     }
 }
 
-// SAHA FİLTRESİ VE CANLI ARAMA BİRLEŞTİRİLDİ
 function filterReservations() {
     const query = document.getElementById('searchReservationQuery').value.toLowerCase().trim();
     const selectedFieldId = document.getElementById('filterReservationField').value;
@@ -1042,17 +1054,14 @@ function filterReservations() {
 
     let activeList = (activeReservationTab === 'today') ? todayRes : ((activeReservationTab === 'future') ? futureRes : pastRes);
 
-    // Saha Filtresi
     if (selectedFieldId !== 'all') {
         activeList = activeList.filter(r => r.field_id == selectedFieldId);
     }
 
-    // Arama Kelimesi Filtresi
     if (query) {
         activeList = activeList.filter(r => r.team_name.toLowerCase().includes(query) || r.contact_name.toLowerCase().includes(query) || r.phone.includes(query));
     }
 
-    // Dynamic Column Sorting
     activeList.sort((a, b) => {
         let valA = a[currentSortColumn];
         let valB = b[currentSortColumn];

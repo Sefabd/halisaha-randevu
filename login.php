@@ -1,5 +1,5 @@
 <?php
-// login.php - SahaNet PRO Account Login & Registration Portal
+// login.php - SahaNet PRO Account Login, Registration & Password Reset Portal
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -23,9 +23,11 @@ if (session_status() === PHP_SESSION_NONE) {
     
     <!-- Brand Header -->
     <div class="text-center mb-3">
-        <div class="d-inline-flex align-items-center gap-2 brand-badge fs-5 mb-2">
-            <i class="fa-solid fa-futbol"></i> SahaNet PRO
-        </div>
+        <a href="index.php" class="text-decoration-none">
+            <div class="d-inline-flex align-items-center gap-2 brand-badge fs-5 mb-2">
+                <i class="fa-solid fa-futbol"></i> SahaNet PRO
+            </div>
+        </a>
         <h2 class="fw-extrabold text-dark fs-4 mb-1">SPOR TESİSİ REZERVASYON & YÖNETİMİ</h2>
         <p class="text-muted fs-7 mb-0">Giriş yapın veya saniyeler içinde yeni hesabınızı oluşturun.</p>
     </div>
@@ -83,7 +85,10 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <input type="text" class="form-control" name="username" id="p_login_username" required placeholder="Örn: oyuncu1">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
+                                <div class="d-flex justify-content-between">
+                                    <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
+                                    <a href="#" class="text-primary text-decoration-none fs-8 fw-semibold" onclick="openForgotPasswordModal()">Şifremi Unuttum?</a>
+                                </div>
                                 <input type="password" class="form-control" name="password" id="p_login_password" required placeholder="••••••••">
                             </div>
                             <div class="col-12 mt-3">
@@ -152,7 +157,10 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <input type="text" class="form-control" name="username" id="o_login_username" required placeholder="Örn: kadikoy_arena">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
+                                <div class="d-flex justify-content-between">
+                                    <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
+                                    <a href="#" class="text-primary text-decoration-none fs-8 fw-semibold" onclick="openForgotPasswordModal()">Şifremi Unuttum?</a>
+                                </div>
                                 <input type="password" class="form-control" name="password" id="o_login_password" required placeholder="••••••••">
                             </div>
                             <div class="col-12 mt-3">
@@ -164,7 +172,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     </form>
                 </div>
 
-                <!-- İşletme Kayıt (DİNAMİK İL / İLÇE DROPDOWN FIX) -->
+                <!-- İşletme Kayıt -->
                 <div class="tab-pane fade" id="owner-register">
                     <form onsubmit="handleOwnerRegister(event)">
                         <div class="row g-3">
@@ -184,8 +192,6 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
                                 <input type="password" class="form-control" name="password" required placeholder="••••••••">
                             </div>
-
-                            <!-- DİNAMİK İL SEÇİNİZ DROPDOWN (SERBEST METİN YERİNE) -->
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">İL *</label>
                                 <select class="form-select" name="city" id="reg_city" onchange="onRegisterCityChange()" required>
@@ -197,15 +203,12 @@ if (session_status() === PHP_SESSION_NONE) {
                                     <option value="Antalya">Antalya</option>
                                 </select>
                             </div>
-
-                            <!-- DİNAMİK İLÇE SEÇİNİZ DROPDOWN -->
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">İLÇE *</label>
                                 <select class="form-select" name="district" id="reg_district" required>
                                     <option value="" disabled selected>İlçe Seçiniz</option>
                                 </select>
                             </div>
-
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
                                 <input type="text" class="form-control" name="phone" required placeholder="0532 555 12 34">
@@ -227,6 +230,34 @@ if (session_status() === PHP_SESSION_NONE) {
 
     </div>
 
+</div>
+
+<!-- Modal: ŞİFREMİ UNUTTUM / ŞİFRE SIFIRLAMA MODALI -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-key text-warning me-2"></i> Şifremi Sıfırla</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="handleResetPassword(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI VEYA TELEFON *</label>
+                        <input type="text" class="form-control" name="username_or_phone" required placeholder="Örn: oyuncu1 veya 0532...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-7 fw-semibold">YENİ ŞİFRE *</label>
+                        <input type="password" class="form-control" name="new_password" required placeholder="Yeni şifreniz">
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-team fw-bold">Şifreyi Sıfırla</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -284,15 +315,30 @@ function showAlert(msg) {
     box.innerText = msg;
 }
 
+function openForgotPasswordModal() {
+    new bootstrap.Modal(document.getElementById('forgotPasswordModal')).show();
+}
+
+async function handleResetPassword(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch('api/auth.php?action=reset_password', { method: 'POST', body: formData });
+    const json = await res.json();
+    alert(json.message);
+    if (json.status === 'success') {
+        bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal')).hide();
+    }
+}
+
 async function handlePlayerLogin(e) {
     e.preventDefault();
     const u = document.getElementById('p_login_username').value;
     const p = document.getElementById('p_login_password').value;
 
-    const res = await fetch('api/auth.php?action=login_player', {
+    const res = await fetch('api/auth.php?action=login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`
+        body: `username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}&role=player`
     });
     const json = await res.json();
     if (json.status === 'success') window.location.href = json.redirect;
@@ -303,7 +349,7 @@ async function handlePlayerRegister(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
 
-    const res = await fetch('api/auth.php?action=register_player', { method: 'POST', body: formData });
+    const res = await fetch('api/auth.php?action=register', { method: 'POST', body: formData });
     const json = await res.json();
     if (json.status === 'success') window.location.href = json.redirect;
     else showAlert(json.message);
@@ -314,10 +360,10 @@ async function handleOwnerLogin(e) {
     const u = document.getElementById('o_login_username').value;
     const p = document.getElementById('o_login_password').value;
 
-    const res = await fetch('api/auth.php?action=login_owner', {
+    const res = await fetch('api/auth.php?action=login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`
+        body: `username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}&role=owner`
     });
     const json = await res.json();
     if (json.status === 'success') window.location.href = json.redirect;

@@ -1,186 +1,242 @@
 <?php
-// api/auth.php - Session, Authentication & Persistent Team Controller
+// api/auth.php - Authentication, Profile, Password Reset & User Reservations API
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+header('Content-Type: application/json; charset=utf-8');
 
 $pdo = require __DIR__ . '/../config/db.php';
-$action = $_REQUEST['action'] ?? '';
+
+$action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 try {
-    // Logout Redirect Fix
-    if ($action === 'logout') {
-        session_destroy();
-        header('Location: ../login.php');
-        exit;
-    }
-
-    // PERSISTENT TEAM SETTING IN DB
-    if ($action === 'set_team') {
-        header('Content-Type: application/json; charset=utf-8');
-        $team = trim($_POST['team'] ?? 'neutral');
-        $_SESSION['user_team'] = $team;
-
-        if (isset($_SESSION['user_role'])) {
-            if ($_SESSION['user_role'] === 'player' && isset($_SESSION['user_id'])) {
-                $up = $pdo->prepare("UPDATE users SET favorite_team = ? WHERE id = ?");
-                $up->execute([$team, $_SESSION['user_id']]);
-            } else if ($_SESSION['user_role'] === 'owner' && isset($_SESSION['facility_id'])) {
-                $up = $pdo->prepare("UPDATE facilities SET favorite_team = ? WHERE id = ?");
-                $up->execute([$team, $_SESSION['facility_id']]);
-            }
-        }
-
-        echo json_encode(['status' => 'success', 'team' => $team]);
-        exit;
-    }
-
-    // 1. OYUNCU KAYIT OL (BÜYÜK HARF İSİM STANDARDİ)
-    if ($action === 'register_player') {
-        header('Content-Type: application/json; charset=utf-8');
-        $full_name = mb_strtoupper(trim($_POST['full_name'] ?? ''), 'UTF-8');
+    // 1. LOGIN
+    if ($action === 'login') {
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
-        $phone = trim($_POST['phone'] ?? '');
-        $team = trim($_POST['team'] ?? 'neutral');
+        $role = trim($_POST['role'] ?? 'player'); // 'player' or 'owner'
 
-        if (empty($full_name) || empty($username) || empty($password) || empty($phone)) {
+        if (empty($username) || empty($password)) {
+            echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı ve şifrenizi giriniz.']);
+            exit;
+        }
+
+        if ($role === 'owner') {
+            $stmt = $pdo->prepare("SELECT * FROM facilities WHERE username = ?");
+            $stmt->execute([$username]);
+            $owner = $stmt->fetch();
+
+            if ($owner && password_verify($password, $owner['password'])) {
+                $_SESSION['user_role'] = 'owner';
+                $_SESSION['owner_id'] = $owner['id'];
+                $_SESSION['owner_name'] = mb_strtoupper($owner['owner_name'], 'UTF-8');
+                $_SESSION['facility_id'] = $owner['id'];
+                $_SESSION['facility_name'] = $owner['name'];
+                $_SESSION['user_team'] = $owner['favorite_team'] ?? 'neutral';
+                $_SESSION['city'] = $owner['city'];
+                $_SESSION['district'] = $owner['district'];
+
+                echo json_encode(['status' => 'success', 'redirect' => 'owner_dashboard.php']);
+                exit;
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Tesis Girişi Başarısız: Kullanıcı adı veya şifre hatalı.']);
+                exit;
+            }
+        } else {
+            // Player
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+            $stmt->execute([$username]);
+            $user = $stmt->fetch();
+
+            if ($user && password_verify($password, $user['password'])) {
+                $_SESSION['user_role'] = 'player';
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_name'] = mb_strtoupper($user['full_name'], 'UTF-8');
+                $_SESSION['user_username'] = $user['username'];
+                $_SESSION['user_phone'] = $user['phone'];
+                $_SESSION['user_team'] = $user['favorite_team'] ?? 'neutral';
+
+                echo json_encode(['status' => 'success', 'redirect' => 'index.php']);
+                exit;
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Oyuncu Girişi Başarısız: Kullanıcı adı veya şifre hatalı.']);
+                exit;
+            }
+        }
+    }
+
+    // 2. REGISTER (PLAYER)
+    if ($action === 'register') {
+        $full_name = mb_strtoupper(trim($_POST['full_name'] ?? ''), 'UTF-8');
+        $username = trim($_POST['username'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $password = trim($_POST['password'] ?? '');
+
+        if (empty($full_name) || empty($username) || empty($phone) || empty($password)) {
             echo json_encode(['status' => 'error', 'message' => 'Lütfen tüm alanları doldurunuz.']);
             exit;
         }
 
-        $checkStmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-        $checkStmt->execute([$username]);
-        if ($checkStmt->fetch()) {
-            echo json_encode(['status' => 'error', 'message' => 'Bu kullanıcı adı zaten kullanılmaktadır!']);
+        // Check unique username
+        $chk = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $chk->execute([$username]);
+        if ($chk->fetch()) {
+            echo json_encode(['status' => 'error', 'message' => 'Bu kullanıcı adı zaten kullanılmaktadır.']);
             exit;
         }
 
-        $passHash = password_hash($password, PASSWORD_DEFAULT);
-        $ins = $pdo->prepare("INSERT INTO users (full_name, username, password, phone, favorite_team) VALUES (?, ?, ?, ?, ?)");
-        $ins->execute([$full_name, $username, $passHash, $phone, $team]);
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("INSERT INTO users (full_name, username, password, phone) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$full_name, $username, $hash, $phone]);
 
         $_SESSION['user_role'] = 'player';
         $_SESSION['user_id'] = $pdo->lastInsertId();
         $_SESSION['user_name'] = $full_name;
-        $_SESSION['username'] = $username;
-        $_SESSION['user_team'] = $team;
-        $_SESSION['city'] = 'İstanbul';
-        $_SESSION['district'] = 'Kadıköy';
+        $_SESSION['user_username'] = $username;
+        $_SESSION['user_phone'] = $phone;
+        $_SESSION['user_team'] = 'neutral';
 
-        echo json_encode(['status' => 'success', 'message' => 'Hesabınız oluşturuldu!', 'redirect' => 'index.php']);
+        echo json_encode(['status' => 'success', 'redirect' => 'index.php']);
         exit;
     }
 
-    // 2. OYUNCU GİRİŞ YAP (PERSISTENT TEAM LOAD FROM DB)
-    if ($action === 'login_player') {
-        header('Content-Type: application/json; charset=utf-8');
-        $username = trim($_POST['username'] ?? '');
-        $password = trim($_POST['password'] ?? '');
+    // 3. SET TEAM THEME
+    if ($action === 'set_team') {
+        $team = trim($_POST['team'] ?? 'neutral');
+        $_SESSION['user_team'] = $team;
 
-        if (empty($username) || empty($password)) {
-            echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı ve şifrenizi giriniz.']);
+        if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'player') {
+            $up = $pdo->prepare("UPDATE users SET favorite_team = ? WHERE id = ?");
+            $up->execute([$team, $_SESSION['user_id']]);
+        } elseif (isset($_SESSION['owner_id']) && $_SESSION['user_role'] === 'owner') {
+            $up = $pdo->prepare("UPDATE facilities SET favorite_team = ? WHERE id = ?");
+            $up->execute([$team, $_SESSION['owner_id']]);
+        }
+
+        echo json_encode(['status' => 'success']);
+        exit;
+    }
+
+    // 4. GET LOGGED-IN USER PROFILE & RESERVATIONS
+    if ($action === 'get_user_profile') {
+        if (!isset($_SESSION['user_role'])) {
+            echo json_encode(['status' => 'error', 'message' => 'Oturum kapalı']);
             exit;
         }
 
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-        $stmt->execute([$username]);
+        if ($_SESSION['user_role'] === 'player') {
+            $user_id = $_SESSION['user_id'];
+            $stmt = $pdo->prepare("SELECT id, full_name, username, phone, favorite_team FROM users WHERE id = ?");
+            $stmt->execute([$user_id]);
+            $user = $stmt->fetch();
+
+            // Fetch user's reservations by phone or contact_name
+            $resStmt = $pdo->prepare("SELECT r.*, f.name as facility_name FROM field_reservations r LEFT JOIN facilities f ON r.facility_id = f.id WHERE r.phone = ? OR r.contact_name = ? ORDER BY r.reservation_date DESC, r.reservation_time ASC");
+            $resStmt->execute([$user['phone'], $user['full_name']]);
+            $myReservations = $resStmt->fetchAll();
+
+            echo json_encode(['status' => 'success', 'profile' => $user, 'reservations' => $myReservations]);
+            exit;
+        } else {
+            // Owner profile
+            $owner_id = $_SESSION['owner_id'];
+            $stmt = $pdo->prepare("SELECT id, owner_name as full_name, username, phone, favorite_team FROM facilities WHERE id = ?");
+            $stmt->execute([$owner_id]);
+            $owner = $stmt->fetch();
+
+            echo json_encode(['status' => 'success', 'profile' => $owner, 'reservations' => []]);
+            exit;
+        }
+    }
+
+    // 5. UPDATE PROFILE & PASSWORD
+    if ($action === 'update_profile') {
+        if (!isset($_SESSION['user_role'])) {
+            echo json_encode(['status' => 'error', 'message' => 'Oturum kapalı']);
+            exit;
+        }
+
+        $full_name = mb_strtoupper(trim($_POST['full_name'] ?? ''), 'UTF-8');
+        $phone = trim($_POST['phone'] ?? '');
+        $current_password = trim($_POST['current_password'] ?? '');
+        $new_password = trim($_POST['new_password'] ?? '');
+
+        if ($_SESSION['user_role'] === 'player') {
+            $user_id = $_SESSION['user_id'];
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt->execute([$user_id]);
+            $user = $stmt->fetch();
+
+            if (!empty($new_password)) {
+                if (!password_verify($current_password, $user['password'])) {
+                    echo json_encode(['status' => 'error', 'message' => 'Mevcut şifreniz yanlış!']);
+                    exit;
+                }
+                $newHash = password_hash($new_password, PASSWORD_DEFAULT);
+                $up = $pdo->prepare("UPDATE users SET full_name = ?, phone = ?, password = ? WHERE id = ?");
+                $up->execute([$full_name, $phone, $newHash, $user_id]);
+            } else {
+                $up = $pdo->prepare("UPDATE users SET full_name = ?, phone = ? WHERE id = ?");
+                $up->execute([$full_name, $phone, $user_id]);
+            }
+
+            $_SESSION['user_name'] = $full_name;
+            $_SESSION['user_phone'] = $phone;
+
+            echo json_encode(['status' => 'success', 'message' => 'Profil bilgileri ve şifreniz güncellendi.']);
+            exit;
+        }
+    }
+
+    // 6. PASSWORD RESET (FORGOT PASSWORD)
+    if ($action === 'reset_password') {
+        $username_or_phone = trim($_POST['username_or_phone'] ?? '');
+        $new_password = trim($_POST['new_password'] ?? '');
+
+        if (empty($username_or_phone) || empty($new_password)) {
+            echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı/telefon ve yeni şifrenizi giriniz.']);
+            exit;
+        }
+
+        $newHash = password_hash($new_password, PASSWORD_DEFAULT);
+
+        // Check users
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ? OR phone = ?");
+        $stmt->execute([$username_or_phone, $username_or_phone]);
         $user = $stmt->fetch();
 
-        if ($user && (password_verify($password, $user['password']) || $password === '123')) {
-            $_SESSION['user_role'] = 'player';
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = mb_strtoupper($user['full_name'], 'UTF-8');
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['user_team'] = $user['favorite_team'] ?? 'neutral';
-            $_SESSION['city'] = 'İstanbul';
-            $_SESSION['district'] = 'Kadıköy';
-
-            echo json_encode(['status' => 'success', 'redirect' => 'index.php']);
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Hatalı kullanıcı adı veya şifre!']);
+        if ($user) {
+            $up = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $up->execute([$newHash, $user['id']]);
+            echo json_encode(['status' => 'success', 'message' => 'Şifreniz başarıyla sıfırlandı. Yeni şifrenizle giriş yapabilirsiniz.']);
+            exit;
         }
+
+        // Check facilities (owner)
+        $stmtFac = $pdo->prepare("SELECT id FROM facilities WHERE username = ? OR phone = ?");
+        $stmtFac->execute([$username_or_phone, $username_or_phone]);
+        $fac = $stmtFac->fetch();
+
+        if ($fac) {
+            $up = $pdo->prepare("UPDATE facilities SET password = ? WHERE id = ?");
+            $up->execute([$newHash, $fac['id']]);
+            echo json_encode(['status' => 'success', 'message' => 'Tesis şifreniz başarıyla sıfırlandı. Yeni şifrenizle giriş yapabilirsiniz.']);
+            exit;
+        }
+
+        echo json_encode(['status' => 'error', 'message' => 'Girilen kullanıcı adı veya telefon sistemde bulunamadı.']);
         exit;
     }
 
-    // 3. İŞLETMECİ KAYIT OL (BÜYÜK HARF İSİM STANDARDİ)
-    if ($action === 'register_owner') {
-        header('Content-Type: application/json; charset=utf-8');
-        $facility_name = trim($_POST['facility_name'] ?? '');
-        $owner_name = mb_strtoupper(trim($_POST['owner_name'] ?? ''), 'UTF-8');
-        $username = trim($_POST['username'] ?? '');
-        $password = trim($_POST['password'] ?? '');
-        $city = trim($_POST['city'] ?? 'İstanbul');
-        $district = trim($_POST['district'] ?? 'Kadıköy');
-        $address = trim($_POST['address'] ?? '');
-        $phone = trim($_POST['phone'] ?? '');
-        $team = trim($_POST['team'] ?? 'neutral');
-
-        if (empty($facility_name) || empty($owner_name) || empty($username) || empty($password) || empty($phone)) {
-            echo json_encode(['status' => 'error', 'message' => 'Lütfen tüm alanları doldurunuz.']);
-            exit;
-        }
-
-        $checkStmt = $pdo->prepare("SELECT id FROM facilities WHERE username = ?");
-        $checkStmt->execute([$username]);
-        if ($checkStmt->fetch()) {
-            echo json_encode(['status' => 'error', 'message' => 'Bu kullanıcı adı başka bir tesis için kayıtlı!']);
-            exit;
-        }
-
-        $passHash = password_hash($password, PASSWORD_DEFAULT);
-        $ins = $pdo->prepare("INSERT INTO facilities (name, owner_name, username, password, city, district, address, phone, open_time, close_time, favorite_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '13:00', '01:00', ?)");
-        $ins->execute([$facility_name, $owner_name, $username, $passHash, $city, $district, $address, $phone, $team]);
-        $facility_id = $pdo->lastInsertId();
-
-        $insField = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee) VALUES (?, 'Futbol Sahası 1', 'Kapalı Futbol Sahası', 1200.00)");
-        $insField->execute([$facility_id]);
-
-        $_SESSION['user_role'] = 'owner';
-        $_SESSION['facility_id'] = $facility_id;
-        $_SESSION['facility_name'] = $facility_name;
-        $_SESSION['owner_name'] = $owner_name;
-        $_SESSION['city'] = $city;
-        $_SESSION['district'] = $district;
-        $_SESSION['user_team'] = $team;
-
-        echo json_encode(['status' => 'success', 'message' => 'Tesis kaydınız oluşturuldu!', 'redirect' => 'owner_dashboard.php']);
-        exit;
-    }
-
-    // 4. İŞLETMECİ GİRİŞ YAP (PERSISTENT TEAM LOAD FROM DB)
-    if ($action === 'login_owner') {
-        header('Content-Type: application/json; charset=utf-8');
-        $username = trim($_POST['username'] ?? '');
-        $password = trim($_POST['password'] ?? '');
-
-        if (empty($username) || empty($password)) {
-            echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı ve şifrenizi giriniz.']);
-            exit;
-        }
-
-        $stmt = $pdo->prepare("SELECT * FROM facilities WHERE username = ?");
-        $stmt->execute([$username]);
-        $facility = $stmt->fetch();
-
-        if ($facility && (password_verify($password, $facility['password']) || $password === '123')) {
-            $_SESSION['user_role'] = 'owner';
-            $_SESSION['facility_id'] = $facility['id'];
-            $_SESSION['facility_name'] = $facility['name'];
-            $_SESSION['owner_name'] = mb_strtoupper($facility['owner_name'], 'UTF-8');
-            $_SESSION['city'] = $facility['city'];
-            $_SESSION['district'] = $facility['district'];
-            $_SESSION['user_team'] = $facility['favorite_team'] ?? 'neutral';
-
-            echo json_encode(['status' => 'success', 'redirect' => 'owner_dashboard.php']);
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Hatalı işletmeci kullanıcı adı veya şifresi!']);
-        }
+    // 7. LOGOUT
+    if ($action === 'logout') {
+        session_unset();
+        session_destroy();
+        header('Location: ../index.php');
         exit;
     }
 
 } catch (PDOException $e) {
-    header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['status' => 'error', 'message' => 'Veritabanı hatası: ' . $e->getMessage()]);
     exit;
 }
