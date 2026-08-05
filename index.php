@@ -725,19 +725,18 @@ function field_name_has(f, word) {
 }
 
 function onDrawerDateChange(facId, inputEl) {
-    const val = inputEl.value;
+    let val = inputEl.value;
     if (!val || val.length !== 10) return;
 
     const parts = val.split('-');
-    const year = parseInt(parts[0]);
+    const year = parseInt(parts[0], 10);
     if (isNaN(year) || year < 2026) return;
 
     const { todayStr } = getLiveClientDateAndHour();
 
     if (val < todayStr) {
-        alert('⚠️ Geçmiş bir tarihe randevu alınamaz!');
         inputEl.value = todayStr;
-        return;
+        val = todayStr;
     }
 
     const dayLabel = document.getElementById(`day-label-fac-${facId}`);

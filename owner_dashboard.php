@@ -775,7 +775,19 @@ async function handleSaveFieldStatusRange(e) {
 }
 
 function onMatrixDateInput(inputEl) {
-    if (!inputEl.value || inputEl.value.length !== 10) return;
+    let val = inputEl.value;
+    if (!val || val.length !== 10) return;
+
+    const parts = val.split('-');
+    const year = parseInt(parts[0], 10);
+    if (isNaN(year) || year < 2026) return;
+
+    const { todayStr } = getLiveClientDateAndHour();
+
+    if (val < todayStr) {
+        inputEl.value = todayStr;
+    }
+
     renderOwnerMatrix();
 }
 
