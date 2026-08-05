@@ -1,35 +1,42 @@
 <?php
-// api/auth.php - Authentication, Registration & Session Controller
+// api/auth.php - Session, Authentication & Team Theme Controller
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-header('Content-Type: application/json; charset=utf-8');
 
 $pdo = require __DIR__ . '/../config/db.php';
 $action = $_REQUEST['action'] ?? '';
 
 try {
+    // Standard Logout Redirect Fix
+    if ($action === 'logout') {
+        session_destroy();
+        header('Location: ../login.php');
+        exit;
+    }
+
     if ($action === 'set_team') {
-        $team = trim($_POST['team'] ?? 'galatasaray');
+        header('Content-Type: application/json; charset=utf-8');
+        $team = trim($_POST['team'] ?? 'neutral');
         $_SESSION['user_team'] = $team;
         echo json_encode(['status' => 'success', 'team' => $team]);
         exit;
     }
 
-    // 1. OYUNCU KAYIT OL (Register Player)
+    // 1. OYUNCU KAYIT OL
     if ($action === 'register_player') {
+        header('Content-Type: application/json; charset=utf-8');
         $full_name = trim($_POST['full_name'] ?? '');
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
-        $team = trim($_POST['team'] ?? 'galatasaray');
+        $team = trim($_POST['team'] ?? 'neutral');
 
         if (empty($full_name) || empty($username) || empty($password) || empty($phone)) {
             echo json_encode(['status' => 'error', 'message' => 'Lütfen tüm alanları doldurunuz.']);
             exit;
         }
 
-        // Check Username Existence
         $checkStmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
         $checkStmt->execute([$username]);
         if ($checkStmt->fetch()) {
@@ -41,7 +48,6 @@ try {
         $ins = $pdo->prepare("INSERT INTO users (full_name, username, password, phone, favorite_team) VALUES (?, ?, ?, ?, ?)");
         $ins->execute([$full_name, $username, $passHash, $phone, $team]);
 
-        // Auto Login Session
         $_SESSION['user_role'] = 'player';
         $_SESSION['user_name'] = $full_name;
         $_SESSION['username'] = $username;
@@ -49,15 +55,15 @@ try {
         $_SESSION['city'] = 'İstanbul';
         $_SESSION['district'] = 'Kadıköy';
 
-        echo json_encode(['status' => 'success', 'message' => 'Hesabınız başarıyla oluşturuldu!', 'redirect' => 'index.php']);
+        echo json_encode(['status' => 'success', 'message' => 'Hesabınız oluşturuldu!', 'redirect' => 'index.php']);
         exit;
     }
 
-    // 2. OYUNCU GİRİŞ YAP (Login Player)
+    // 2. OYUNCU GİRİŞ YAP
     if ($action === 'login_player') {
+        header('Content-Type: application/json; charset=utf-8');
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
-        $team = trim($_POST['team'] ?? 'galatasaray');
 
         if (empty($username) || empty($password)) {
             echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı ve şifrenizi giriniz.']);
@@ -73,19 +79,20 @@ try {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['full_name'];
             $_SESSION['username'] = $user['username'];
-            $_SESSION['user_team'] = $team;
+            $_SESSION['user_team'] = $user['favorite_team'] ?? 'neutral';
             $_SESSION['city'] = 'İstanbul';
             $_SESSION['district'] = 'Kadıköy';
 
             echo json_encode(['status' => 'success', 'redirect' => 'index.php']);
         } else {
-            echo json_encode(['status' => 'error', 'message' => 'Hatalı oyuncu kullanıcı adı veya şifresi!']);
+            echo json_encode(['status' => 'error', 'message' => 'Hatalı kullanıcı adı veya şifre!']);
         }
         exit;
     }
 
-    // 3. İŞLETMECİ KAYIT OL (Register Owner)
+    // 3. İŞLETMECİ KAYIT OL
     if ($action === 'register_owner') {
+        header('Content-Type: application/json; charset=utf-8');
         $facility_name = trim($_POST['facility_name'] ?? '');
         $owner_name = trim($_POST['owner_name'] ?? '');
         $username = trim($_POST['username'] ?? '');
@@ -94,14 +101,13 @@ try {
         $district = trim($_POST['district'] ?? 'Kadıköy');
         $address = trim($_POST['address'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
-        $team = trim($_POST['team'] ?? 'galatasaray');
+        $team = trim($_POST['team'] ?? 'neutral');
 
         if (empty($facility_name) || empty($owner_name) || empty($username) || empty($password) || empty($phone)) {
             echo json_encode(['status' => 'error', 'message' => 'Lütfen tüm alanları doldurunuz.']);
             exit;
         }
 
-        // Check Username Existence
         $checkStmt = $pdo->prepare("SELECT id FROM facilities WHERE username = ?");
         $checkStmt->execute([$username]);
         if ($checkStmt->fetch()) {
@@ -114,11 +120,9 @@ try {
         $ins->execute([$facility_name, $owner_name, $username, $passHash, $city, $district, $address, $phone, $team]);
         $facility_id = $pdo->lastInsertId();
 
-        // Create Default Saha 1 for new facility
-        $insField = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee) VALUES (?, 'Saha 1 (Kapalı Çim)', 'Kapalı Suni Çim', 1200.00)");
+        $insField = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee) VALUES (?, 'Saha 1', 'Kapalı Saha', 1200.00)");
         $insField->execute([$facility_id]);
 
-        // Auto Login Session
         $_SESSION['user_role'] = 'owner';
         $_SESSION['facility_id'] = $facility_id;
         $_SESSION['facility_name'] = $facility_name;
@@ -131,11 +135,11 @@ try {
         exit;
     }
 
-    // 4. İŞLETMECİ GİRİŞ YAP (Login Owner)
+    // 4. İŞLETMECİ GİRİŞ YAP
     if ($action === 'login_owner') {
+        header('Content-Type: application/json; charset=utf-8');
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
-        $team = trim($_POST['team'] ?? 'galatasaray');
 
         if (empty($username) || empty($password)) {
             echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı ve şifrenizi giriniz.']);
@@ -153,7 +157,7 @@ try {
             $_SESSION['owner_name'] = $facility['owner_name'];
             $_SESSION['city'] = $facility['city'];
             $_SESSION['district'] = $facility['district'];
-            $_SESSION['user_team'] = $team;
+            $_SESSION['user_team'] = $facility['favorite_team'] ?? 'neutral';
 
             echo json_encode(['status' => 'success', 'redirect' => 'owner_dashboard.php']);
         } else {
@@ -162,13 +166,8 @@ try {
         exit;
     }
 
-    if ($action === 'logout') {
-        session_destroy();
-        echo json_encode(['status' => 'success', 'redirect' => 'login.php']);
-        exit;
-    }
-
 } catch (PDOException $e) {
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['status' => 'error', 'message' => 'Veritabanı hatası: ' . $e->getMessage()]);
     exit;
 }
