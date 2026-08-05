@@ -725,19 +725,12 @@ function field_name_has(f, word) {
 }
 
 function onDrawerDateChange(facId, inputEl) {
-    let val = inputEl.value;
+    const val = inputEl.value;
     if (!val || val.length !== 10) return;
 
     const parts = val.split('-');
     const year = parseInt(parts[0], 10);
     if (isNaN(year) || year < 2026) return;
-
-    const { todayStr } = getLiveClientDateAndHour();
-
-    if (val < todayStr) {
-        inputEl.value = todayStr;
-        val = todayStr;
-    }
 
     const dayLabel = document.getElementById(`day-label-fac-${facId}`);
     if (dayLabel) dayLabel.innerText = formatTurkishDate(val);
@@ -784,6 +777,16 @@ async function renderInlineDrawerTimeline(facId) {
 
     const dayLabel = document.getElementById(`day-label-fac-${facId}`);
     if (dayLabel) dayLabel.innerText = formatTurkishDate(date);
+
+    if (date < todayStr) {
+        document.getElementById(`timeline-container-${facId}`).innerHTML = `
+            <div class="p-4 text-center text-warning bg-warning bg-opacity-10 rounded-3 border border-warning">
+                <i class="fa-solid fa-clock-rotate-left display-5 mb-2 d-block text-warning"></i>
+                <h5 class="fw-bold text-dark">Geçmiş Bir Tarih Seçtiniz (${date})</h5>
+                <p class="mb-0 fs-7 text-muted">Geçmiş tarihlere randevu alınamaz. Lütfen yukarıdaki tarih kutusundan bugünün veya daha ileri bir tarihi seçiniz.</p>
+            </div>`;
+        return;
+    }
 
     // TESİS KAPALI GÜN KONTROLÜ
     const closedDates = fac.closed_dates_array || [];
