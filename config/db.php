@@ -1,5 +1,5 @@
 <?php
-// config/db.php - SahaNet PRO Database Connection with Auto Migration Check
+// config/db.php - SahaNet PRO Database Connection with 5 Kadıköy Facilities Auto-Seeding
 
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
 $db_name = getenv('DB_NAME') ?: 'halisaha_db';
@@ -36,7 +36,6 @@ try {
     }
 }
 
-// Ensure all tables and columns exist on every request to prevent 1146 and 1054 SQL errors
 try {
     $autoIncrement = ($db_type === 'mysql') ? "AUTO_INCREMENT" : "AUTOINCREMENT";
 
@@ -73,7 +72,7 @@ try {
         id INTEGER PRIMARY KEY {$autoIncrement},
         facility_id INTEGER NOT NULL,
         field_name VARCHAR(100) NOT NULL,
-        field_type VARCHAR(50) DEFAULT 'Kapalı Suni Çim',
+        field_type VARCHAR(50) DEFAULT 'Kapalı Saha',
         hourly_fee DECIMAL(10,2) NOT NULL DEFAULT 1200.00,
         status VARCHAR(20) DEFAULT 'Aktif',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -100,43 +99,123 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );");
 
-    // SQL MIGRATION FIX: Add facility_id and field_id if missing in old SQLite/MySQL table
     try { $pdo->exec("ALTER TABLE field_reservations ADD COLUMN facility_id INTEGER DEFAULT 1"); } catch (PDOException $ex) {}
     try { $pdo->exec("ALTER TABLE field_reservations ADD COLUMN field_id INTEGER DEFAULT 1"); } catch (PDOException $ex) {}
 
-    // Check if facilities is empty; if so, seed default demo accounts
+    // Check facility count; if less than 5, seed all 5 Kadıköy facilities and fields
     $stmtFacCheck = $pdo->query("SELECT COUNT(*) as cnt FROM facilities");
-    if ($stmtFacCheck->fetch()['cnt'] == 0) {
+    if ($stmtFacCheck->fetch()['cnt'] < 5) {
         $passHash = password_hash('123', PASSWORD_DEFAULT);
+        $pdo->exec("DELETE FROM facilities; DELETE FROM facility_fields;");
 
-        // Demo Facility
+        $facilities = [
+            [
+                'name' => 'Kadıköy Şampiyonlar Spor Kompleksi',
+                'owner_name' => 'Mehmet Kaya',
+                'username' => 'kadikoy_arena',
+                'password' => $passHash,
+                'city' => 'İstanbul',
+                'district' => 'Kadıköy',
+                'address' => 'Caferağa Mah. Moda Cad. No:45 Kadıköy / İstanbul',
+                'phone' => '0532 555 12 34',
+                'open_time' => '13:00',
+                'close_time' => '01:00',
+                'favorite_team' => 'galatasaray'
+            ],
+            [
+                'name' => 'Moda Park VIP Spor Tesisleri',
+                'owner_name' => 'Caner Erkin',
+                'username' => 'moda_park',
+                'password' => $passHash,
+                'city' => 'İstanbul',
+                'district' => 'Kadıköy',
+                'address' => 'Moda Sahil Yolu No:18 Kadıköy / İstanbul',
+                'phone' => '0533 444 55 66',
+                'open_time' => '12:00',
+                'close_time' => '02:00',
+                'favorite_team' => 'fenerbahce'
+            ],
+            [
+                'name' => 'Fenerbahçe Kalamış Spor Tesisleri',
+                'owner_name' => 'Ali Koç',
+                'username' => 'kalamis_spor',
+                'password' => $passHash,
+                'city' => 'İstanbul',
+                'district' => 'Kadıköy',
+                'address' => 'Kalamış Marina Yanı No:5 Kadıköy / İstanbul',
+                'phone' => '0535 111 22 33',
+                'open_time' => '10:00',
+                'close_time' => '00:00',
+                'favorite_team' => 'fenerbahce'
+            ],
+            [
+                'name' => 'Suadiye Sahil Spor Tesisleri',
+                'owner_name' => 'Oğuzhan Şahin',
+                'username' => 'suadiye_sahil',
+                'password' => $passHash,
+                'city' => 'İstanbul',
+                'district' => 'Kadıköy',
+                'address' => 'Suadiye Plaj Yolu No:30 Kadıköy / İstanbul',
+                'phone' => '0536 999 00 11',
+                'open_time' => '14:00',
+                'close_time' => '02:00',
+                'favorite_team' => 'besiktas'
+            ],
+            [
+                'name' => 'Göztepe Park Spor Kompleksi',
+                'owner_name' => 'Serkan Aksoy',
+                'username' => 'goztepe_park',
+                'password' => $passHash,
+                'city' => 'İstanbul',
+                'district' => 'Kadıköy',
+                'address' => 'Bağdat Cad. Göztepe Parkı Yanı Kadıköy / İstanbul',
+                'phone' => '0507 888 99 00',
+                'open_time' => '13:00',
+                'close_time' => '01:00',
+                'favorite_team' => 'galatasaray'
+            ],
+            [
+                'name' => 'Beşiktaş VIP Spor Kompleksi',
+                'owner_name' => 'Ahmet Nur',
+                'username' => 'besiktas_arena',
+                'password' => $passHash,
+                'city' => 'İstanbul',
+                'district' => 'Beşiktaş',
+                'address' => 'Abbasağa Mah. Ihlamur Cad. No:12 Beşiktaş / İstanbul',
+                'phone' => '0541 222 33 44',
+                'open_time' => '14:00',
+                'close_time' => '02:00',
+                'favorite_team' => 'besiktas'
+            ],
+            [
+                'name' => 'Çankaya Başkent Spor Arena',
+                'owner_name' => 'Burak Demir',
+                'username' => 'cankaya_baskent',
+                'password' => $passHash,
+                'city' => 'Ankara',
+                'district' => 'Çankaya',
+                'address' => 'Tunalı Hilmi Cad. No:88 Çankaya / Ankara',
+                'phone' => '0505 777 88 99',
+                'open_time' => '12:00',
+                'close_time' => '00:00',
+                'favorite_team' => 'galatasaray'
+            ]
+        ];
+
         $insFac = $pdo->prepare("INSERT INTO facilities (name, owner_name, username, password, city, district, address, phone, open_time, close_time, favorite_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $insFac->execute([
-            'Kadıköy Şampiyonlar Spor Kompleksi',
-            'Mehmet Kaya',
-            'kadikoy_arena',
-            $passHash,
-            'İstanbul',
-            'Kadıköy',
-            'Caferağa Mah. Moda Cad. No:45 Kadıköy / İstanbul',
-            '0532 555 12 34',
-            '13:00',
-            '01:00',
-            'galatasaray'
-        ]);
+        foreach ($facilities as $f) {
+            $insFac->execute(array_values($f));
+        }
 
-        // Demo Fields
         $insFld = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee) VALUES (?, ?, ?, ?)");
-        $insFld->execute([1, 'Saha 1', 'Kapalı Saha', 1200.00]);
-        $insFld->execute([1, 'Saha 2', 'Açık Saha', 1100.00]);
-
-        // Demo Player
-        $insU = $pdo->prepare("INSERT INTO users (full_name, username, password, phone, favorite_team) VALUES (?, ?, ?, ?, ?)");
-        $insU->execute(['Ahmet Yılmaz (Oyuncu)', 'oyuncu1', $passHash, '0532 555 12 34', 'galatasaray']);
+        for ($i = 1; $i <= count($facilities); $i++) {
+            $insFld->execute([$i, 'Saha 1', 'Kapalı Saha', 1200.00]);
+            $insFld->execute([$i, 'Saha 2', 'Açık Saha', 1100.00]);
+        }
     }
 
 } catch (PDOException $sqle) {
-    // Suppress schema check errors if tables already exist
+    // Suppress schema check errors
 }
 
 return $pdo;

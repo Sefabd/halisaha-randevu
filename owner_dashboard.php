@@ -1,5 +1,5 @@
 <?php
-// owner_dashboard.php - Tesis İşletmecisi Paneli (Logo & Renkli Saat Matrisi)
+// owner_dashboard.php - Tesis İşletmecisi Paneli (Logo, Temiz Tablo & Renkli Saat Matrisi)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -103,7 +103,7 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
             <div class="d-flex align-items-center gap-3">
                 <!-- Color Legend -->
                 <div class="d-flex align-items-center gap-2 fs-8">
-                    <span class="badge bg-success bg-opacity-10 text-success border border-success">🟢 Boş (Elden Kayıt Yap)</span>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success">🟢 Boş (Elden Kayıt)</span>
                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">🔴 Alınan Randevu</span>
                     <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">🟡 Abonmanlı</span>
                 </div>
@@ -121,7 +121,7 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
         </div>
     </section>
 
-    <div class="row g-4 mb-5">
+    <div class="row g-4 mb-4">
         <!-- 1. TESİS AYARLARI VE DİNAMİK İL/İLÇE DROPDOWN -->
         <div class="col-lg-5">
             <div class="minimal-card p-4 h-100">
@@ -212,9 +212,9 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-borderless align-middle m-0">
-                        <thead>
-                            <tr class="text-muted fs-7 border-bottom">
+                    <table class="table table-hover align-middle m-0 fs-7">
+                        <thead class="bg-light text-muted border-bottom">
+                            <tr>
                                 <th>SAHA ADI</th>
                                 <th>TİPİ</th>
                                 <th>SAATLİK ÜCRET</th>
@@ -228,22 +228,22 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
         </div>
     </div>
 
-    <!-- 3. KENDİ SAHALARIMIN RANDEVU LİSTESİ -->
+    <!-- 3. KENDİ SAHALARIMIN RANDEVU LİSTESİ (TEMİZ GÖRSEL TABLO REVİZYONU - SCREENSHOT 5 FIX) -->
     <section class="minimal-card p-4 mb-5">
         <h4 class="fw-bold text-dark mb-3 fs-5"><i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevu Listesi</h4>
         <div class="table-responsive">
-            <table class="table-minimal">
-                <thead>
+            <table class="table table-hover align-middle m-0 fs-7">
+                <thead class="table-light text-muted border-bottom">
                     <tr>
-                        <th>TAKIM ADI</th>
-                        <th>YETKİLİ KİŞİ</th>
-                        <th>TELEFON</th>
-                        <th>SAHA</th>
-                        <th>TARİH</th>
-                        <th>SAAT</th>
-                        <th>ÜCRET</th>
-                        <th>DURUM</th>
-                        <th class="text-end">İŞLEMLER</th>
+                        <th class="py-3">TAKIM ADI</th>
+                        <th class="py-3">YETKİLİ KİŞİ</th>
+                        <th class="py-3">TELEFON</th>
+                        <th class="py-3">SAHA</th>
+                        <th class="py-3">TARİH</th>
+                        <th class="py-3">SAAT</th>
+                        <th class="py-3">ÜCRET</th>
+                        <th class="py-3">DURUM</th>
+                        <th class="py-3 text-end">İŞLEMLER</th>
                     </tr>
                 </thead>
                 <tbody id="ownerReservationsBody"></tbody>
@@ -282,13 +282,15 @@ $current_team = $_SESSION['user_team'] ?? 'neutral';
                     <input type="hidden" name="field_id" id="modal_field_id" value="0">
                     <div class="mb-3">
                         <label class="form-label text-muted fs-7 fw-semibold">SAHA ADI *</label>
-                        <input type="text" class="form-control" name="field_name" id="modal_field_name" required placeholder="Örn: Saha 1">
+                        <input type="text" class="form-control" name="field_name" id="modal_field_name" required placeholder="Örn: Futbol Sahası 1">
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-muted fs-7 fw-semibold">SAHA TİPİ</label>
                         <select class="form-select" name="field_type" id="modal_field_type">
-                            <option value="Kapalı Saha">Kapalı Saha</option>
-                            <option value="Açık Saha">Açık Saha</option>
+                            <option value="Kapalı Futbol Sahası">⚽ Kapalı Futbol Sahası</option>
+                            <option value="Açık Futbol Sahası">⚽ Açık Futbol Sahası</option>
+                            <option value="Kapalı Basketbol Sahası">🏀 Kapalı Basketbol Sahası</option>
+                            <option value="Açık Tenis Kortu">🎾 Açık Tenis Kortu</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -616,15 +618,15 @@ async function loadOwnerReservations() {
             if (r.status === 'Onaylandı') approvedCount++;
 
             html += `<tr>
-                <td class="fw-bold text-dark">${escapeHtml(r.team_name)}</td>
-                <td>${escapeHtml(r.contact_name)}</td>
-                <td>${escapeHtml(r.phone)}</td>
-                <td><span class="badge bg-light text-dark border">${escapeHtml(r.field_name)}</span></td>
-                <td class="text-primary fw-semibold">${r.reservation_date}</td>
-                <td class="text-dark fw-bold">${r.reservation_time}</td>
-                <td class="text-success fw-bold">₺${parseFloat(r.fee).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
-                <td>${getStatusBadge(r.status)}</td>
-                <td class="text-end">
+                <td class="fw-bold text-dark px-3 py-3">${escapeHtml(r.team_name)}</td>
+                <td class="px-3 py-3">${escapeHtml(r.contact_name)}</td>
+                <td class="px-3 py-3">${escapeHtml(r.phone)}</td>
+                <td class="px-3 py-3"><span class="badge bg-light text-dark border px-2 py-1">${escapeHtml(r.field_name)}</span></td>
+                <td class="px-3 py-3 text-primary fw-semibold">${r.reservation_date}</td>
+                <td class="px-3 py-3 text-dark fw-bold">${r.reservation_time}</td>
+                <td class="px-3 py-3 text-success fw-bold">₺${parseFloat(r.fee).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
+                <td class="px-3 py-3">${getStatusBadge(r.status)}</td>
+                <td class="px-3 py-3 text-end">
                     <button class="btn btn-sm btn-outline-danger" onclick="cancelReservation(${r.id})">İptal Et / Sil</button>
                 </td>
             </tr>`;
@@ -665,10 +667,10 @@ async function cancelReservation(id) {
 
 function getStatusBadge(status) {
     switch (status) {
-        case 'Onaylandı': return `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Onaylandı</span>`;
-        case 'Tamamlandı': return `<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">Tamamlandı</span>`;
-        case 'İptal': return `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">İptal</span>`;
-        default: return `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">Bekliyor</span>`;
+        case 'Onaylandı': return `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">Onaylandı</span>`;
+        case 'Tamamlandı': return `<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1">Tamamlandı</span>`;
+        case 'İptal': return `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">İptal</span>`;
+        default: return `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">Bekliyor</span>`;
     }
 }
 

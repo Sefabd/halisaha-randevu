@@ -3,7 +3,6 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-// Login page is ALWAYS default Emerald Green ('neutral')
 ?>
 <!DOCTYPE html>
 <html lang="tr" data-team="neutral">
@@ -18,44 +17,44 @@ if (session_status() === PHP_SESSION_NONE) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="d-flex align-items-center justify-content-center py-5 min-vh-100">
+<body class="d-flex align-items-center justify-content-center py-4 min-vh-100 bg-light">
 
-<div class="container max-w-850">
+<div class="container max-w-650">
     
     <!-- Brand Header -->
-    <div class="text-center mb-4">
-        <div class="d-inline-flex align-items-center gap-2 brand-badge fs-4 mb-2">
+    <div class="text-center mb-3">
+        <div class="d-inline-flex align-items-center gap-2 brand-badge fs-5 mb-2">
             <i class="fa-solid fa-futbol"></i> SahaNet PRO
         </div>
-        <h1 class="display-6 fw-extrabold text-dark">SPOR TESİSİ REZERVASYON & YÖNETİMİ</h1>
-        <p class="text-muted fs-6">Giriş yapın veya saniyeler içinde yeni hesabınızı oluşturun.</p>
+        <h2 class="fw-extrabold text-dark fs-4 mb-1">SPOR TESİSİ REZERVASYON & YÖNETİMİ</h2>
+        <p class="text-muted fs-7 mb-0">Giriş yapın veya saniyeler içinde yeni hesabınızı oluşturun.</p>
     </div>
 
     <!-- Role Selection Tabs -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-6">
-            <div class="role-card active text-center h-100" id="cardPlayer" onclick="selectRole('player')">
-                <div class="role-icon mx-auto">
+    <div class="row g-2 mb-3">
+        <div class="col-6">
+            <div class="role-card active text-center p-3 h-100" id="cardPlayer" onclick="selectRole('player')">
+                <div class="role-icon mx-auto mb-2" style="width:40px; height:40px; font-size:1.1rem;">
                     <i class="fa-solid fa-user-ninja"></i>
                 </div>
-                <h3 class="fw-bold text-dark fs-5 mb-1">OYUNCU / MÜŞTERİ PORTALI</h3>
-                <p class="text-muted fs-7 mb-0">Saha ve kort kiralayın, randevularınızı takip edin.</p>
+                <h4 class="fw-bold text-dark fs-6 mb-0">OYUNCU PORTALI</h4>
+                <span class="text-muted fs-8">Randevu al ve kiralama yap</span>
             </div>
         </div>
 
-        <div class="col-md-6">
-            <div class="role-card text-center h-100" id="cardOwner" onclick="selectRole('owner')">
-                <div class="role-icon mx-auto">
+        <div class="col-6">
+            <div class="role-card text-center p-3 h-100" id="cardOwner" onclick="selectRole('owner')">
+                <div class="role-icon mx-auto mb-2" style="width:40px; height:40px; font-size:1.1rem;">
                     <i class="fa-solid fa-stadium"></i>
                 </div>
-                <h3 class="fw-bold text-dark fs-5 mb-1">TESİS İŞLETMECİSİ</h3>
-                <p class="text-muted fs-7 mb-0">Tesisinizi kaydetin, sahalarınızı yönetin.</p>
+                <h4 class="fw-bold text-dark fs-6 mb-0">TESİS İŞLETMECİSİ</h4>
+                <span class="text-muted fs-8">Tesisini ve sahalarını yönet</span>
             </div>
         </div>
     </div>
 
     <!-- Form Container -->
-    <div class="minimal-card p-4 p-md-5">
+    <div class="minimal-card p-4">
         <div id="authAlert" class="alert alert-danger bg-danger bg-opacity-10 border border-danger border-opacity-25 text-danger d-none rounded-3 mb-3 fs-7"></div>
 
         <!-- ==================== OYUNCU SECTION ==================== -->
@@ -63,10 +62,10 @@ if (session_status() === PHP_SESSION_NONE) {
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <ul class="nav nav-pills" id="playerTab" role="tablist">
                     <li class="nav-item">
-                        <button class="nav-link active fw-bold" id="player-login-tab" data-bs-toggle="pill" data-bs-target="#player-login" type="button">Oyuncu Girişi</button>
+                        <button class="nav-link active fw-bold py-1 px-3 fs-7" id="player-login-tab" data-bs-toggle="pill" data-bs-target="#player-login" type="button">Oyuncu Girişi</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link fw-bold" id="player-register-tab" data-bs-toggle="pill" data-bs-target="#player-register" type="button">Oyuncu Kayıt Ol</button>
+                        <button class="nav-link fw-bold py-1 px-3 fs-7" id="player-register-tab" data-bs-toggle="pill" data-bs-target="#player-register" type="button">Oyuncu Kayıt Ol</button>
                     </li>
                 </ul>
                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fs-8" onclick="fillDemoPlayer()">
@@ -87,8 +86,8 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
                                 <input type="password" class="form-control" name="password" id="p_login_password" required placeholder="••••••••">
                             </div>
-                            <div class="col-12 mt-4">
-                                <button type="submit" class="btn btn-team w-100 py-3 fs-6 fw-bold">
+                            <div class="col-12 mt-3">
+                                <button type="submit" class="btn btn-team w-100 py-2.5 fs-6 fw-bold">
                                     <i class="fa-solid fa-right-to-bracket me-2"></i> OYUNCU GİRİŞİ YAP
                                 </button>
                             </div>
@@ -116,8 +115,8 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
                                 <input type="password" class="form-control" name="password" required placeholder="••••••••">
                             </div>
-                            <div class="col-12 mt-4">
-                                <button type="submit" class="btn btn-team w-100 py-3 fs-6 fw-bold">
+                            <div class="col-12 mt-3">
+                                <button type="submit" class="btn btn-team w-100 py-2.5 fs-6 fw-bold">
                                     <i class="fa-solid fa-user-plus me-2"></i> OYUNCU HESABI OLUŞTUR
                                 </button>
                             </div>
@@ -132,10 +131,10 @@ if (session_status() === PHP_SESSION_NONE) {
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <ul class="nav nav-pills" id="ownerTab" role="tablist">
                     <li class="nav-item">
-                        <button class="nav-link active fw-bold" id="owner-login-tab" data-bs-toggle="pill" data-bs-target="#owner-login" type="button">İşletmeci Girişi</button>
+                        <button class="nav-link active fw-bold py-1 px-3 fs-7" id="owner-login-tab" data-bs-toggle="pill" data-bs-target="#owner-login" type="button">İşletmeci Girişi</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link fw-bold" id="owner-register-tab" data-bs-toggle="pill" data-bs-target="#owner-register" type="button">Tesisini Kaydet</button>
+                        <button class="nav-link fw-bold py-1 px-3 fs-7" id="owner-register-tab" data-bs-toggle="pill" data-bs-target="#owner-register" type="button">Tesisini Kaydet</button>
                     </li>
                 </ul>
                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fs-8" onclick="fillDemoOwner()">
@@ -156,8 +155,8 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
                                 <input type="password" class="form-control" name="password" id="o_login_password" required placeholder="••••••••">
                             </div>
-                            <div class="col-12 mt-4">
-                                <button type="submit" class="btn btn-team w-100 py-3 fs-6 fw-bold">
+                            <div class="col-12 mt-3">
+                                <button type="submit" class="btn btn-team w-100 py-2.5 fs-6 fw-bold">
                                     <i class="fa-solid fa-right-to-bracket me-2"></i> İŞLETME PANELİNE GİRİŞ YAP
                                 </button>
                             </div>
@@ -165,7 +164,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     </form>
                 </div>
 
-                <!-- İşletme Kayıt -->
+                <!-- İşletme Kayıt (DİNAMİK İL / İLÇE DROPDOWN FIX) -->
                 <div class="tab-pane fade" id="owner-register">
                     <form onsubmit="handleOwnerRegister(event)">
                         <div class="row g-3">
@@ -185,14 +184,28 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
                                 <input type="password" class="form-control" name="password" required placeholder="••••••••">
                             </div>
+
+                            <!-- DİNAMİK İL SEÇİNİZ DROPDOWN (SERBEST METİN YERİNE) -->
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">İL *</label>
-                                <input type="text" class="form-control" name="city" value="İstanbul" required>
+                                <select class="form-select" name="city" id="reg_city" onchange="onRegisterCityChange()" required>
+                                    <option value="" disabled selected>İl Seçiniz</option>
+                                    <option value="İstanbul">İstanbul</option>
+                                    <option value="Ankara">Ankara</option>
+                                    <option value="İzmir">İzmir</option>
+                                    <option value="Bursa">Bursa</option>
+                                    <option value="Antalya">Antalya</option>
+                                </select>
                             </div>
+
+                            <!-- DİNAMİK İLÇE SEÇİNİZ DROPDOWN -->
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">İLÇE *</label>
-                                <input type="text" class="form-control" name="district" value="Kadıköy" required>
+                                <select class="form-select" name="district" id="reg_district" required>
+                                    <option value="" disabled selected>İlçe Seçiniz</option>
+                                </select>
                             </div>
+
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
                                 <input type="text" class="form-control" name="phone" required placeholder="0532 555 12 34">
@@ -201,8 +214,8 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <label class="form-label text-muted fs-7 fw-semibold">ADRES *</label>
                                 <input type="text" class="form-control" name="address" required placeholder="Moda Cad. No:12">
                             </div>
-                            <div class="col-12 mt-4">
-                                <button type="submit" class="btn btn-team w-100 py-3 fs-6 fw-bold">
+                            <div class="col-12 mt-3">
+                                <button type="submit" class="btn btn-team w-100 py-2.5 fs-6 fw-bold">
                                     <i class="fa-solid fa-stadium me-2"></i> TESİSİNİ KAYDET VE PANELİ AÇ
                                 </button>
                             </div>
@@ -218,6 +231,24 @@ if (session_status() === PHP_SESSION_NONE) {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+const CITIES_DISTRICTS = {
+    'İstanbul': ['Kadıköy', 'Beşiktaş', 'Üsküdar', 'Şişli', 'Beyoğlu', 'Maltepe', 'Ataşehir', 'Ümraniye', 'Bakırköy', 'Fatih', 'Pendik', 'Sarıyer'],
+    'Ankara': ['Çankaya', 'Keçiören', 'Yenimahalle', 'Mamak', 'Etimesgut', 'Sincan', 'Gölbaşı'],
+    'İzmir': ['Konak', 'Karşıyaka', 'Bornova', 'Buca', 'Alsancak', 'Çiğli', 'Gaziemir'],
+    'Bursa': ['Nilüfer', 'Osmangazi', 'Yıldırım', 'Mudanya'],
+    'Antalya': ['Muratpaşa', 'Konyaaltı', 'Kepez', 'Alanya']
+};
+
+function onRegisterCityChange() {
+    const city = document.getElementById('reg_city').value;
+    const distSelect = document.getElementById('reg_district');
+    const districts = CITIES_DISTRICTS[city] || [];
+
+    let html = `<option value="" disabled selected>İlçe Seçiniz</option>`;
+    html += districts.map(d => `<option value="${d}">${d}</option>`).join('');
+    distSelect.innerHTML = html;
+}
+
 function selectRole(role) {
     const cardP = document.getElementById('cardPlayer');
     const cardO = document.getElementById('cardOwner');

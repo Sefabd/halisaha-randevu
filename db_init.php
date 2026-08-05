@@ -1,9 +1,9 @@
 <?php
-// db_init.php - Kadıköy İçin 5 Adet Tesis Ve Farklı Şehir Örnekleri
+// db_init.php - Tesisler, Futbol, Basketbol ve Tenis Sahaları Kurulumu
 
 $pdo = require __DIR__ . '/config/db.php';
 
-echo "<h2>⚽ SahaNet PRO Veritabanı & Kadıköy Tesis Kurulumu</h2>";
+echo "<h2>⚽ SahaNet PRO Veritabanı & Spor Tesisleri Kurulumu</h2>";
 
 try {
     $passHash = password_hash('123', PASSWORD_DEFAULT);
@@ -11,9 +11,9 @@ try {
     $pdo->exec("DELETE FROM facilities; DELETE FROM facility_fields; DELETE FROM field_reservations;");
 
     $facilities = [
-        // 1. Kadıköy - Şampiyonlar
+        // Kadıköy Tesisleri
         [
-            'name' => 'Kadıköy Şampiyonlar Halı Saha Kompleksi',
+            'name' => 'Kadıköy Şampiyonlar Spor Kompleksi',
             'owner_name' => 'Mehmet Kaya',
             'username' => 'kadikoy_arena',
             'password' => $passHash,
@@ -25,9 +25,8 @@ try {
             'close_time' => '01:00',
             'favorite_team' => 'galatasaray'
         ],
-        // 2. Kadıköy - Moda Park
         [
-            'name' => 'Moda Park VIP Halı Saha Tesisleri',
+            'name' => 'Moda Park VIP Spor Tesisleri',
             'owner_name' => 'Caner Erkin',
             'username' => 'moda_park',
             'password' => $passHash,
@@ -39,7 +38,6 @@ try {
             'close_time' => '02:00',
             'favorite_team' => 'fenerbahce'
         ],
-        // 3. Kadıköy - Kalamış
         [
             'name' => 'Fenerbahçe Kalamış Spor Tesisleri',
             'owner_name' => 'Ali Koç',
@@ -53,9 +51,8 @@ try {
             'close_time' => '00:00',
             'favorite_team' => 'fenerbahce'
         ],
-        // 4. Kadıköy - Suadiye
         [
-            'name' => 'Suadiye Sahil Halı Saha Tesisleri',
+            'name' => 'Suadiye Sahil Spor Tesisleri',
             'owner_name' => 'Oğuzhan Şahin',
             'username' => 'suadiye_sahil',
             'password' => $passHash,
@@ -67,9 +64,8 @@ try {
             'close_time' => '02:00',
             'favorite_team' => 'besiktas'
         ],
-        // 5. Kadıköy - Göztepe
         [
-            'name' => 'Göztepe Park Halı Saha Kompleksi',
+            'name' => 'Göztepe Park Spor Kompleksi',
             'owner_name' => 'Serkan Aksoy',
             'username' => 'goztepe_park',
             'password' => $passHash,
@@ -95,21 +91,6 @@ try {
             'open_time' => '14:00',
             'close_time' => '02:00',
             'favorite_team' => 'besiktas'
-        ],
-
-        // Ankara
-        [
-            'name' => 'Çankaya Başkent Halı Saha Arena',
-            'owner_name' => 'Burak Demir',
-            'username' => 'cankaya_baskent',
-            'password' => $passHash,
-            'city' => 'Ankara',
-            'district' => 'Çankaya',
-            'address' => 'Tunalı Hilmi Cad. No:88 Çankaya / Ankara',
-            'phone' => '0505 777 88 99',
-            'open_time' => '12:00',
-            'close_time' => '00:00',
-            'favorite_team' => 'galatasaray'
         ]
     ];
 
@@ -118,14 +99,16 @@ try {
         $insFac->execute(array_values($f));
     }
 
-    // Sahaları Ekle (Saha 1, Saha 2, Saha 3 - Temiz İsimler)
+    // Sahaları Ekle (Futbol, Basketbol ve Tenis Ayrımı)
     $insFld = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee) VALUES (?, ?, ?, ?)");
     for ($i = 1; $i <= count($facilities); $i++) {
-        $insFld->execute([$i, 'Saha 1', 'Kapalı Saha', 1200.00]);
-        $insFld->execute([$i, 'Saha 2', 'Açık Saha', 1100.00]);
+        $insFld->execute([$i, 'Futbol Sahası 1', 'Kapalı Futbol Sahası', 1200.00]);
+        $insFld->execute([$i, 'Futbol Sahası 2', 'Açık Futbol Sahası', 1100.00]);
+        $insFld->execute([$i, 'Basketbol Sahası A', 'Kapalı Basketbol Sahası', 950.00]);
+        $insFld->execute([$i, 'Tenis Kortu 1', 'Açık Tenis Kortu', 850.00]);
     }
 
-    echo "<p>🎉 Kadıköy ve Diğer Bölgeler İçin Tesisler Başarıyla Yüklendi!</p>";
+    echo "<p>🎉 Spor Tesisleri (Futbol, Basketbol, Tenis) Başarıyla Yüklendi!</p>";
     echo "<p>✨ <a href='index.php'>Ana Sayfaya Git 👉</a></p>";
 
 } catch (PDOException $e) {
