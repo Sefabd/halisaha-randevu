@@ -1,5 +1,5 @@
 <?php
-// login.php - SahaNet PRO Account Login, Registration with Email & Email Link Password Reset Portal
+// login.php - SahaNet PRO Account Login & Registration Portal
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -17,7 +17,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="d-flex align-items-center justify-content-center py-4 min-vh-100 bg-light position-relative">
+<body class="d-flex align-items-center justify-content-center py-4 min-vh-100 bg-light">
 
 <div class="container max-w-650">
     
@@ -29,7 +29,7 @@ if (session_status() === PHP_SESSION_NONE) {
             </div>
         </a>
         <h2 class="fw-extrabold text-dark fs-4 mb-1">SPOR TESİSİ REZERVASYON & YÖNETİMİ</h2>
-        <p class="text-muted fs-7 mb-0">E-posta adresinizle giriş yapın veya saniyeler içinde kaydolun.</p>
+        <p class="text-muted fs-7 mb-0">Giriş yapın veya saniyeler içinde yeni hesabınızı oluşturun.</p>
     </div>
 
     <!-- Role Selection Tabs -->
@@ -81,14 +81,11 @@ if (session_status() === PHP_SESSION_NONE) {
                     <form onsubmit="handlePlayerLogin(event)">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI VEYA E-POSTA *</label>
-                                <input type="text" class="form-control" name="username" id="p_login_username" required placeholder="oyuncu1 veya ahmet@gmail.com">
+                                <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI *</label>
+                                <input type="text" class="form-control" name="username" id="p_login_username" required placeholder="Örn: oyuncu1">
                             </div>
                             <div class="col-md-6">
-                                <div class="d-flex justify-content-between">
-                                    <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
-                                    <a href="#" class="text-primary text-decoration-none fs-8 fw-semibold" onclick="openForgotPasswordModal()">Şifremi Unuttum?</a>
-                                </div>
+                                <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
                                 <input type="password" class="form-control" name="password" id="p_login_password" required placeholder="••••••••">
                             </div>
                             <div class="col-12 mt-3">
@@ -100,17 +97,13 @@ if (session_status() === PHP_SESSION_NONE) {
                     </form>
                 </div>
 
-                <!-- Oyuncu Kayıt (E-Posta Dahil) -->
+                <!-- Oyuncu Kayıt -->
                 <div class="tab-pane fade" id="player-register">
                     <form onsubmit="handlePlayerRegister(event)">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">AD SOYAD *</label>
                                 <input type="text" class="form-control" name="full_name" required placeholder="Ahmet Yılmaz">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label text-muted fs-7 fw-semibold">E-POSTA ADRESİ (GMAİL) *</label>
-                                <input type="email" class="form-control" name="email" required placeholder="ahmet@gmail.com">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
@@ -120,7 +113,7 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI *</label>
                                 <input type="text" class="form-control" name="username" required placeholder="Örn: ahmet10">
                             </div>
-                            <div class="col-12">
+                            <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
                                 <input type="password" class="form-control" name="password" required placeholder="••••••••">
                             </div>
@@ -157,14 +150,11 @@ if (session_status() === PHP_SESSION_NONE) {
                     <form onsubmit="handleOwnerLogin(event)">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI VEYA E-POSTA *</label>
-                                <input type="text" class="form-control" name="username" id="o_login_username" required placeholder="kadikoy_arena veya kadikoy@gmail.com">
+                                <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI *</label>
+                                <input type="text" class="form-control" name="username" id="o_login_username" required placeholder="Örn: kadikoy_arena">
                             </div>
                             <div class="col-md-6">
-                                <div class="d-flex justify-content-between">
-                                    <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
-                                    <a href="#" class="text-primary text-decoration-none fs-8 fw-semibold" onclick="openForgotPasswordModal()">Şifremi Unuttum?</a>
-                                </div>
+                                <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
                                 <input type="password" class="form-control" name="password" id="o_login_password" required placeholder="••••••••">
                             </div>
                             <div class="col-12 mt-3">
@@ -176,7 +166,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     </form>
                 </div>
 
-                <!-- İşletme Kayıt (E-Posta Dahil) -->
+                <!-- İşletme Kayıt -->
                 <div class="tab-pane fade" id="owner-register">
                     <form onsubmit="handleOwnerRegister(event)">
                         <div class="row g-3">
@@ -187,10 +177,6 @@ if (session_status() === PHP_SESSION_NONE) {
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">YETKİLİ AD SOYAD *</label>
                                 <input type="text" class="form-control" name="owner_name" required placeholder="Mehmet Kaya">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label text-muted fs-7 fw-semibold">E-POSTA ADRESİ (GMAİL) *</label>
-                                <input type="email" class="form-control" name="email" required placeholder="kadikoy@gmail.com">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI *</label>
@@ -221,7 +207,7 @@ if (session_status() === PHP_SESSION_NONE) {
                                 <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
                                 <input type="text" class="form-control" name="phone" required placeholder="0532 555 12 34">
                             </div>
-                            <div class="col-12">
+                            <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">ADRES *</label>
                                 <input type="text" class="form-control" name="address" required placeholder="Moda Cad. No:12">
                             </div>
@@ -238,55 +224,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
     </div>
 
-</div>
-
-<!-- Modal: GMAİL E-POSTA BAĞLANTISI İLE ŞİFRE SIFIRLAMA MODALI -->
-<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-bottom">
-                <h5 class="modal-title fw-bold"><i class="fa-solid fa-envelope-open-text text-danger me-2"></i> E-Posta (Gmail) İle Şifre Sıfırlama</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-
-                <!-- SIMULATED INBOX EMAIL CARD -->
-                <div id="gmailEmailSimulationCard" class="d-none minimal-card p-3 border-danger mb-3 bg-light shadow-sm">
-                    <div class="d-flex align-items-center justify-content-between mb-2 border-bottom pb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="fa-solid fa-envelope text-danger fs-5"></i>
-                            <div>
-                                <strong class="text-dark fs-7 d-block">SahaNet PRO <span class="text-muted fw-normal">&lt;noreply@sahanetpro.com&gt;</span></strong>
-                                <span class="text-muted fs-8">Kime: <span id="mailRecipientEmail" class="fw-bold text-dark"></span></span>
-                            </div>
-                        </div>
-                        <span class="badge bg-danger bg-opacity-10 text-danger border">Gelen Kutusu</span>
-                    </div>
-
-                    <h6 class="fw-bold text-dark fs-7 mb-2">Konu: SahaNet PRO - Şifre Sıfırlama Bağlantınız</h6>
-                    <p class="text-muted fs-8 mb-3">Hesabınızın şifresini sıfırlamak için aşağıdaki e-posta bağlantısına tıklayabilirsiniz:</p>
-
-                    <div class="text-center">
-                        <a href="#" id="mailResetActionBtn" target="_blank" class="btn btn-danger btn-sm fw-bold px-3 py-2 w-100">
-                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> 👉 E-POSTADAKİ ŞİFRE SIFIRLAMA LİNKİNE TIKLA
-                        </a>
-                    </div>
-                </div>
-
-                <!-- REQUEST FORM -->
-                <form id="formSendResetEmail" onsubmit="handleSendResetEmail(event)">
-                    <div class="mb-3">
-                        <label class="form-label text-muted fs-7 fw-semibold">KAYITLI E-POSTA ADRESİNİZ *</label>
-                        <input type="email" class="form-control fw-bold" id="resetEmailInput" required placeholder="ahmet@gmail.com">
-                    </div>
-                    <button type="submit" class="btn btn-team w-100 fw-bold">
-                        <i class="fa-solid fa-paper-plane me-1"></i> E-Postama Şifre Sıfırlama Bağlantısı Gönder
-                    </button>
-                </form>
-
-            </div>
-        </div>
-    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -342,33 +279,6 @@ function showAlert(msg) {
     const box = document.getElementById('authAlert');
     box.classList.remove('d-none');
     box.innerText = msg;
-}
-
-function openForgotPasswordModal() {
-    document.getElementById('formSendResetEmail').classList.remove('d-none');
-    document.getElementById('gmailEmailSimulationCard').classList.add('d-none');
-    new bootstrap.Modal(document.getElementById('forgotPasswordModal')).show();
-}
-
-async function handleSendResetEmail(e) {
-    e.preventDefault();
-    const email = document.getElementById('resetEmailInput').value;
-
-    const res = await fetch('api/auth.php?action=send_reset_email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `email=${encodeURIComponent(email)}`
-    });
-    const json = await res.json();
-
-    if (json.status === 'success') {
-        document.getElementById('mailRecipientEmail').innerText = json.email;
-        document.getElementById('mailResetActionBtn').href = json.reset_link;
-        document.getElementById('gmailEmailSimulationCard').classList.remove('d-none');
-        document.getElementById('formSendResetEmail').classList.add('d-none');
-    } else {
-        alert(json.message);
-    }
 }
 
 async function handlePlayerLogin(e) {
