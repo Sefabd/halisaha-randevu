@@ -1,5 +1,5 @@
 <?php
-// api/auth.php - Authentication, Profile, Password Reset & User Reservations API
+// api/auth.php - Authentication, Profile, OTP Email Password Reset & User Reservations API
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -14,7 +14,7 @@ try {
     if ($action === 'login') {
         $username = trim($_POST['username'] ?? '');
         $password = trim($_POST['password'] ?? '');
-        $role = trim($_POST['role'] ?? 'player'); // 'player' or 'owner'
+        $role = trim($_POST['role'] ?? 'player');
 
         if (empty($username) || empty($password)) {
             echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı ve şifrenizi giriniz.']);
@@ -65,7 +65,7 @@ try {
         }
     }
 
-    // 2. REGISTER (PLAYER)
+    // 2. REGISTER
     if ($action === 'register') {
         $full_name = mb_strtoupper(trim($_POST['full_name'] ?? ''), 'UTF-8');
         $username = trim($_POST['username'] ?? '');
@@ -77,7 +77,6 @@ try {
             exit;
         }
 
-        // Check unique username
         $chk = $pdo->prepare("SELECT id FROM users WHERE username = ?");
         $chk->execute([$username]);
         if ($chk->fetch()) {
@@ -100,7 +99,96 @@ try {
         exit;
     }
 
-    // 3. SET TEAM THEME
+    // 3. SEND EMAIL OTP CODE FOR PASSWORD RESET
+    if ($action === 'send_reset_code') {
+        $account = trim($_POST['account'] ?? '');
+
+        if (empty($account)) {
+            echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı veya telefon adresinizi giriniz.']);
+            exit;
+        }
+
+        $user_found = false;
+        $account_type = 'player';
+        $user_id = 0;
+
+        // Check users
+        $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE username = ? OR phone = ?");
+        $stmt->execute([$account, $account]);
+        $u = $stmt->fetch();
+
+        if ($u) {
+            $user_found = true;
+            $account_type = 'player';
+            $user_id = $u['id'];
+        } else {
+            // Check facilities (owner)
+            $stmtFac = $pdo->prepare("SELECT id, username, name FROM facilities WHERE username = ? OR phone = ?");
+            $stmtFac->execute([$account, $account]);
+            $f = $stmtFac->fetch();
+
+            if ($f) {
+                $user_found = true;
+                $account_type = 'owner';
+                $user_id = $f['id'];
+            }
+        }
+
+        if (!$user_found) {
+            echo json_encode(['status' => 'error', 'message' => 'Girilen kullanıcı adı veya telefon numarası sistemde bulunamadı.']);
+            exit;
+        }
+
+        // Generate 6-digit OTP
+        $otp = sprintf("%06d", mt_rand(100000, 999999));
+        $_SESSION['reset_otp'] = $otp;
+        $_SESSION['reset_user_id'] = $user_id;
+        $_SESSION['reset_account_type'] = $account_type;
+
+        echo json_encode([
+            'status' => 'success',
+            'code' => $otp,
+            'message' => "📧 Gelen Gmail İletisi (Simülasyon): 6 Haneli Doğrulama Kodunuz [ {$otp} ]"
+        ]);
+        exit;
+    }
+
+    // 4. VERIFY OTP AND RESET PASSWORD
+    if ($action === 'verify_reset_code') {
+        $code = trim($_POST['code'] ?? '');
+        $new_password = trim($_POST['new_password'] ?? '');
+
+        if (empty($code) || empty($new_password)) {
+            echo json_encode(['status' => 'error', 'message' => 'Lütfen doğrulama kodunu ve yeni şifrenizi giriniz.']);
+            exit;
+        }
+
+        if (!isset($_SESSION['reset_otp']) || $_SESSION['reset_otp'] !== $code) {
+            echo json_encode(['status' => 'error', 'message' => 'Girdiğiniz 6 haneli doğrulama kodu hatalı veya süresi dolmuş!']);
+            exit;
+        }
+
+        $user_id = $_SESSION['reset_user_id'];
+        $account_type = $_SESSION['reset_account_type'];
+        $newHash = password_hash($new_password, PASSWORD_DEFAULT);
+
+        if ($account_type === 'player') {
+            $up = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $up->execute([$newHash, $user_id]);
+        } else {
+            $up = $pdo->prepare("UPDATE facilities SET password = ? WHERE id = ?");
+            $up->execute([$newHash, $user_id]);
+        }
+
+        unset($_SESSION['reset_otp']);
+        unset($_SESSION['reset_user_id']);
+        unset($_SESSION['reset_account_type']);
+
+        echo json_encode(['status' => 'success', 'message' => '🎉 Şifreniz başarıyla güncellendi! Yeni şifrenizle giriş yapabilirsiniz.']);
+        exit;
+    }
+
+    // 5. SET TEAM THEME
     if ($action === 'set_team') {
         $team = trim($_POST['team'] ?? 'neutral');
         $_SESSION['user_team'] = $team;
@@ -117,7 +205,7 @@ try {
         exit;
     }
 
-    // 4. GET LOGGED-IN USER PROFILE & RESERVATIONS
+    // 6. GET LOGGED-IN USER PROFILE & RESERVATIONS
     if ($action === 'get_user_profile') {
         if (!isset($_SESSION['user_role'])) {
             echo json_encode(['status' => 'error', 'message' => 'Oturum kapalı']);
@@ -130,7 +218,6 @@ try {
             $stmt->execute([$user_id]);
             $user = $stmt->fetch();
 
-            // Fetch user's reservations by phone or contact_name
             $resStmt = $pdo->prepare("SELECT r.*, f.name as facility_name FROM field_reservations r LEFT JOIN facilities f ON r.facility_id = f.id WHERE r.phone = ? OR r.contact_name = ? ORDER BY r.reservation_date DESC, r.reservation_time ASC");
             $resStmt->execute([$user['phone'], $user['full_name']]);
             $myReservations = $resStmt->fetchAll();
@@ -138,7 +225,6 @@ try {
             echo json_encode(['status' => 'success', 'profile' => $user, 'reservations' => $myReservations]);
             exit;
         } else {
-            // Owner profile
             $owner_id = $_SESSION['owner_id'];
             $stmt = $pdo->prepare("SELECT id, owner_name as full_name, username, phone, favorite_team FROM facilities WHERE id = ?");
             $stmt->execute([$owner_id]);
@@ -149,7 +235,7 @@ try {
         }
     }
 
-    // 5. UPDATE PROFILE & PASSWORD
+    // 7. UPDATE PROFILE
     if ($action === 'update_profile') {
         if (!isset($_SESSION['user_role'])) {
             echo json_encode(['status' => 'error', 'message' => 'Oturum kapalı']);
@@ -188,47 +274,7 @@ try {
         }
     }
 
-    // 6. PASSWORD RESET (FORGOT PASSWORD)
-    if ($action === 'reset_password') {
-        $username_or_phone = trim($_POST['username_or_phone'] ?? '');
-        $new_password = trim($_POST['new_password'] ?? '');
-
-        if (empty($username_or_phone) || empty($new_password)) {
-            echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı/telefon ve yeni şifrenizi giriniz.']);
-            exit;
-        }
-
-        $newHash = password_hash($new_password, PASSWORD_DEFAULT);
-
-        // Check users
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ? OR phone = ?");
-        $stmt->execute([$username_or_phone, $username_or_phone]);
-        $user = $stmt->fetch();
-
-        if ($user) {
-            $up = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-            $up->execute([$newHash, $user['id']]);
-            echo json_encode(['status' => 'success', 'message' => 'Şifreniz başarıyla sıfırlandı. Yeni şifrenizle giriş yapabilirsiniz.']);
-            exit;
-        }
-
-        // Check facilities (owner)
-        $stmtFac = $pdo->prepare("SELECT id FROM facilities WHERE username = ? OR phone = ?");
-        $stmtFac->execute([$username_or_phone, $username_or_phone]);
-        $fac = $stmtFac->fetch();
-
-        if ($fac) {
-            $up = $pdo->prepare("UPDATE facilities SET password = ? WHERE id = ?");
-            $up->execute([$newHash, $fac['id']]);
-            echo json_encode(['status' => 'success', 'message' => 'Tesis şifreniz başarıyla sıfırlandı. Yeni şifrenizle giriş yapabilirsiniz.']);
-            exit;
-        }
-
-        echo json_encode(['status' => 'error', 'message' => 'Girilen kullanıcı adı veya telefon sistemde bulunamadı.']);
-        exit;
-    }
-
-    // 7. LOGOUT
+    // 8. LOGOUT
     if ($action === 'logout') {
         session_unset();
         session_destroy();

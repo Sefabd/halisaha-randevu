@@ -1,5 +1,5 @@
 <?php
-// login.php - SahaNet PRO Account Login, Registration & Password Reset Portal
+// login.php - SahaNet PRO Account Login, Registration & OTP Gmail Password Reset Portal
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -17,7 +17,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="d-flex align-items-center justify-content-center py-4 min-vh-100 bg-light">
+<body class="d-flex align-items-center justify-content-center py-4 min-vh-100 bg-light position-relative">
 
 <div class="container max-w-650">
     
@@ -232,30 +232,53 @@ if (session_status() === PHP_SESSION_NONE) {
 
 </div>
 
-<!-- Modal: ŞİFREMİ UNUTTUM / ŞİFRE SIFIRLAMA MODALI -->
+<!-- Modal: GMAİL / E-POSTA İLE ŞİFRE SIFIRLAMA MODALI (2 ADIMLI) -->
 <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header border-bottom">
-                <h5 class="modal-title fw-bold"><i class="fa-solid fa-key text-warning me-2"></i> Şifremi Sıfırla</h5>
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-envelope-open-text text-danger me-2"></i> Gmail / E-Posta Şifre Sıfırlama</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form onsubmit="handleResetPassword(event)">
-                <div class="modal-body p-4">
+            <div class="modal-body p-4">
+
+                <!-- GMAIL NOTIFICATION BANNER (SIMULATION) -->
+                <div id="gmailNotificationBanner" class="d-none alert alert-danger bg-danger bg-opacity-10 border border-danger text-dark p-3 rounded-3 mb-3 fs-7 shadow-sm">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="fa-solid fa-envelope text-danger fs-5"></i>
+                        <strong class="text-danger">📧 Gelen Gmail İletisi:</strong>
+                    </div>
+                    <span id="gmailBannerContent" class="fw-bold fs-6 text-dark d-block"></span>
+                    <small class="text-muted">Aşağıdaki alana 6 haneli doğrulama kodunu girerek yeni şifrenizi belirleyin.</small>
+                </div>
+
+                <!-- STEP 1: REQUEST CODE -->
+                <form id="formRequestCode" onsubmit="handleSendResetCode(event)">
                     <div class="mb-3">
                         <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI VEYA TELEFON *</label>
-                        <input type="text" class="form-control" name="username_or_phone" required placeholder="Örn: oyuncu1 veya 0532...">
+                        <input type="text" class="form-control fw-bold" id="resetAccountInput" required placeholder="Örn: oyuncu1 veya 0532...">
+                    </div>
+                    <button type="submit" class="btn btn-team w-100 fw-bold">
+                        <i class="fa-solid fa-paper-plane me-1"></i> 6 Haneli Gmail Kodu Gönder
+                    </button>
+                </form>
+
+                <!-- STEP 2: VERIFY CODE & NEW PASSWORD -->
+                <form id="formVerifyCode" class="d-none" onsubmit="handleVerifyResetCode(event)">
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-7 fw-semibold">6 HANELİ GMAİL DOĞRULAMA KODU *</label>
+                        <input type="text" class="form-control text-center fw-extrabold fs-5 tracking-wide" id="otpCodeInput" maxlength="6" required placeholder="123456">
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-muted fs-7 fw-semibold">YENİ ŞİFRE *</label>
-                        <input type="password" class="form-control" name="new_password" required placeholder="Yeni şifreniz">
+                        <input type="password" class="form-control" id="otpNewPassword" required placeholder="Yeni şifrenizi yazın">
                     </div>
-                </div>
-                <div class="modal-footer border-top">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-team fw-bold">Şifreyi Sıfırla</button>
-                </div>
-            </form>
+                    <button type="submit" class="btn btn-success w-100 fw-bold">
+                        <i class="fa-solid fa-check-circle me-1"></i> Kodu Doğrula & Şifreyi Kaydet
+                    </button>
+                </form>
+
+            </div>
         </div>
     </div>
 </div>
@@ -316,13 +339,44 @@ function showAlert(msg) {
 }
 
 function openForgotPasswordModal() {
+    document.getElementById('formRequestCode').classList.remove('d-none');
+    document.getElementById('formVerifyCode').classList.add('d-none');
+    document.getElementById('gmailNotificationBanner').classList.add('d-none');
     new bootstrap.Modal(document.getElementById('forgotPasswordModal')).show();
 }
 
-async function handleResetPassword(e) {
+async function handleSendResetCode(e) {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const res = await fetch('api/auth.php?action=reset_password', { method: 'POST', body: formData });
+    const account = document.getElementById('resetAccountInput').value;
+
+    const res = await fetch('api/auth.php?action=send_reset_code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `account=${encodeURIComponent(account)}`
+    });
+    const json = await res.json();
+
+    if (json.status === 'success') {
+        document.getElementById('gmailBannerContent').innerText = json.message;
+        document.getElementById('gmailNotificationBanner').classList.remove('d-none');
+        document.getElementById('formRequestCode').classList.add('d-none');
+        document.getElementById('formVerifyCode').classList.remove('d-none');
+        document.getElementById('otpCodeInput').value = json.code;
+    } else {
+        alert(json.message);
+    }
+}
+
+async function handleVerifyResetCode(e) {
+    e.preventDefault();
+    const code = document.getElementById('otpCodeInput').value;
+    const newPassword = document.getElementById('otpNewPassword').value;
+
+    const res = await fetch('api/auth.php?action=verify_reset_code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `code=${encodeURIComponent(code)}&new_password=${encodeURIComponent(newPassword)}`
+    });
     const json = await res.json();
     alert(json.message);
     if (json.status === 'success') {

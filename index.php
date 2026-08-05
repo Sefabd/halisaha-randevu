@@ -748,7 +748,7 @@ function isSlotClosedByRange(dateStr, timeStr, fieldObj) {
     return (slotDt >= startDt && slotDt <= endDt);
 }
 
-// KRONOLOJİK SAAT DİZİLİMİ VE HASSAS SAAT ARALIKLI KAPAMA CONTROL
+// KRONOLOJİK SAAT DİZİLİMİ VE HASSAS VARDİYA GEÇMİŞ SAAT DENETİMİ
 async function renderInlineDrawerTimeline(facId) {
     const fac = currentFacilities.find(f => f.id == facId);
     if (!fac) return;
@@ -818,15 +818,26 @@ async function renderInlineDrawerTimeline(facId) {
 
             const hourNum = parseInt(h.split(':')[0]);
             const isToday = (date === TODAY_STR);
-            
-            const isNightShiftHour = (hourNum < openH);
-            const isPastHourToday = isToday && !isNightShiftHour && (hourNum <= CURRENT_HOUR);
+
+            // VARDİYA GEÇMİŞ SAAT DENETİMİ FIX:
+            // Eğer seçilen tarih TODAY (örneğin 05.08.2026 saat 16:06 iken):
+            // - Sabah 00:00, 01:00, 02:00 (açılış saati 08:00'den küçük) saatleri bugün sabah tamamlandığı için GEÇTİ'dir!
+            // - 08:00 ile 16:00 arası (hourNum <= CURRENT_HOUR) GEÇTİ'dir!
+            // - 17:00 ve sonrası ALINABİLİR'dir.
+            let isPastHour = (date < TODAY_STR);
+            if (isToday) {
+                if (hourNum < openH) {
+                    isPastHour = true; // Early morning hours of TODAY passed earlier today
+                } else if (hourNum <= CURRENT_HOUR) {
+                    isPastHour = true;
+                }
+            }
 
             const isBooked = reservations.some(r => r.field_id == field.id && r.reservation_date === date && r.reservation_time === h && r.status !== 'İptal');
 
             if (isBooked) {
                 hHtml += `<td><div class="slot-badge slot-busy-normal"><i class="fa-solid fa-lock me-1"></i>DOLU</div></td>`;
-            } else if (isPastHourToday) {
+            } else if (isPastHour) {
                 hHtml += `<td><div class="slot-badge bg-secondary bg-opacity-10 text-muted border border-secondary border-opacity-25" style="cursor:not-allowed;" title="Saat Geçti"><i class="fa-solid fa-clock-rotate-left me-1"></i>GEÇTİ</div></td>`;
             } else {
                 hHtml += `<td>
@@ -858,7 +869,7 @@ function handleSlotClick(facId, fieldId, fieldName, date, time, fee) {
         return;
     }
     const hourNum = parseInt(time.split(':')[0]);
-    if (date === TODAY_STR && hourNum <= CURRENT_HOUR && hourNum >= 8) {
+    if (date === TODAY_STR && (hourNum < 8 || hourNum <= CURRENT_HOUR)) {
         alert('⚠️ Geçmiş bir saate randevu alınamaz!');
         return;
     }
