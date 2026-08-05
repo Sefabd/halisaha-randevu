@@ -137,7 +137,7 @@ $current_hour = (int)date('H');
                     </div>
                 </div>
 
-                <!-- SAHA BUL BUTONU VE PILL'LER -->
+                <!-- SAHA BUL BUTONU VE FİLTRE PILL'LERİ (KRAMPON EKLLENDİ) -->
                 <div class="col-12 border-top pt-3">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                         <div class="d-flex flex-wrap align-items-center gap-2 fs-7">
@@ -149,6 +149,9 @@ $current_hour = (int)date('H');
                             </div>
                             <div class="filter-pill" id="pillShower" onclick="togglePill('pillShower')">
                                 <i class="fa-solid fa-shower me-1"></i> Soyunma Odası & Duş
+                            </div>
+                            <div class="filter-pill" id="pillShoes" onclick="togglePill('pillShoes')">
+                                <i class="fa-solid fa-shoe-prints me-1 text-warning"></i> Krampon Kiralama
                             </div>
                         </div>
 
@@ -440,6 +443,7 @@ async function loadFacilities() {
     if (document.getElementById('pillCamera').classList.contains('active')) filterPills += `<span class="badge bg-success bg-opacity-10 text-success border me-1">📹 HD Kamera</span>`;
     if (document.getElementById('pillWater').classList.contains('active')) filterPills += `<span class="badge bg-info bg-opacity-10 text-info border me-1">💧 Ücretsiz Su</span>`;
     if (document.getElementById('pillShower').classList.contains('active')) filterPills += `<span class="badge bg-primary bg-opacity-10 text-primary border me-1">🚿 Duş</span>`;
+    if (document.getElementById('pillShoes').classList.contains('active')) filterPills += `<span class="badge bg-warning bg-opacity-10 text-warning border me-1">👟 Krampon Kiralama</span>`;
     document.getElementById('summaryFilters').innerHTML = filterPills || `<span class="badge bg-light text-dark border">Tüm Tesisler</span>`;
 
     const res = await fetch(`api/facility.php?action=list_public&city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}&sport_type=${encodeURIComponent(sportType)}`);
@@ -496,7 +500,7 @@ function renderFacilitiesList(facilities) {
                     else if (field_name_has(f, 'Voleybol')) icon = '🏐';
 
                     const coverBadge = isCovered ? '🏢 Kapalı' : '☀️ Açık';
-                    const statusText = (f.status === 'Pasif') ? ' <span class="text-danger fw-bold">(TADİLATTA)</span>' : '';
+                    const statusText = (f.status === 'Pasif') ? ' <span class="text-danger fw-bold">(KAPALI)</span>' : '';
                     return `<span class="badge bg-light text-dark border fs-8">${icon} ${escapeHtml(f.field_name)} <span class="text-muted">(${coverBadge})</span>${statusText} <strong class="text-primary">(₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')})</strong></span>`;
                 }).join('')}
             </div>
@@ -570,6 +574,7 @@ async function toggleAccordionDrawer(facId) {
     await renderInlineDrawerTimeline(facId);
 }
 
+// GECE YARISI (00:00, 01:00, 02:00) SAAT BÖLGESİ KONTROLÜ VE KAPALI TARİH ARALIĞI KONTROLÜ FIX
 async function renderInlineDrawerTimeline(facId) {
     const fac = currentFacilities.find(f => f.id == facId);
     if (!fac) return;
@@ -580,13 +585,19 @@ async function renderInlineDrawerTimeline(facId) {
     const dayLabel = document.getElementById(`day-label-fac-${facId}`);
     if (dayLabel) dayLabel.innerText = formatTurkishDate(date);
 
-    // CHECK IF FACILITY IS CLOSED ON THIS DATE
+    // TARİH ARALIĞINDA KAPALI MI KONTROLÜ (start <= date <= end)
     const closedDates = fac.closed_dates_array || [];
-    const isFacilityClosed = closedDates.some(cd => (isObject(cd) ? cd.date : cd) === date);
+    const closedMatch = closedDates.find(cd => {
+        if (isObject(cd)) {
+            const s = cd.start || cd.date;
+            const e = cd.end || cd.start || cd.date;
+            return (date >= s && date <= e);
+        }
+        return cd === date;
+    });
 
-    if (isFacilityClosed) {
-        const closedInfo = closedDates.find(cd => (isObject(cd) ? cd.date : cd) === date);
-        const reason = isObject(closedInfo) ? closedInfo.reason : 'Tadilat / Özel İzin';
+    if (closedMatch) {
+        const reason = isObject(closedMatch) ? (closedMatch.reason || 'Tesis Kapalı') : 'Kapalı';
         document.getElementById(`timeline-container-${facId}`).innerHTML = `
             <div class="p-4 text-center text-danger bg-danger bg-opacity-10 rounded-3 border border-danger">
                 <i class="fa-solid fa-ban display-5 mb-2 d-block"></i>
@@ -623,13 +634,17 @@ async function renderInlineDrawerTimeline(facId) {
 
         hours.forEach(h => {
             if (field.status === 'Pasif') {
-                hHtml += `<td><div class="slot-badge bg-danger bg-opacity-10 text-danger border border-danger" style="cursor:not-allowed;" title="Saha Tadilatta"><i class="fa-solid fa-wrench me-1"></i>TADİLAT</div></td>`;
+                hHtml += `<td><div class="slot-badge bg-danger bg-opacity-10 text-danger border border-danger" style="cursor:not-allowed;" title="Saha Kapalı"><i class="fa-solid fa-ban me-1"></i>KAPALI</div></td>`;
                 return;
             }
 
             const hourNum = parseInt(h.split(':')[0]);
             const isToday = (date === TODAY_STR);
-            const isPastHourToday = isToday && (hourNum <= CURRENT_HOUR);
+            
+            // GECE YARISI FIX: 00:00 - 03:00 saatleri açılış saatinden küçükse (gece vardiyası) gündüz saat 14:00'te GEÇTİ SAYILMAZ!
+            const isNightShiftHour = (hourNum < openH);
+            const isPastHourToday = isToday && !isNightShiftHour && (hourNum <= CURRENT_HOUR);
+
             const isBooked = reservations.some(r => r.field_id == field.id && r.reservation_date === date && r.reservation_time === h && r.status !== 'İptal');
 
             if (isBooked) {
@@ -666,7 +681,7 @@ function handleSlotClick(facId, fieldId, fieldName, date, time, fee) {
         return;
     }
     const hourNum = parseInt(time.split(':')[0]);
-    if (date === TODAY_STR && hourNum <= CURRENT_HOUR) {
+    if (date === TODAY_STR && hourNum <= CURRENT_HOUR && hourNum >= 8) {
         alert('⚠️ Geçmiş bir saate randevu alınamaz!');
         return;
     }

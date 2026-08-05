@@ -1,5 +1,5 @@
 <?php
-// api/facility.php - Facility Public Discovery & Owner Management API with Maintenance & Features
+// api/facility.php - Facility Public Discovery & Owner Management API with Range Lockouts & Features
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -101,7 +101,7 @@ try {
         exit;
     }
 
-    // 3. UPDATE OWNER FACILITY PROFILE (WITH WEEKEND HOURS & CLOSED DATES)
+    // 3. UPDATE OWNER FACILITY PROFILE (WITH CLOSED DATE RANGE SUPPORT)
     if ($action === 'update_profile') {
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
             echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);
@@ -119,16 +119,18 @@ try {
         $open_time_weekend = trim($_POST['open_time_weekend'] ?? '09:00');
         $close_time_weekend = trim($_POST['close_time_weekend'] ?? '03:00');
 
-        // Closed Dates JSON
-        $closed_date = trim($_POST['new_closed_date'] ?? '');
-        $closed_reason = trim($_POST['new_closed_reason'] ?? 'Tadilat / Özel İzin');
+        // Closed Date Range
+        $start_date = trim($_POST['closed_start_date'] ?? '');
+        $end_date = trim($_POST['closed_end_date'] ?? '');
+        $closed_reason = trim($_POST['closed_reason'] ?? 'Tesis Kapalı');
 
         $stmt = $pdo->prepare("SELECT closed_dates FROM facilities WHERE id = ?");
         $stmt->execute([$facility_id]);
         $existing = json_decode($stmt->fetch()['closed_dates'] ?? '[]', true) ?: [];
 
-        if (!empty($closed_date)) {
-            $existing[] = ['date' => $closed_date, 'reason' => $closed_reason];
+        if (!empty($start_date)) {
+            if (empty($end_date)) $end_date = $start_date;
+            $existing[] = ['start' => $start_date, 'end' => $end_date, 'reason' => $closed_reason];
         }
 
         $closed_json = json_encode(array_values($existing), JSON_UNESCAPED_UNICODE);
@@ -140,11 +142,11 @@ try {
         $_SESSION['city'] = $city;
         $_SESSION['district'] = $district;
 
-        echo json_encode(['status' => 'success', 'message' => 'Tesis profili ve çalışma saatleri güncellendi.']);
+        echo json_encode(['status' => 'success', 'message' => 'Tesis profili ve kapalı tarihler güncellendi.']);
         exit;
     }
 
-    // 3.5 REMOVE CLOSED DATE
+    // 3.5 REMOVE CLOSED DATE RANGE
     if ($action === 'remove_closed_date') {
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
             echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);
@@ -152,14 +154,15 @@ try {
         }
 
         $facility_id = $_SESSION['facility_id'];
-        $date = trim($_POST['date'] ?? '');
+        $start = trim($_POST['start'] ?? '');
 
         $stmt = $pdo->prepare("SELECT closed_dates FROM facilities WHERE id = ?");
         $stmt->execute([$facility_id]);
         $existing = json_decode($stmt->fetch()['closed_dates'] ?? '[]', true) ?: [];
 
-        $filtered = array_filter($existing, function($item) use ($date) {
-            return is_array($item) ? ($item['date'] !== $date) : ($item !== $date);
+        $filtered = array_filter($existing, function($item) use ($start) {
+            $itemStart = is_array($item) ? ($item['start'] ?? $item['date'] ?? '') : $item;
+            return $itemStart !== $start;
         });
 
         $closed_json = json_encode(array_values($filtered), JSON_UNESCAPED_UNICODE);
@@ -167,11 +170,11 @@ try {
         $up = $pdo->prepare("UPDATE facilities SET closed_dates = ? WHERE id = ?");
         $up->execute([$closed_json, $facility_id]);
 
-        echo json_encode(['status' => 'success', 'message' => 'Kapalı gün kaldırıldı.']);
+        echo json_encode(['status' => 'success', 'message' => 'Kapalı tarih kaldırıldı.']);
         exit;
     }
 
-    // 4. SAVE (ADD/EDIT) FIELD (WITH FEATURES CHECKBOXES & STATUS)
+    // 4. SAVE (ADD/EDIT) FIELD
     if ($action === 'save_field') {
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
             echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);
@@ -206,7 +209,7 @@ try {
         exit;
     }
 
-    // 4.5 TOGGLE FIELD STATUS (AKTİF <-> PASİF/TADİLAT)
+    // 4.5 TOGGLE FIELD STATUS (AKTİF <-> KAPALI)
     if ($action === 'toggle_field_status') {
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
             echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);

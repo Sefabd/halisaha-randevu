@@ -1,5 +1,5 @@
 <?php
-// owner_dashboard.php - Tesis İşletmecisi Paneli (Özellik Checkbox'ları, Tadilat Modu, Gelişmiş Saatler & Anlık Durum)
+// owner_dashboard.php - Tesis İşletmecisi Paneli (Kolon Sıralama, Tarih Aralıklı Kapalı Gün & Kapalı Saha Modu)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -125,7 +125,7 @@ $current_hour = (int)date('H');
     </section>
 
     <div class="row g-4 mb-4">
-        <!-- 1. GELİŞMİŞ TESİS & ÇALIŞMA SAATLERİ (HAFTA İÇİ / HAFTA SONU & KAPALI GÜNLER) -->
+        <!-- 1. GELİŞMİŞ TESİS & ÇALIŞMA SAATLERİ (HAFTA İÇİ / HAFTA SONU & KAPALI TARİH ARALIĞI) -->
         <div class="col-lg-5">
             <div class="minimal-card p-4 h-100">
                 <h5 class="fw-bold text-dark mb-3">
@@ -191,12 +191,21 @@ $current_hour = (int)date('H');
                             </select>
                         </div>
 
-                        <!-- ÖNCEDEN KAPALI GÜN / TADİLAT TARİHİ EKLEME -->
+                        <!-- ÖNCEDEN KAPALI GÜN / TARİH ARALIĞI EKLEME -->
                         <div class="col-12 border-top pt-3">
-                            <label class="form-label text-danger fs-8 fw-bold mb-1"><i class="fa-solid fa-ban me-1"></i> ÖNCEDEN KAPALI GÜN / TADİLAT TARİHİ EKLE</label>
-                            <div class="input-group mb-2">
-                                <input type="date" class="form-control form-control-sm" name="new_closed_date" id="newClosedDate" min="<?php echo $today_str; ?>">
-                                <input type="text" class="form-control form-control-sm" name="new_closed_reason" id="newClosedReason" placeholder="Neden? (Örn: Saha Bakımı)">
+                            <label class="form-label text-danger fs-8 fw-bold mb-1"><i class="fa-solid fa-ban me-1"></i> TESİS KAPALI TARİH ARALIĞI EKLE</label>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="fs-8 text-muted">Başlangıç Tarihi</label>
+                                    <input type="date" class="form-control form-control-sm" name="closed_start_date" id="closedStartDate" min="<?php echo $today_str; ?>">
+                                </div>
+                                <div class="col-6">
+                                    <label class="fs-8 text-muted">Bitiş Tarihi</label>
+                                    <input type="date" class="form-control form-control-sm" name="closed_end_date" id="closedEndDate" min="<?php echo $today_str; ?>">
+                                </div>
+                                <div class="col-12">
+                                    <input type="text" class="form-control form-control-sm" name="closed_reason" id="closedReason" placeholder="Neden? (Örn: Tesis Bakımı / Özel İzin)">
+                                </div>
                             </div>
                             <div class="d-flex flex-wrap gap-1 fs-8" id="closedDatesBadgeList">
                                 <!-- Closed dates badges populated via JS -->
@@ -235,7 +244,7 @@ $current_hour = (int)date('H');
                                 <th>SAHA ADI</th>
                                 <th>TİPİ</th>
                                 <th>ANLIK DURUM</th>
-                                <th>DURUM (AKTİF/PASİF)</th>
+                                <th>DURUM</th>
                                 <th>SAATLİK ÜCRET</th>
                                 <th class="text-end">İŞLEMLER</th>
                             </tr>
@@ -247,12 +256,12 @@ $current_hour = (int)date('H');
         </div>
     </div>
 
-    <!-- 3. OTOMATİK MAÇ DURUM MOTORLU SEKMELİ İŞLETME RANDEVU LİSTESİ -->
+    <!-- 3. RANDEVU LİSTELERİNDE SIRALANABİLİR KOLONLAR (ASC / DESC ÜÇGEN SİMGELERİ İLE) -->
     <section class="minimal-card p-4 mb-5">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
             <div>
                 <h4 class="fw-bold text-dark mb-0 fs-5"><i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevu Yönetimi</h4>
-                <span class="text-muted fs-7">Sistem saatine göre otomatik Maç Durumları: ⏳ Bekliyor, ⚽ Başladı, 🏁 Bitti</span>
+                <span class="text-muted fs-7">Kolon başlıklarına tıklayarak randevuları A-Z / Z-A sıralayabilirsiniz.</span>
             </div>
 
             <!-- CANLI ARAMA KUTUSU -->
@@ -282,17 +291,28 @@ $current_hour = (int)date('H');
             </ul>
         </div>
 
+        <!-- SIRALANABİLİR KOLONLAR (ASC / DESC İKONLARI) -->
         <div class="table-responsive">
             <table class="table table-hover align-middle m-0 fs-7">
                 <thead class="table-light text-muted border-bottom">
                     <tr>
-                        <th class="py-3">TAKIM ADI</th>
-                        <th class="py-3">YETKİLİ KİŞİ</th>
+                        <th class="py-3 sortable-th" onclick="sortReservationsBy('team_name')">
+                            TAKIM ADI <span id="sort-team_name"><i class="fa-solid fa-sort text-muted fs-8 ms-1"></i></span>
+                        </th>
+                        <th class="py-3 sortable-th" onclick="sortReservationsBy('contact_name')">
+                            YETKİLİ KİŞİ <span id="sort-contact_name"><i class="fa-solid fa-sort text-muted fs-8 ms-1"></i></span>
+                        </th>
                         <th class="py-3">TELEFON</th>
                         <th class="py-3">SAHA</th>
-                        <th class="py-3">TARİH</th>
-                        <th class="py-3">SAAT</th>
-                        <th class="py-3">ÜCRET</th>
+                        <th class="py-3 sortable-th" onclick="sortReservationsBy('reservation_date')">
+                            TARİH <span id="sort-reservation_date"><i class="fa-solid fa-sort text-muted fs-8 ms-1"></i></span>
+                        </th>
+                        <th class="py-3 sortable-th" onclick="sortReservationsBy('reservation_time')">
+                            SAAT <span id="sort-reservation_time"><i class="fa-solid fa-sort text-muted fs-8 ms-1"></i></span>
+                        </th>
+                        <th class="py-3 sortable-th" onclick="sortReservationsBy('fee')">
+                            ÜCRET <span id="sort-fee"><i class="fa-solid fa-sort text-muted fs-8 ms-1"></i></span>
+                        </th>
                         <th class="py-3">MAÇ DURUMU (OTOMATİK)</th>
                         <th class="py-3 text-end">İŞLEMLER</th>
                     </tr>
@@ -320,7 +340,7 @@ $current_hour = (int)date('H');
     </div>
 </div>
 
-<!-- Modal: Saha Ekle / Düzenle (ÖZELLİK CHECKBOX'LARI VE PASİF/TADİLAT MODU İLE) -->
+<!-- Modal: Saha Ekle / Düzenle -->
 <div class="modal fade" id="fieldModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -353,13 +373,13 @@ $current_hour = (int)date('H');
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">SAHA DURUMU</label>
                             <select class="form-select" name="status" id="modal_field_status">
-                                <option value="Aktif" selected>✅ Aktif (Randevuya Açık)</option>
-                                <option value="Pasif">🛠️ Pasif (Tadilatta / Kapalı)</option>
+                                <option value="Aktif" selected>✅ Aktif (Açık)</option>
+                                <option value="Pasif">🔴 Kapalı</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- ÖZELLİK CHECKBOX'LARI -->
+                    <!-- ÖZELLİK CHECKBOX'LARI (GECE AYDINLATMASI ÇIKARILDI) -->
                     <div class="border-top pt-3">
                         <label class="form-label text-dark fs-7 fw-bold mb-2"><i class="fa-solid fa-list-check text-primary me-1"></i> SAHA ÖZELLİKLERİ VE İMKANLAR</label>
                         <div class="row g-2 fs-7">
@@ -385,12 +405,6 @@ $current_hour = (int)date('H');
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" name="features[]" value="Krampon / Ayakkabı Kiralama" id="feat_shoes">
                                     <label class="form-check-label" for="feat_shoes"><i class="fa-solid fa-shoe-prints text-warning me-1"></i> Krampon / Ayakkabı Kiralama</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="features[]" value="Gece Aydınlatması / Projektör" id="feat_lights" checked>
-                                    <label class="form-check-label" for="feat_lights"><i class="fa-solid fa-lightbulb text-warning me-1"></i> Gece Aydınlatması / Projektör</label>
                                 </div>
                             </div>
                         </div>
@@ -507,6 +521,8 @@ let ownerFieldsData = [];
 let ownerFacilityData = null;
 let ownerReservationsData = [];
 let activeReservationTab = 'today';
+let currentSortColumn = 'reservation_date';
+let currentSortAsc = true;
 
 async function loadOwnerFacility() {
     const res = await fetch('api/facility.php?action=get_owner_facility');
@@ -536,15 +552,18 @@ async function loadOwnerFacility() {
 function renderClosedDatesBadges(closedArray) {
     const container = document.getElementById('closedDatesBadgeList');
     if (closedArray.length === 0) {
-        container.innerHTML = `<span class="text-muted">Kayıtlı kapalı gün bulunmuyor.</span>`;
+        container.innerHTML = `<span class="text-muted">Kayıtlı kapalı tarih bulunmuyor.</span>`;
         return;
     }
     let html = '';
     closedArray.forEach(item => {
-        const d = isObject(item) ? item.date : item;
-        const r = isObject(item) ? item.reason : 'Tadilat';
+        const start = isObject(item) ? (item.start || item.date) : item;
+        const end = isObject(item) ? (item.end || item.start || item.date) : item;
+        const r = isObject(item) ? (item.reason || 'Kapalı') : 'Kapalı';
+        const dateRangeText = (start === end) ? start : `${start} - ${end}`;
+
         html += `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger p-1.5 me-1 mb-1">
-            🚫 ${d} (${escapeHtml(r)}) <i class="fa-solid fa-xmark ms-1 cursor-pointer" onclick="removeClosedDate('${d}')"></i>
+            🚫 ${dateRangeText} (${escapeHtml(r)}) <i class="fa-solid fa-xmark ms-1 cursor-pointer" onclick="removeClosedDate('${start}')"></i>
         </span>`;
     });
     container.innerHTML = html;
@@ -554,10 +573,10 @@ function isObject(val) {
     return val !== null && typeof val === 'object';
 }
 
-async function removeClosedDate(dateStr) {
-    if (!confirm(`${dateStr} kapalı gün engelini kaldırmak istiyor musunuz?`)) return;
+async function removeClosedDate(startStr) {
+    if (!confirm(`${startStr} kapalı gün engelini kaldırmak istiyor musunuz?`)) return;
     const formData = new FormData();
-    formData.append('date', dateStr);
+    formData.append('start', startStr);
 
     const res = await fetch('api/facility.php?action=remove_closed_date', { method: 'POST', body: formData });
     const json = await res.json();
@@ -581,10 +600,9 @@ function renderOwnerFields(fields) {
         if (f.field_name.includes('Basketbol') || (f.field_type && f.field_type.includes('Basketbol'))) icon = '🏀';
         else if (f.field_name.includes('Tenis') || (f.field_type && f.field_type.includes('Tenis'))) icon = '🎾';
 
-        // ANLIK DURUM HESAPLAMA (🟢 Boşta / 🔴 Dolu (Maç Var) / 🛠️ Tadilatta)
         let liveStatusBadge = '';
         if (f.status === 'Pasif') {
-            liveStatusBadge = `<span class="badge bg-danger text-white">🛠️ Tadilatta</span>`;
+            liveStatusBadge = `<span class="badge bg-danger text-white">🔴 Kapalı</span>`;
         } else {
             const isBookedNow = ownerReservationsData.some(r => r.field_id == f.id && r.reservation_date === TODAY_STR && r.reservation_time === currentFormattedH && r.status !== 'İptal');
             if (isBookedNow) {
@@ -597,7 +615,7 @@ function renderOwnerFields(fields) {
         const isPassive = (f.status === 'Pasif');
         const toggleBtn = isPassive 
             ? `<button class="btn btn-sm btn-outline-success" onclick="toggleFieldStatus(${f.id}, 'Aktif')">✅ Aktif Yap</button>`
-            : `<button class="btn btn-sm btn-outline-warning" onclick="toggleFieldStatus(${f.id}, 'Pasif')">🛠️ Pasif Yap</button>`;
+            : `<button class="btn btn-sm btn-outline-danger" onclick="toggleFieldStatus(${f.id}, 'Pasif')">🔴 Kapat</button>`;
 
         html += `<tr>
             <td class="fw-bold text-dark">${icon} ${escapeHtml(f.field_name)}</td>
@@ -629,6 +647,7 @@ function onMatrixDateInput(inputEl) {
     renderOwnerMatrix();
 }
 
+// GECE YARISI (00:00, 01:00, 02:00) SAATLERİ İÇİN MATRİS RENDER FIX
 function renderOwnerMatrix() {
     if (!ownerFacilityData || ownerFieldsData.length === 0) return;
     const dateInput = document.getElementById('matrixDate');
@@ -661,7 +680,7 @@ function renderOwnerMatrix() {
 
         hours.forEach(h => {
             if (field.status === 'Pasif') {
-                bHtml += `<td><div class="slot-badge bg-secondary text-white" style="cursor:not-allowed;">TADİLAT</div></td>`;
+                bHtml += `<td><div class="slot-badge bg-danger bg-opacity-10 text-danger border border-danger" style="cursor:not-allowed;">KAPALI</div></td>`;
                 return;
             }
 
@@ -715,7 +734,7 @@ function quickWalkinModal(fieldId, date, time) {
     const currentH = now.getHours();
     const resH = parseInt(time.split(':')[0]);
 
-    if (date < TODAY_STR || (date === TODAY_STR && resH < currentH)) {
+    if (date < TODAY_STR || (date === TODAY_STR && resH < currentH && resH >= 8)) {
         alert('⚠️ Geçmiş bir saate randevu eklenemez!');
         return;
     }
@@ -761,12 +780,10 @@ function openAddFieldModal() {
     document.getElementById('modal_field_status').value = 'Aktif';
     document.getElementById('fieldModalTitle').innerText = 'Yeni Saha Ekle';
     
-    // Check default features
     document.getElementById('feat_camera').checked = true;
     document.getElementById('feat_water').checked = true;
     document.getElementById('feat_shower').checked = true;
     document.getElementById('feat_shoes').checked = false;
-    document.getElementById('feat_lights').checked = true;
 
     new bootstrap.Modal(document.getElementById('fieldModal')).show();
 }
@@ -787,7 +804,6 @@ function editField(id) {
     document.getElementById('feat_water').checked = feats.includes('Ücretsiz Su & İkram');
     document.getElementById('feat_shower').checked = feats.includes('Soyunma Odası & Duş');
     document.getElementById('feat_shoes').checked = feats.includes('Krampon / Ayakkabı Kiralama');
-    document.getElementById('feat_lights').checked = feats.includes('Gece Aydınlatması / Projektör');
 
     new bootstrap.Modal(document.getElementById('fieldModal')).show();
 }
@@ -834,6 +850,29 @@ function setReservationTab(tab) {
     filterReservations();
 }
 
+// KOLON SIRALAMA MANTIĞI (ASC / DESC ÜÇGEN SİMGELERİ)
+function sortReservationsBy(column) {
+    if (currentSortColumn === column) {
+        currentSortAsc = !currentSortAsc;
+    } else {
+        currentSortColumn = column;
+        currentSortAsc = true;
+    }
+
+    // Reset icons
+    ['team_name', 'contact_name', 'reservation_date', 'reservation_time', 'fee'].forEach(col => {
+        const el = document.getElementById(`sort-${col}`);
+        if (el) el.innerHTML = `<i class="fa-solid fa-sort text-muted fs-8 ms-1"></i>`;
+    });
+
+    const activeIconEl = document.getElementById(`sort-${column}`);
+    if (activeIconEl) {
+        activeIconEl.innerHTML = currentSortAsc ? `<i class="fa-solid fa-caret-up text-primary fs-7 ms-1"></i>` : `<i class="fa-solid fa-caret-down text-primary fs-7 ms-1"></i>`;
+    }
+
+    filterReservations();
+}
+
 // OTOMATİK MAÇ DURUM MOTORU (Bekliyor / Başladı / Bitti)
 function computeMatchStatusBadge(resDate, resTime) {
     const now = new Date();
@@ -852,7 +891,7 @@ function computeMatchStatusBadge(resDate, resTime) {
     }
 
     // TODAY
-    if (resHour < currentHour) {
+    if (resHour < currentHour && resHour >= 8) {
         return `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1"><i class="fa-solid fa-flag-checkered me-1"></i>🏁 Bitti</span>`;
     } else if (resHour === currentHour) {
         return `<span class="badge bg-success text-white px-2.5 py-1 shadow-sm"><i class="fa-solid fa-futbol me-1"></i>⚽ Başladı (Maç Oynanıyor)</span>`;
@@ -903,6 +942,22 @@ function filterReservations() {
     if (query) {
         activeList = activeList.filter(r => r.team_name.toLowerCase().includes(query) || r.contact_name.toLowerCase().includes(query) || r.phone.includes(query));
     }
+
+    // Dynamic Column Sorting
+    activeList.sort((a, b) => {
+        let valA = a[currentSortColumn];
+        let valB = b[currentSortColumn];
+        if (currentSortColumn === 'fee') {
+            valA = parseFloat(valA);
+            valB = parseFloat(valB);
+        } else {
+            valA = String(valA).toLowerCase();
+            valB = String(valB).toLowerCase();
+        }
+        if (valA < valB) return currentSortAsc ? -1 : 1;
+        if (valA > valB) return currentSortAsc ? 1 : -1;
+        return 0;
+    });
 
     if (activeList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">Bu sekmede kayıtlı randevu bulunamadı.</td></tr>`;

@@ -17,30 +17,30 @@
   --team-secondary: #10b981;
   --team-light: #ecfdf5;
   --team-border: #a7f3d0;
-  --team-accent-line: #10b981;
+  --team-accent-line: #059669;
   --team-glow: rgba(16, 185, 129, 0.15);
   --team-gradient: linear-gradient(135deg, #059669, #10b981);
 }
 
-/* Süper Lig Team Color Engines (GS & FB Revize) */
+/* Süper Lig Team Color Engines (GS & FB Revize - Temiz Şık Görünüm) */
 [data-team="galatasaray"] {
   --team-primary: #a9041e;
   --team-secondary: #fdb913;
   --team-light: #fff7ed;
   --team-border: #fed7aa;
-  --team-accent-line: #fdb913;
+  --team-accent-line: #a9041e;
   --team-glow: rgba(169, 4, 30, 0.15);
   --team-gradient: linear-gradient(135deg, #a9041e, #fdb913);
 }
 
-/* Fenerbahçe: Derin Lacivert & Canlı Sarı Çizgi Vurguları */
+/* Fenerbahçe: Derin Lacivert Ana Renk & Sıcak Altın Sarı Aksan */
 [data-team="fenerbahce"] {
   --team-primary: #002d72;
-  --team-secondary: #eab308;
+  --team-secondary: #f59e0b;
   --team-light: #fefce8;
-  --team-border: #eab308;
-  --team-accent-line: #ffed00;
-  --team-glow: rgba(0, 45, 114, 0.18);
+  --team-border: #cbd5e1;
+  --team-accent-line: #002d72;
+  --team-glow: rgba(0, 45, 114, 0.15);
   --team-gradient: linear-gradient(135deg, #002d72, #001f52);
 }
 
@@ -49,7 +49,7 @@
   --team-secondary: #4b5563;
   --team-light: #f3f4f6;
   --team-border: #d1d5db;
-  --team-accent-line: #4b5563;
+  --team-accent-line: #111827;
   --team-glow: rgba(17, 24, 39, 0.15);
   --team-gradient: linear-gradient(135deg, #111827, #374151);
 }
@@ -59,7 +59,7 @@
   --team-secondary: #2b547e;
   --team-light: #fff0f3;
   --team-border: #fca5a5;
-  --team-accent-line: #2b547e;
+  --team-accent-line: #77001e;
   --team-glow: rgba(119, 0, 30, 0.15);
   --team-gradient: linear-gradient(135deg, #77001e, #2b547e);
 }
@@ -78,11 +78,11 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   letter-spacing: -0.02em;
 }
 
-/* Minimalist Cards with Team Top Accent & Yellow Border for FB */
+/* Minimalist Cards with Team Top Accent & Clean Borders */
 .minimal-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-top: 4px solid var(--team-accent-line);
+  border-top: 3px solid var(--team-accent-line);
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -98,7 +98,7 @@ h1, h2, h3, h4, h5, h6, .brand-font {
 .minimal-navbar {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
-  border-bottom: 2px solid var(--team-accent-line);
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -110,7 +110,6 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   font-weight: 800;
   padding: 6px 14px;
   border-radius: 10px;
-  border: 1px solid var(--team-accent-line);
   box-shadow: 0 4px 12px var(--team-glow);
 }
 
@@ -125,7 +124,7 @@ h1, h2, h3, h4, h5, h6, .brand-font {
 }
 
 .role-card:hover, .role-card.active {
-  border-color: var(--team-accent-line);
+  border-color: var(--team-primary);
   background: var(--team-light);
   box-shadow: 0 8px 25px var(--team-glow);
   transform: translateY(-2px);
@@ -158,7 +157,7 @@ h1, h2, h3, h4, h5, h6, .brand-font {
 }
 
 .filter-pill.active, .filter-pill:hover {
-  border-color: var(--team-accent-line);
+  border-color: var(--team-primary);
   background: var(--team-light);
   color: var(--team-primary);
 }
@@ -226,15 +225,26 @@ h1, h2, h3, h4, h5, h6, .brand-font {
 }
 
 .form-control:focus, .form-select:focus {
-  border-color: var(--team-accent-line) !important;
+  border-color: var(--team-primary) !important;
   box-shadow: 0 0 0 3px var(--team-glow) !important;
+}
+
+/* Sortable Table Columns Header */
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.sortable-th:hover {
+  color: var(--team-primary) !important;
 }
 
 /* Buttons */
 .btn-team {
   background: var(--team-gradient);
   color: #ffffff;
-  border: 1px solid var(--team-accent-line);
+  border: none;
   font-weight: 700;
   border-radius: 10px;
   padding: 9px 18px;
@@ -251,7 +261,7 @@ h1, h2, h3, h4, h5, h6, .brand-font {
 /* Inline Slide-Down Accordion Panel */
 .facility-accordion-drawer {
   background: #f8fafc;
-  border: 1px solid var(--team-border);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
   margin-top: 15px;
