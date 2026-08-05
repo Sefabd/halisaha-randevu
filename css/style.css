@@ -162,16 +162,59 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   color: var(--team-primary);
 }
 
-/* Hourly Slot Badges (Owner & Player) */
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Sticky Scrollable Reservation List Container */
+.scrollable-table-container {
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.scrollable-table-container table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #f8fafc !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* UNIFORM FIXED EQUAL DIMENSIONS FOR HOURLY SLOT BADGES (OWNER & PLAYER) */
 .slot-badge {
-  padding: 6px 10px;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 68px;
+  width: 100%;
+  height: 38px !important;
+  padding: 0 6px !important;
   border-radius: 8px;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
   border: 1px solid transparent;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 
 /* 🟢 Yeşil: Boş Randevu */

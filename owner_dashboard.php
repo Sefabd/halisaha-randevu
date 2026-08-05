@@ -328,10 +328,10 @@ $today_str = date('Y-m-d');
             </ul>
         </div>
 
-        <!-- SIRALANABİLİR KOLONLAR (ASC / DESC İKONLARI) -->
-        <div class="table-responsive">
+        <!-- SIRALANABİLİR KOLONLAR (ASC / DESC İKONLARI VE SABİT YÜKSEKLİKLİ İÇ SCROLLBAR) -->
+        <div class="scrollable-table-container">
             <table class="table table-hover align-middle m-0 fs-7">
-                <thead class="table-light text-muted border-bottom">
+                <thead class="table-light text-muted border-bottom sticky-top">
                     <tr>
                         <th class="py-3 sortable-th" onclick="sortReservationsBy('team_name')">
                             TAKIM ADI <span id="sort-team_name"><i class="fa-solid fa-sort text-muted fs-8 ms-1"></i></span>
