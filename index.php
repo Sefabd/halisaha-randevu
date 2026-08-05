@@ -137,7 +137,7 @@ $current_hour = (int)date('H');
                     </div>
                 </div>
 
-                <!-- SAHA BUL BUTONU VE FİLTRE PILL'LERİ (KRAMPON EKLLENDİ) -->
+                <!-- SAHA BUL BUTONU VE FİLTRE PILL'LERİ -->
                 <div class="col-12 border-top pt-3">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                         <div class="d-flex flex-wrap align-items-center gap-2 fs-7">
@@ -376,7 +376,7 @@ const CITIES_DISTRICTS = {
 };
 
 const TURKISH_DAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-const TURKISH_MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+const TURKISH_MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylul', 'Ekim', 'Kasım', 'Aralık'];
 
 function formatTurkishDate(dateStr) {
     if (!dateStr || dateStr.length !== 10) return '';
@@ -439,14 +439,30 @@ async function loadFacilities() {
 
     document.getElementById('summaryLocation').innerText = `${city} / ${districtSelect || 'Tüm İlçeler'}`;
 
-    let filterPills = '';
-    if (document.getElementById('pillCamera').classList.contains('active')) filterPills += `<span class="badge bg-success bg-opacity-10 text-success border me-1">📹 HD Kamera</span>`;
-    if (document.getElementById('pillWater').classList.contains('active')) filterPills += `<span class="badge bg-info bg-opacity-10 text-info border me-1">💧 Ücretsiz Su</span>`;
-    if (document.getElementById('pillShower').classList.contains('active')) filterPills += `<span class="badge bg-primary bg-opacity-10 text-primary border me-1">🚿 Duş</span>`;
-    if (document.getElementById('pillShoes').classList.contains('active')) filterPills += `<span class="badge bg-warning bg-opacity-10 text-warning border me-1">👟 Krampon Kiralama</span>`;
-    document.getElementById('summaryFilters').innerHTML = filterPills || `<span class="badge bg-light text-dark border">Tüm Tesisler</span>`;
+    let reqFeatures = [];
+    let filterPillsSummary = '';
 
-    const res = await fetch(`api/facility.php?action=list_public&city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}&sport_type=${encodeURIComponent(sportType)}`);
+    if (document.getElementById('pillCamera').classList.contains('active')) {
+        reqFeatures.push('HD Kamera Kaydı');
+        filterPillsSummary += `<span class="badge bg-success bg-opacity-10 text-success border me-1">📹 HD Kamera</span>`;
+    }
+    if (document.getElementById('pillWater').classList.contains('active')) {
+        reqFeatures.push('Ücretsiz Su & İkram');
+        filterPillsSummary += `<span class="badge bg-info bg-opacity-10 text-info border me-1">💧 Ücretsiz Su</span>`;
+    }
+    if (document.getElementById('pillShower').classList.contains('active')) {
+        reqFeatures.push('Soyunma Odası & Duş');
+        filterPillsSummary += `<span class="badge bg-primary bg-opacity-10 text-primary border me-1">🚿 Duş</span>`;
+    }
+    if (document.getElementById('pillShoes').classList.contains('active')) {
+        reqFeatures.push('Krampon / Ayakkabı Kiralama');
+        filterPillsSummary += `<span class="badge bg-warning bg-opacity-10 text-warning border me-1">👟 Krampon Kiralama</span>`;
+    }
+
+    document.getElementById('summaryFilters').innerHTML = filterPillsSummary || `<span class="badge bg-light text-dark border">Tüm Tesisler</span>`;
+
+    const featuresParam = encodeURIComponent(reqFeatures.join(','));
+    const res = await fetch(`api/facility.php?action=list_public&city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}&sport_type=${encodeURIComponent(sportType)}&features=${featuresParam}`);
     const json = await res.json();
 
     if (json.status === 'success') {
@@ -527,7 +543,7 @@ function renderFacilitiesList(facilities) {
                         <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-check text-primary me-2"></i> Uygun Saat Seçimi</h6>
                         <span class="badge bg-white text-dark border mt-1 fs-7 fw-bold" id="day-label-fac-${fac.id}">${formatTurkishDate(TODAY_STR)}</span>
                     </div>
-                    <input type="date" class="form-control form-control-sm max-w-160 fw-bold" id="date-fac-${fac.id}" min="${TODAY_STR}" value="${TODAY_STR}" oninput="onDrawerDateInput(${fac.id}, this)">
+                    <input type="date" class="form-control form-control-sm max-w-160 fw-bold" id="date-fac-${fac.id}" min="${TODAY_STR}" value="${TODAY_STR}" onchange="onDrawerDateChange(${fac.id}, this)">
                 </div>
                 <div id="timeline-container-${fac.id}" class="table-responsive">
                     <!-- Populated dynamically via JS -->
@@ -544,9 +560,14 @@ function field_name_has(f, word) {
     return f.field_name.includes(word) || (f.field_type && f.field_type.includes(word));
 }
 
-function onDrawerDateInput(facId, inputEl) {
+// TARİH SEÇERKEN YAZMA ERKEN UYARI BUG FIX (ONCHANGE + YIL 2026 KONTROLÜ)
+function onDrawerDateChange(facId, inputEl) {
     const val = inputEl.value;
     if (!val || val.length !== 10) return;
+
+    const parts = val.split('-');
+    const year = parseInt(parts[0]);
+    if (isNaN(year) || year < 2026) return;
 
     if (val < TODAY_STR) {
         alert('⚠️ Geçmiş bir tarihe randevu alınamaz!');
@@ -574,7 +595,7 @@ async function toggleAccordionDrawer(facId) {
     await renderInlineDrawerTimeline(facId);
 }
 
-// GECE YARISI (00:00, 01:00, 02:00) SAAT BÖLGESİ KONTROLÜ VE KAPALI TARİH ARALIĞI KONTROLÜ FIX
+// KRONOLOJİK SAAT DİZİLİMİ (00:00 - 23:00) VE TARİH ARALIĞI FIX
 async function renderInlineDrawerTimeline(facId) {
     const fac = currentFacilities.find(f => f.id == facId);
     if (!fac) return;
@@ -585,7 +606,7 @@ async function renderInlineDrawerTimeline(facId) {
     const dayLabel = document.getElementById(`day-label-fac-${facId}`);
     if (dayLabel) dayLabel.innerText = formatTurkishDate(date);
 
-    // TARİH ARALIĞINDA KAPALI MI KONTROLÜ (start <= date <= end)
+    // TESİS KAPALI GÜN KONTROLÜ
     const closedDates = fac.closed_dates_array || [];
     const closedMatch = closedDates.find(cd => {
         if (isObject(cd)) {
@@ -615,11 +636,14 @@ async function renderInlineDrawerTimeline(facId) {
     let closeH = parseInt(fac.close_time || '01');
     if (closeH <= openH) closeH += 24;
 
-    const hours = [];
+    const hourNumbers = [];
     for (let h = openH; h < closeH; h++) {
-        const realH = h % 24;
-        hours.push((realH < 10 ? '0' : '') + realH + ':00');
+        hourNumbers.push(h % 24);
     }
+    // Kronolojik Sıralama
+    hourNumbers.sort((a, b) => a - b);
+
+    const hours = hourNumbers.map(h => (h < 10 ? '0' : '') + h + ':00');
 
     let hHtml = `<table class="table table-borderless text-center align-middle m-0 fs-8"><thead class="border-bottom text-muted"><tr><th class="text-start">SAHA</th>`;
     hours.forEach(h => hHtml += `<th>${h}</th>`);
@@ -633,15 +657,26 @@ async function renderInlineDrawerTimeline(facId) {
         hHtml += `<tr><td class="fw-bold text-dark text-start py-2">${icon} ${escapeHtml(field.field_name)}</td>`;
 
         hours.forEach(h => {
-            if (field.status === 'Pasif') {
-                hHtml += `<td><div class="slot-badge bg-danger bg-opacity-10 text-danger border border-danger" style="cursor:not-allowed;" title="Saha Kapalı"><i class="fa-solid fa-ban me-1"></i>KAPALI</div></td>`;
+            // SAHA ÖZEL KAPALI ARALIK KONTROLÜ
+            const range = field.closed_range_obj || {};
+            let isFieldClosedNow = (field.status === 'Pasif');
+            let closeReasonText = 'Saha Kapalı';
+
+            if (range.start_date && range.end_date) {
+                if (date >= range.start_date && date <= range.end_date) {
+                    isFieldClosedNow = true;
+                    closeReasonText = range.reason || 'Kapalı';
+                }
+            }
+
+            if (isFieldClosedNow) {
+                hHtml += `<td><div class="slot-badge bg-danger bg-opacity-10 text-danger border border-danger" style="cursor:not-allowed;" title="${escapeHtml(closeReasonText)}"><i class="fa-solid fa-ban me-1"></i>KAPALI</div></td>`;
                 return;
             }
 
             const hourNum = parseInt(h.split(':')[0]);
             const isToday = (date === TODAY_STR);
             
-            // GECE YARISI FIX: 00:00 - 03:00 saatleri açılış saatinden küçükse (gece vardiyası) gündüz saat 14:00'te GEÇTİ SAYILMAZ!
             const isNightShiftHour = (hourNum < openH);
             const isPastHourToday = isToday && !isNightShiftHour && (hourNum <= CURRENT_HOUR);
 

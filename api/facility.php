@@ -1,5 +1,5 @@
 <?php
-// api/facility.php - Facility Public Discovery & Owner Management API with Range Lockouts & Features
+// api/facility.php - Facility Public Discovery & Owner Management API with Field-Specific Closed Date/Time Ranges
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -15,6 +15,8 @@ try {
         $city = trim($_GET['city'] ?? '');
         $district = trim($_GET['district'] ?? '');
         $sport_type = trim($_GET['sport_type'] ?? '');
+        $req_features = trim($_GET['features'] ?? '');
+        $req_feature_list = !empty($req_features) ? explode(',', $req_features) : [];
 
         $sql = "SELECT id, name, city, district, address, phone, open_time, close_time, open_time_weekend, close_time_weekend, closed_dates, features FROM facilities WHERE 1=1";
         $params = [];
@@ -37,7 +39,7 @@ try {
         // Attach fields to each facility
         $result = [];
         foreach ($facilities as $fac) {
-            $fieldSql = "SELECT id, field_name, field_type, hourly_fee, status, features FROM facility_fields WHERE facility_id = ?";
+            $fieldSql = "SELECT id, field_name, field_type, hourly_fee, status, features, closed_range FROM facility_fields WHERE facility_id = ?";
             $fieldParams = [$fac['id']];
 
             if (!empty($sport_type) && $sport_type !== 'Tümü') {
@@ -57,10 +59,31 @@ try {
 
             // Decode JSON features and closed dates
             $fac['closed_dates_array'] = json_decode($fac['closed_dates'] ?? '[]', true) ?: [];
-            $fac['features_array'] = json_decode($fac['features'] ?? '[]', true) ?: [];
+            $fac_features = json_decode($fac['features'] ?? '[]', true) ?: [];
+            $fac['features_array'] = $fac_features;
+
+            // Two-Way Feature Filter check (Camera, Water, Shower, Shoes)
+            if (!empty($req_feature_list)) {
+                $has_all_features = true;
+                foreach ($req_feature_list as $rf) {
+                    $rf = trim($rf);
+                    if (empty($rf)) continue;
+                    if (!in_array($rf, $fac_features)) {
+                        // Check if any field has this feature
+                        $field_has = false;
+                        foreach ($fields as $f) {
+                            $ffeats = json_decode($f['features'] ?? '[]', true) ?: [];
+                            if (in_array($rf, $ffeats)) { $field_has = true; break; }
+                        }
+                        if (!$field_has) { $has_all_features = false; break; }
+                    }
+                }
+                if (!$has_all_features) continue;
+            }
 
             foreach ($fields as &$f) {
                 $f['features_array'] = json_decode($f['features'] ?? '[]', true) ?: [];
+                $f['closed_range_obj'] = json_decode($f['closed_range'] ?? '{}', true) ?: (object)[];
             }
 
             if (!empty($sport_type) && $sport_type !== 'Tümü' && count($fields) === 0) {
@@ -95,13 +118,14 @@ try {
 
         foreach ($fields as &$f) {
             $f['features_array'] = json_decode($f['features'] ?? '[]', true) ?: [];
+            $f['closed_range_obj'] = json_decode($f['closed_range'] ?? '{}', true) ?: (object)[];
         }
 
         echo json_encode(['status' => 'success', 'facility' => $facility, 'fields' => $fields]);
         exit;
     }
 
-    // 3. UPDATE OWNER FACILITY PROFILE (WITH CLOSED DATE RANGE SUPPORT)
+    // 3. UPDATE OWNER FACILITY PROFILE
     if ($action === 'update_profile') {
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
             echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);
@@ -119,7 +143,6 @@ try {
         $open_time_weekend = trim($_POST['open_time_weekend'] ?? '09:00');
         $close_time_weekend = trim($_POST['close_time_weekend'] ?? '03:00');
 
-        // Closed Date Range
         $start_date = trim($_POST['closed_start_date'] ?? '');
         $end_date = trim($_POST['closed_end_date'] ?? '');
         $closed_reason = trim($_POST['closed_reason'] ?? 'Tesis Kapalı');
@@ -174,7 +197,43 @@ try {
         exit;
     }
 
-    // 4. SAVE (ADD/EDIT) FIELD
+    // 4. SET FIELD CLOSED DATE & TIME RANGE
+    if ($action === 'set_field_closed_range') {
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
+            echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);
+            exit;
+        }
+
+        $facility_id = $_SESSION['facility_id'];
+        $field_id = intval($_POST['field_id'] ?? 0);
+        $status = trim($_POST['status'] ?? 'Aktif');
+        $start_date = trim($_POST['closed_start_date'] ?? '');
+        $start_time = trim($_POST['closed_start_time'] ?? '00:00');
+        $end_date = trim($_POST['closed_end_date'] ?? '');
+        $end_time = trim($_POST['closed_end_time'] ?? '23:59');
+        $reason = trim($_POST['closed_reason'] ?? 'Bakım / Kapalı');
+
+        $range_obj = [];
+        if ($status === 'Pasif' || !empty($start_date)) {
+            $range_obj = [
+                'start_date' => $start_date,
+                'start_time' => $start_time,
+                'end_date' => $end_date ?: $start_date,
+                'end_time' => $end_time,
+                'reason' => $reason
+            ];
+        }
+
+        $range_json = json_encode($range_obj, JSON_UNESCAPED_UNICODE);
+
+        $up = $pdo->prepare("UPDATE facility_fields SET status = ?, closed_range = ? WHERE id = ? AND facility_id = ?");
+        $up->execute([$status, $range_json, $field_id, $facility_id]);
+
+        echo json_encode(['status' => 'success', 'message' => 'Saha kapalı tarih ve saat aralığı güncellendi.']);
+        exit;
+    }
+
+    // 5. SAVE FIELD
     if ($action === 'save_field') {
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
             echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);
@@ -209,25 +268,7 @@ try {
         exit;
     }
 
-    // 4.5 TOGGLE FIELD STATUS (AKTİF <-> KAPALI)
-    if ($action === 'toggle_field_status') {
-        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
-            echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);
-            exit;
-        }
-
-        $facility_id = $_SESSION['facility_id'];
-        $field_id = intval($_POST['field_id'] ?? 0);
-        $new_status = trim($_POST['status'] ?? 'Aktif');
-
-        $up = $pdo->prepare("UPDATE facility_fields SET status = ? WHERE id = ? AND facility_id = ?");
-        $up->execute([$new_status, $field_id, $facility_id]);
-
-        echo json_encode(['status' => 'success', 'message' => 'Saha durumu güncellendi.']);
-        exit;
-    }
-
-    // 5. DELETE FIELD
+    // 6. DELETE FIELD
     if ($action === 'delete_field') {
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
             echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);

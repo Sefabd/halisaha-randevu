@@ -1,5 +1,5 @@
 <?php
-// owner_dashboard.php - Tesis İşletmecisi Paneli (Kolon Sıralama, Tarih Aralıklı Kapalı Gün & Kapalı Saha Modu)
+// owner_dashboard.php - Tesis İşletmecisi Paneli (Kolon Sıralama, Tarih/Saat Aralıklı Saha Kapama & Saha Filtresi)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -97,7 +97,7 @@ $current_hour = (int)date('H');
         </div>
     </div>
 
-    <!-- RENKLİ SAAT MATRİSİ (SEÇİLEN TARİHE GÖRE CANLI GÜNCELLENİR) -->
+    <!-- KRONOLOJİK KONTROL EDİLMİŞ CANLI SAAT MATRİSİ (00:00 - 23:00) -->
     <section class="minimal-card p-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
@@ -110,7 +110,7 @@ $current_hour = (int)date('H');
                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">🔴 Alınan Randevu</span>
                     <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">🟡 Abonmanlı</span>
                 </div>
-                <input type="date" class="form-control form-control-sm max-w-160 fw-bold border-primary" id="matrixDate" value="<?php echo $today_str; ?>" oninput="onMatrixDateInput(this)">
+                <input type="date" class="form-control form-control-sm max-w-160 fw-bold border-primary" id="matrixDate" value="<?php echo $today_str; ?>" onchange="onMatrixDateInput(this)">
             </div>
         </div>
 
@@ -125,7 +125,7 @@ $current_hour = (int)date('H');
     </section>
 
     <div class="row g-4 mb-4">
-        <!-- 1. GELİŞMİŞ TESİS & ÇALIŞMA SAATLERİ (HAFTA İÇİ / HAFTA SONU & KAPALI TARİH ARALIĞI) -->
+        <!-- 1. GELİŞMİŞ TESİS & ÇALIŞMA SAATLERİ -->
         <div class="col-lg-5">
             <div class="minimal-card p-4 h-100">
                 <h5 class="fw-bold text-dark mb-3">
@@ -222,7 +222,7 @@ $current_hour = (int)date('H');
             </div>
         </div>
 
-        <!-- 2. SAHALARIM YÖNETİM KARTI (ANLIK DURUM KOLONU İLE) -->
+        <!-- 2. SAHALARIM YÖNETİM KARTI (DURUMU AYARLA MODALI İLE) -->
         <div class="col-lg-7">
             <div class="minimal-card p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -230,7 +230,7 @@ $current_hour = (int)date('H');
                         <h5 class="fw-bold text-dark mb-0">
                             <i class="fa-solid fa-vector-square text-success me-2"></i> Tesis Sahalarım
                         </h5>
-                        <span class="text-muted fs-7">Sahalarınız, anlık doluluk durumları ve düzenleme</span>
+                        <span class="text-muted fs-7">Sahalarınız, anlık doluluk durumları ve kapalı kalacağı tarih/saat aralığı ayarları</span>
                     </div>
                     <button class="btn btn-team btn-sm" onclick="openAddFieldModal()">
                         <i class="fa-solid fa-plus me-1"></i> Yeni Saha Ekle
@@ -256,17 +256,24 @@ $current_hour = (int)date('H');
         </div>
     </div>
 
-    <!-- 3. RANDEVU LİSTELERİNDE SIRALANABİLİR KOLONLAR (ASC / DESC ÜÇGEN SİMGELERİ İLE) -->
+    <!-- 3. RANDEVU LİSTELERİNDE SIRALANABİLİR KOLONLAR VE SAHA FİLTRESİ -->
     <section class="minimal-card p-4 mb-5">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
             <div>
                 <h4 class="fw-bold text-dark mb-0 fs-5"><i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevu Yönetimi</h4>
-                <span class="text-muted fs-7">Kolon başlıklarına tıklayarak randevuları A-Z / Z-A sıralayabilirsiniz.</span>
+                <span class="text-muted fs-7">Kolon başlıklarına tıklayarak sıralayabilir, saha açılır menüsünden filtreleyebilirsiniz.</span>
             </div>
 
-            <!-- CANLI ARAMA KUTUSU -->
-            <div class="max-w-300">
-                <input type="text" class="form-control form-control-sm" id="searchReservationQuery" placeholder="🔍 Takım veya Yetkili Ara..." oninput="filterReservations()">
+            <!-- CANLI ARAMA KUTUSU VE SAHA FİLTRESİ DROPDOWN'U -->
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <!-- SAHA FİLTRESİ DROPDOWN -->
+                <select class="form-select form-select-sm max-w-180 border-primary fw-bold" id="filterReservationField" onchange="filterReservations()">
+                    <option value="all">Tüm Sahalar</option>
+                </select>
+
+                <div class="max-w-220">
+                    <input type="text" class="form-control form-control-sm" id="searchReservationQuery" placeholder="🔍 Takım veya Yetkili Ara..." oninput="filterReservations()">
+                </div>
             </div>
         </div>
 
@@ -324,6 +331,66 @@ $current_hour = (int)date('H');
 
 </div>
 
+<!-- Modal: SAHA DURUMU VE KAPALI TARİH/SAAT ARALIĞI AYARLA MODALI -->
+<div class="modal fade" id="fieldStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-wrench text-warning me-2"></i> Saha Durumu ve Kapalı Tarih/Saat Aralığı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="handleSaveFieldStatusRange(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="statusFieldId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-7 fw-semibold">SAHA ADI</label>
+                        <input type="text" class="form-control fw-bold" id="statusFieldName" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-7 fw-semibold">DURUM SEÇİMİ</label>
+                        <select class="form-select" id="statusSelect">
+                            <option value="Aktif">✅ Aktif (Açık)</option>
+                            <option value="Pasif">🔴 Kapalı (Tarih ve Saat Aralıklı)</option>
+                        </select>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <h6 class="fw-bold text-danger fs-8 mb-2"><i class="fa-solid fa-calendar-xmark me-1"></i> KAPALI KALACAĞI TARİH VE SAAT ARALIĞI</h6>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="fs-8 text-muted">Başlangıç Tarihi</label>
+                                <input type="date" class="form-control form-control-sm" id="fieldClosedStartDate" min="<?php echo $today_str; ?>">
+                            </div>
+                            <div class="col-6">
+                                <label class="fs-8 text-muted">Başlangıç Saati</label>
+                                <input type="time" class="form-control form-control-sm" id="fieldClosedStartTime" value="00:00">
+                            </div>
+                            <div class="col-6">
+                                <label class="fs-8 text-muted">Bitiş Tarihi</label>
+                                <input type="date" class="form-control form-control-sm" id="fieldClosedEndDate" min="<?php echo $today_str; ?>">
+                            </div>
+                            <div class="col-6">
+                                <label class="fs-8 text-muted">Bitiş Saati</label>
+                                <input type="time" class="form-control form-control-sm" id="fieldClosedEndTime" value="23:59">
+                            </div>
+                            <div class="col-12 mt-2">
+                                <label class="fs-8 text-muted">Kapanış Nedeni</label>
+                                <input type="text" class="form-control form-control-sm" id="fieldClosedReason" placeholder="Örn: Çim Bakımı, Projektör Tamiri">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-team fw-bold">Ayarları Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: RANDEVU DETAY POPUP -->
 <div class="modal fade" id="reservationDetailsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -379,7 +446,7 @@ $current_hour = (int)date('H');
                         </div>
                     </div>
 
-                    <!-- ÖZELLİK CHECKBOX'LARI (GECE AYDINLATMASI ÇIKARILDI) -->
+                    <!-- ÖZELLİK CHECKBOX'LARI -->
                     <div class="border-top pt-3">
                         <label class="form-label text-dark fs-7 fw-bold mb-2"><i class="fa-solid fa-list-check text-primary me-1"></i> SAHA ÖZELLİKLERİ VE İMKANLAR</label>
                         <div class="row g-2 fs-7">
@@ -545,8 +612,18 @@ async function loadOwnerFacility() {
         renderClosedDatesBadges(json.facility.closed_dates_array || []);
         renderOwnerFields(json.fields);
         populateWalkinSelects(json.facility, json.fields);
+        populateReservationFieldFilter(json.fields);
         renderOwnerMatrix();
     }
+}
+
+function populateReservationFieldFilter(fields) {
+    const filterSel = document.getElementById('filterReservationField');
+    let html = `<option value="all">Tüm Sahalar</option>`;
+    fields.forEach(f => {
+        html += `<option value="${f.id}">${escapeHtml(f.field_name)}</option>`;
+    });
+    filterSel.innerHTML = html;
 }
 
 function renderClosedDatesBadges(closedArray) {
@@ -613,9 +690,7 @@ function renderOwnerFields(fields) {
         }
 
         const isPassive = (f.status === 'Pasif');
-        const toggleBtn = isPassive 
-            ? `<button class="btn btn-sm btn-outline-success" onclick="toggleFieldStatus(${f.id}, 'Aktif')">✅ Aktif Yap</button>`
-            : `<button class="btn btn-sm btn-outline-danger" onclick="toggleFieldStatus(${f.id}, 'Pasif')">🔴 Kapat</button>`;
+        const toggleBtn = `<button class="btn btn-sm ${isPassive ? 'btn-outline-danger' : 'btn-outline-primary'}" onclick="openFieldStatusModal(${f.id}, '${escapeHtml(f.field_name)}', '${f.status}')">⚙️ Durumu Ayarla</button>`;
 
         html += `<tr>
             <td class="fw-bold text-dark">${icon} ${escapeHtml(f.field_name)}</td>
@@ -624,7 +699,7 @@ function renderOwnerFields(fields) {
             <td>${toggleBtn}</td>
             <td class="fw-bold text-dark">₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-info me-1" onclick="editField(${f.id})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-sm btn-outline-info me-1" onclick="editField(${f.id})"><i class="fa-solid fa-pen"></i> Düzenle</button>
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteField(${f.id})"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>`;
@@ -632,14 +707,41 @@ function renderOwnerFields(fields) {
     tbody.innerHTML = html;
 }
 
-async function toggleFieldStatus(id, newStatus) {
-    const formData = new FormData();
-    formData.append('field_id', id);
-    formData.append('status', newStatus);
+function openFieldStatusModal(fieldId, fieldName, currentStatus) {
+    const f = ownerFieldsData.find(item => item.id == fieldId);
+    document.getElementById('statusFieldId').value = fieldId;
+    document.getElementById('statusFieldName').value = fieldName;
+    document.getElementById('statusSelect').value = currentStatus || 'Aktif';
 
-    const res = await fetch('api/facility.php?action=toggle_field_status', { method: 'POST', body: formData });
+    const range = (f && f.closed_range_obj) ? f.closed_range_obj : {};
+    document.getElementById('fieldClosedStartDate').value = range.start_date || TODAY_STR;
+    document.getElementById('fieldClosedStartTime').value = range.start_time || '00:00';
+    document.getElementById('fieldClosedEndDate').value = range.end_date || TODAY_STR;
+    document.getElementById('fieldClosedEndTime').value = range.end_time || '23:59';
+    document.getElementById('fieldClosedReason').value = range.reason || 'Bakım / Tamir';
+
+    new bootstrap.Modal(document.getElementById('fieldStatusModal')).show();
+}
+
+async function handleSaveFieldStatusRange(e) {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('field_id', document.getElementById('statusFieldId').value);
+    formData.append('status', document.getElementById('statusSelect').value);
+    formData.append('closed_start_date', document.getElementById('fieldClosedStartDate').value);
+    formData.append('closed_start_time', document.getElementById('fieldClosedStartTime').value);
+    formData.append('closed_end_date', document.getElementById('fieldClosedEndDate').value);
+    formData.append('closed_end_time', document.getElementById('fieldClosedEndTime').value);
+    formData.append('closed_reason', document.getElementById('fieldClosedReason').value);
+
+    const res = await fetch('api/facility.php?action=set_field_closed_range', { method: 'POST', body: formData });
     const json = await res.json();
-    if (json.status === 'success') loadOwnerFacility();
+    if (json.status === 'success') {
+        bootstrap.Modal.getInstance(document.getElementById('fieldStatusModal')).hide();
+        loadOwnerFacility();
+    } else {
+        alert(json.message);
+    }
 }
 
 function onMatrixDateInput(inputEl) {
@@ -647,7 +749,7 @@ function onMatrixDateInput(inputEl) {
     renderOwnerMatrix();
 }
 
-// GECE YARISI (00:00, 01:00, 02:00) SAATLERİ İÇİN MATRİS RENDER FIX
+// KRONOLOJİK SAAT DİZİLİMİ (00:00, 01:00, ..., 11:00, ..., 23:00)
 function renderOwnerMatrix() {
     if (!ownerFacilityData || ownerFieldsData.length === 0) return;
     const dateInput = document.getElementById('matrixDate');
@@ -657,11 +759,14 @@ function renderOwnerMatrix() {
     let closeH = parseInt(ownerFacilityData.close_time || '01');
     if (closeH <= openH) closeH += 24;
 
-    const hours = [];
+    const hourNumbers = [];
     for (let h = openH; h < closeH; h++) {
-        const realH = h % 24;
-        hours.push((realH < 10 ? '0' : '') + realH + ':00');
+        hourNumbers.push(h % 24);
     }
+    // Kronolojik Sıralama
+    hourNumbers.sort((a, b) => a - b);
+
+    const hours = hourNumbers.map(h => (h < 10 ? '0' : '') + h + ':00');
 
     const header = document.getElementById('ownerMatrixHeader');
     let hHtml = `<th class="text-start">SAHA ADI</th>`;
@@ -850,7 +955,6 @@ function setReservationTab(tab) {
     filterReservations();
 }
 
-// KOLON SIRALAMA MANTIĞI (ASC / DESC ÜÇGEN SİMGELERİ)
 function sortReservationsBy(column) {
     if (currentSortColumn === column) {
         currentSortAsc = !currentSortAsc;
@@ -859,7 +963,6 @@ function sortReservationsBy(column) {
         currentSortAsc = true;
     }
 
-    // Reset icons
     ['team_name', 'contact_name', 'reservation_date', 'reservation_time', 'fee'].forEach(col => {
         const el = document.getElementById(`sort-${col}`);
         if (el) el.innerHTML = `<i class="fa-solid fa-sort text-muted fs-8 ms-1"></i>`;
@@ -873,7 +976,6 @@ function sortReservationsBy(column) {
     filterReservations();
 }
 
-// OTOMATİK MAÇ DURUM MOTORU (Bekliyor / Başladı / Bitti)
 function computeMatchStatusBadge(resDate, resTime) {
     const now = new Date();
     const year = now.getFullYear();
@@ -890,7 +992,6 @@ function computeMatchStatusBadge(resDate, resTime) {
         return `<span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25 px-2 py-1"><i class="fa-solid fa-hourglass-half me-1 text-warning"></i>⏳ Bekliyor</span>`;
     }
 
-    // TODAY
     if (resHour < currentHour && resHour >= 8) {
         return `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1"><i class="fa-solid fa-flag-checkered me-1"></i>🏁 Bitti</span>`;
     } else if (resHour === currentHour) {
@@ -900,8 +1001,10 @@ function computeMatchStatusBadge(resDate, resTime) {
     }
 }
 
+// SAHA FİLTRESİ VE CANLI ARAMA BİRLEŞTİRİLDİ
 function filterReservations() {
     const query = document.getElementById('searchReservationQuery').value.toLowerCase().trim();
+    const selectedFieldId = document.getElementById('filterReservationField').value;
     const tbody = document.getElementById('ownerReservationsBody');
 
     let todayRes = [];
@@ -939,6 +1042,12 @@ function filterReservations() {
 
     let activeList = (activeReservationTab === 'today') ? todayRes : ((activeReservationTab === 'future') ? futureRes : pastRes);
 
+    // Saha Filtresi
+    if (selectedFieldId !== 'all') {
+        activeList = activeList.filter(r => r.field_id == selectedFieldId);
+    }
+
+    // Arama Kelimesi Filtresi
     if (query) {
         activeList = activeList.filter(r => r.team_name.toLowerCase().includes(query) || r.contact_name.toLowerCase().includes(query) || r.phone.includes(query));
     }
@@ -960,7 +1069,7 @@ function filterReservations() {
     });
 
     if (activeList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">Bu sekmede kayıtlı randevu bulunamadı.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">Bu kriterlerde kayıtlı randevu bulunamadı.</td></tr>`;
         return;
     }
 
