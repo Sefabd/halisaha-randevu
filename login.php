@@ -3,10 +3,10 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-$current_team = $_SESSION['user_team'] ?? 'galatasaray';
+// Login page is ALWAYS default Emerald Green ('neutral')
 ?>
 <!DOCTYPE html>
-<html lang="tr" data-team="<?php echo htmlspecialchars($current_team); ?>">
+<html lang="tr" data-team="neutral">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,39 +20,15 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
 </head>
 <body class="d-flex align-items-center justify-content-center py-5 min-vh-100">
 
-<div class="container max-w-900">
+<div class="container max-w-850">
     
     <!-- Brand Header -->
     <div class="text-center mb-4">
         <div class="d-inline-flex align-items-center gap-2 brand-badge fs-4 mb-2">
             <i class="fa-solid fa-futbol"></i> SahaNet PRO
         </div>
-        <h1 class="display-6 fw-extrabold text-dark">HALI SAHA REZERVASYON & YÖNETİMİ</h1>
+        <h1 class="display-6 fw-extrabold text-dark">SPOR TESİSİ REZERVASYON & YÖNETİMİ</h1>
         <p class="text-muted fs-6">Giriş yapın veya saniyeler içinde yeni hesabınızı oluşturun.</p>
-    </div>
-
-    <!-- SÜPER LİG TAKIM SEÇİCİ -->
-    <div class="minimal-card p-3 mb-4 text-center">
-        <label class="form-label text-muted fs-7 fw-bold mb-2 d-block text-uppercase">
-            <i class="fa-solid fa-shirt text-primary me-1"></i> Süper Lig Takımınızı Seçin
-        </label>
-        <div class="d-flex flex-wrap justify-content-center gap-2">
-            <div class="team-pill <?php echo $current_team === 'galatasaray' ? 'active' : ''; ?>" onclick="changeTeamTheme('galatasaray')">
-                <span>🟡🔴</span> Galatasaray
-            </div>
-            <div class="team-pill <?php echo $current_team === 'fenerbahce' ? 'active' : ''; ?>" onclick="changeTeamTheme('fenerbahce')">
-                <span>🔵🟡</span> Fenerbahçe
-            </div>
-            <div class="team-pill <?php echo $current_team === 'besiktas' ? 'active' : ''; ?>" onclick="changeTeamTheme('besiktas')">
-                <span>⬛⚪</span> Beşiktaş
-            </div>
-            <div class="team-pill <?php echo $current_team === 'trabzonspor' ? 'active' : ''; ?>" onclick="changeTeamTheme('trabzonspor')">
-                <span>🟣🔴</span> Trabzonspor
-            </div>
-            <div class="team-pill <?php echo $current_team === 'neutral' ? 'active' : ''; ?>" onclick="changeTeamTheme('neutral')">
-                <span>🟢⚪</span> Genel Spor
-            </div>
-        </div>
     </div>
 
     <!-- Role Selection Tabs -->
@@ -63,7 +39,7 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
                     <i class="fa-solid fa-user-ninja"></i>
                 </div>
                 <h3 class="fw-bold text-dark fs-5 mb-1">OYUNCU / MÜŞTERİ PORTALI</h3>
-                <p class="text-muted fs-7 mb-0">Halı saha kiralayın, randevularınızı takip edin.</p>
+                <p class="text-muted fs-7 mb-0">Saha ve kort kiralayın, randevularınızı takip edin.</p>
             </div>
         </div>
 
@@ -72,7 +48,7 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
                 <div class="role-icon mx-auto">
                     <i class="fa-solid fa-stadium"></i>
                 </div>
-                <h3 class="fw-bold text-dark fs-5 mb-1">HALI SAHA İŞLETMECİSİ</h3>
+                <h3 class="fw-bold text-dark fs-5 mb-1">TESİS İŞLETMECİSİ</h3>
                 <p class="text-muted fs-7 mb-0">Tesisinizi kaydetin, sahalarınızı yönetin.</p>
             </div>
         </div>
@@ -94,7 +70,7 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
                     </li>
                 </ul>
                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fs-8" onclick="fillDemoPlayer()">
-                    <i class="fa-solid fa-key me-1"></i> Demo Oyuncu Doldur (oyuncu1)
+                    <i class="fa-solid fa-key me-1"></i> Demo Oyuncu (oyuncu1)
                 </button>
             </div>
 
@@ -163,7 +139,7 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
                     </li>
                 </ul>
                 <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fs-8" onclick="fillDemoOwner()">
-                    <i class="fa-solid fa-key me-1"></i> Demo İşletmeci Doldur (kadikoy_arena)
+                    <i class="fa-solid fa-key me-1"></i> Demo İşletmeci (kadikoy_arena)
                 </button>
             </div>
 
@@ -194,8 +170,8 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
                     <form onsubmit="handleOwnerRegister(event)">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label text-muted fs-7 fw-semibold">HALI SAHA TESİS ADI *</label>
-                                <input type="text" class="form-control" name="facility_name" required placeholder="Örn: Moda Arena Halı Saha">
+                                <label class="form-label text-muted fs-7 fw-semibold">TESİS ADI *</label>
+                                <input type="text" class="form-control" name="facility_name" required placeholder="Örn: Moda Spor Kompleksi">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">YETKİLİ AD SOYAD *</label>
@@ -203,7 +179,7 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">KULLANICI ADI *</label>
-                                <input type="text" class="form-control" name="username" required placeholder="Örn: moda_arena">
+                                <input type="text" class="form-control" name="username" required placeholder="Örn: moda_spor">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted fs-7 fw-semibold">ŞİFRE *</label>
@@ -242,21 +218,6 @@ $current_team = $_SESSION['user_team'] ?? 'galatasaray';
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-let selectedTeam = '<?php echo htmlspecialchars($current_team); ?>';
-
-function changeTeamTheme(team) {
-    selectedTeam = team;
-    document.documentElement.setAttribute('data-team', team);
-    document.querySelectorAll('.team-pill').forEach(el => el.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-
-    fetch('api/auth.php?action=set_team', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `team=${encodeURIComponent(team)}`
-    });
-}
-
 function selectRole(role) {
     const cardP = document.getElementById('cardPlayer');
     const cardO = document.getElementById('cardOwner');
@@ -300,7 +261,7 @@ async function handlePlayerLogin(e) {
     const res = await fetch('api/auth.php?action=login_player', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}&team=${encodeURIComponent(selectedTeam)}`
+        body: `username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`
     });
     const json = await res.json();
     if (json.status === 'success') window.location.href = json.redirect;
@@ -310,7 +271,6 @@ async function handlePlayerLogin(e) {
 async function handlePlayerRegister(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    formData.append('team', selectedTeam);
 
     const res = await fetch('api/auth.php?action=register_player', { method: 'POST', body: formData });
     const json = await res.json();
@@ -326,7 +286,7 @@ async function handleOwnerLogin(e) {
     const res = await fetch('api/auth.php?action=login_owner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}&team=${encodeURIComponent(selectedTeam)}`
+        body: `username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`
     });
     const json = await res.json();
     if (json.status === 'success') window.location.href = json.redirect;
@@ -336,7 +296,6 @@ async function handleOwnerLogin(e) {
 async function handleOwnerRegister(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    formData.append('team', selectedTeam);
 
     const res = await fetch('api/auth.php?action=register_owner', { method: 'POST', body: formData });
     const json = await res.json();

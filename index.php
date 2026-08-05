@@ -1,10 +1,10 @@
 <?php
-// index.php - SporPin & SosyalHalıSaha Konseptli SahaNet PRO Portalı
+// index.php - SporNet PRO Online Spor Tesisleri & Kort Kiralama Portalı
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-$selected_city = $_SESSION['city'] ?? 'İstanbul';
-$selected_district = $_SESSION['district'] ?? 'Kadıköy';
+$selected_city = $_SESSION['city'] ?? '';
+$selected_district = $_SESSION['district'] ?? '';
 // Default guest theme color is ALWAYS 'neutral' (Emerald Green), unless logged in
 $current_team = isset($_SESSION['user_role']) ? ($_SESSION['user_team'] ?? 'neutral') : 'neutral';
 $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
@@ -14,7 +14,7 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SahaNet PRO - Online Halı Saha Rezervasyon Platformu</title>
+    <title>SahaNet PRO - Online Spor Tesisleri & Kort Kiralama Portalı</title>
     
     <!-- Google Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
 </head>
 <body>
 
-<!-- 1. HEADER NAVBAR -->
+<!-- 1. CLEAN HEADER NAVBAR -->
 <header class="minimal-navbar py-3 sticky-top">
     <div class="container px-4 d-flex align-items-center justify-content-between">
         <!-- Logo -->
@@ -37,18 +37,16 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
             </a>
         </div>
 
-        <!-- Right Navigation Links -->
+        <!-- Clean Navigation Links (Sahalar and Ana Sayfa only) -->
         <nav class="d-none d-lg-flex align-items-center gap-4 text-muted fs-7 fw-semibold">
             <a href="index.php" class="text-dark text-decoration-none"><i class="fa-solid fa-house me-1"></i> Ana Sayfa</a>
-            <a href="#facilitiesSection" class="text-secondary text-decoration-none"><i class="fa-solid fa-stadium me-1"></i> Sahalar</a>
-            <a href="#abonmanSection" class="text-secondary text-decoration-none"><i class="fa-solid fa-crown me-1"></i> Abonman Paketleri</a>
-            <a href="#howItWorks" class="text-secondary text-decoration-none"><i class="fa-solid fa-circle-question me-1"></i> Nasıl Çalışır</a>
+            <a href="#facilitiesSection" class="text-secondary text-decoration-none"><i class="fa-solid fa-stadium me-1"></i> Sahalar & Tesisler</a>
         </nav>
 
-        <!-- Auth Button / User Team Selector -->
+        <!-- Auth Button / Logged-in Team Selector -->
         <div class="d-flex align-items-center gap-2">
             <?php if ($user_name): ?>
-                <!-- Logged in user team selector -->
+                <!-- Team Quick Switcher (Logged-in only) -->
                 <select class="form-select form-select-sm max-w-130 border-0 bg-light" onchange="switchTeamTheme(this.value)">
                     <option value="galatasaray" <?php echo $current_team === 'galatasaray' ? 'selected' : ''; ?>>🟡🔴 GS</option>
                     <option value="fenerbahce" <?php echo $current_team === 'fenerbahce' ? 'selected' : ''; ?>>🔵🟡 FB</option>
@@ -68,25 +66,26 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
     </div>
 </header>
 
-<!-- 2. SPORPIN STYLE BODY HERO SEARCH BANNER WITH EXTRA FILTERS -->
+<!-- 2. SPORPIN STYLE BODY HERO SEARCH BANNER WITH DEFAULT PLACEHOLDERS AND FILTER PILLS -->
 <section class="py-5 mb-5 bg-dark text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
     <div class="container text-center py-4 position-relative" style="z-index: 2;">
         <span class="badge bg-white text-dark rounded-pill px-3 py-2 fs-7 mb-3 fw-bold shadow-sm">
-            <i class="fa-solid fa-bolt text-warning me-1"></i> SPORCULARLA HALI SAHALARI BULUŞTURAN PLATFORM!
+            <i class="fa-solid fa-bolt text-warning me-1"></i> SPORCULARLA TESİSLERİ BULUŞTURAN PLATFORM
         </span>
-        <h1 class="display-6 fw-extrabold mb-2">Hemen Halı Saha veya VIP Saha Bul, Rezervasyonunu Yap.</h1>
-        <p class="text-muted fs-6 mb-4 max-w-700 mx-auto">İl ve ilçe seçip "SAHA BUL" butonuna basarak tesisleri listeleyin.</p>
+        <h1 class="display-6 fw-extrabold mb-2">Hemen Saha veya Kort Bul, Online Rezervasyon Yap.</h1>
+        <p class="text-muted fs-6 mb-4 max-w-700 mx-auto">İl ve ilçe seçip "SAHA BUL" butonuna basarak spor tesislerini listeleyin.</p>
 
-        <!-- YÜZEN 3'LÜ ARAMA KUTUSU VE EKSTRA FİLTRELER -->
+        <!-- YÜZEN 3'LÜ ARAMA KUTUSU VE REVİZE EDİLMİŞ ŞIK FİLTRELER -->
         <div class="minimal-card p-4 max-w-950 mx-auto shadow-lg text-dark bg-white">
             <form onsubmit="executeSearch(event)" class="row g-3 align-items-center">
                 
-                <!-- 1. SPOR TİPİ -->
+                <!-- 1. SPOR TİPİ SEÇİNİZ -->
                 <div class="col-md-3">
                     <label class="form-label text-muted fs-8 fw-bold mb-1 text-uppercase text-start d-block">SPOR TİPİ</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0"><i class="fa-solid fa-futbol text-primary"></i></span>
                         <select class="form-select border-0 bg-light" id="searchSportType">
+                            <option value="" disabled selected>Spor Tipi Seçiniz</option>
                             <option value="Halı Saha">⚽ Halı Saha</option>
                             <option value="Basketbol Sahası">🏀 Basketbol Sahası</option>
                             <option value="Tenis Kortu">🎾 Tenis Kortu</option>
@@ -95,13 +94,14 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
                     </div>
                 </div>
 
-                <!-- 2. DİNAMİK İL SEÇİMİ (5 İL) -->
+                <!-- 2. İL SEÇİNİZ (VARSAYILAN "İl Seçiniz") -->
                 <div class="col-md-3">
                     <label class="form-label text-muted fs-8 fw-bold mb-1 text-uppercase text-start d-block">İL SEÇİMİ</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0"><i class="fa-solid fa-city text-primary"></i></span>
                         <select class="form-select border-0 bg-light" id="portalCity" onchange="onCityChange()">
-                            <option value="İstanbul" selected>İstanbul</option>
+                            <option value="" disabled selected>İl Seçiniz</option>
+                            <option value="İstanbul">İstanbul</option>
                             <option value="Ankara">Ankara</option>
                             <option value="İzmir">İzmir</option>
                             <option value="Bursa">Bursa</option>
@@ -110,13 +110,13 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
                     </div>
                 </div>
 
-                <!-- 3. İLE GÖRE DİNAMİK İLÇE SEÇİMİ -->
+                <!-- 3. İLÇE SEÇİNİZ (VARSAYILAN "İlçe Seçiniz") -->
                 <div class="col-md-3">
                     <label class="form-label text-muted fs-8 fw-bold mb-1 text-uppercase text-start d-block">İLÇE SEÇİMİ</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0"><i class="fa-solid fa-location-dot text-primary"></i></span>
                         <select class="form-select border-0 bg-light" id="portalDistrict">
-                            <!-- Populated dynamically via JS -->
+                            <option value="" disabled selected>İlçe Seçiniz</option>
                         </select>
                     </div>
                 </div>
@@ -128,35 +128,26 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
                     </button>
                 </div>
 
-                <!-- EKSTRA DETAYLI FİLTRELER -->
+                <!-- REVİZE EDİLMİŞ ŞIK FİLTRE PILL'LERİ -->
                 <div class="col-12 border-top pt-3 mt-2">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 fs-7">
-                        <div class="d-flex flex-wrap align-items-center gap-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filterCamera">
-                                <label class="form-check-label text-dark fw-semibold" for="filterCamera">
-                                    <i class="fa-solid fa-video text-success me-1"></i> HD Kamera Kaydı Var
-                                </label>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <div class="filter-pill" id="pillCamera" onclick="togglePill('pillCamera')">
+                                <i class="fa-solid fa-video me-1"></i> HD Kamera Kaydı
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filterWater">
-                                <label class="form-check-label text-dark fw-semibold" for="filterWater">
-                                    <i class="fa-solid fa-bottle-water text-info me-1"></i> Ücretsiz Su & İkram
-                                </label>
+                            <div class="filter-pill" id="pillWater" onclick="togglePill('pillWater')">
+                                <i class="fa-solid fa-bottle-water me-1"></i> Ücretsiz Su & İkram
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filterShower">
-                                <label class="form-check-label text-dark fw-semibold" for="filterShower">
-                                    <i class="fa-solid fa-shower text-primary me-1"></i> Duş & Soyunma Odası
-                                </label>
+                            <div class="filter-pill" id="pillShower" onclick="togglePill('pillShower')">
+                                <i class="fa-solid fa-shower me-1"></i> Soyunma Odası & Duş
                             </div>
                         </div>
 
                         <!-- SAHA TİPİ FİLTRESİ -->
                         <div class="d-flex align-items-center gap-2">
-                            <span class="text-muted fw-semibold">Saha Tipi:</span>
+                            <span class="text-muted fw-semibold fs-8">Saha Tipi:</span>
                             <select class="form-select form-select-sm border-0 bg-light max-w-140" id="filterFieldCover">
-                                <option value="Tümü">Tüm Sahalar</option>
+                                <option value="Tümü">Tüm Tesisler</option>
                                 <option value="Kapalı">Kapalı Saha</option>
                                 <option value="Açık">Açık Saha</option>
                             </select>
@@ -175,11 +166,11 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
         
         <div class="row g-4">
             
-            <!-- LEFT COLUMN (70%): SCROLLABLE STACKED FACILITY CARDS -->
+            <!-- LEFT COLUMN (70%): SCROLLABLE STACKED FACILITY CARDS WITH INLINE ACCORDION DRAWER -->
             <div class="col-lg-8">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="fw-bold text-dark mb-0 fs-5">
-                        <i class="fa-solid fa-stadium text-primary me-2"></i> Listelenen Halı Sahalar
+                        <i class="fa-solid fa-stadium text-primary me-2"></i> Listelenen Spor Tesisleri
                     </h4>
                     <span class="text-muted fs-7" id="facilityCountBadge">Arama bekleniyor...</span>
                 </div>
@@ -189,7 +180,7 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
                     <div class="minimal-card p-5 text-center text-muted">
                         <i class="fa-solid fa-magnifying-glass text-primary display-4 mb-3 d-block"></i>
                         <h5 class="fw-bold text-dark mb-2">Henüz Arama Yapmadınız</h5>
-                        <p class="fs-7 max-w-500 mx-auto">Lütfen yukarıdaki arama kutusundan kriterlerinizi seçip <strong>"SAHA BUL"</strong> butonuna basınız.</p>
+                        <p class="fs-7 max-w-500 mx-auto">Lütfen yukarıdaki arama kutusundan İl ve İlçe seçip <strong>"SAHA BUL"</strong> butonuna basınız.</p>
                     </div>
                 </div>
             </div>
@@ -204,7 +195,7 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
                     <div class="mb-3">
                         <label class="form-label text-muted fs-8 fw-bold">SEÇİLİ KONUM</label>
                         <div class="p-2.5 bg-light rounded-3 d-flex align-items-center justify-content-between fs-7 fw-bold text-dark border">
-                            <span><i class="fa-solid fa-location-dot text-danger me-2"></i><span id="summaryLocation">İstanbul / Kadıköy</span></span>
+                            <span><i class="fa-solid fa-location-dot text-danger me-2"></i><span id="summaryLocation">Henüz İl Seçilmedi</span></span>
                         </div>
                     </div>
 
@@ -233,42 +224,12 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
 
 </div>
 
-<!-- Modal: CANLI SAATLER TAKVİMİ MODALI (Tesis İçin "Saatleri Gör & Randevu Al" Tıklanınca Açılır) -->
-<div class="modal fade" id="facilityHoursModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content">
-            <div class="modal-header border-bottom">
-                <div>
-                    <h5 class="modal-title fw-bold" id="hoursModalTitle"><i class="fa-solid fa-calendar-days text-primary me-2"></i> Tesis Açık Saatleri</h5>
-                    <span class="text-muted fs-7" id="hoursModalSubTitle">İşletmenin belirlediği açık saatler</span>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-muted fs-7">Lütfen uygun saatin üzerine tıklayarak randevunuzu oluşturun.</span>
-                    <input type="date" class="form-control form-control-sm max-w-160" id="hoursModalDate" onchange="loadHoursModalTimeline()">
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-borderless text-center align-middle m-0 fs-8">
-                        <thead class="border-bottom text-muted">
-                            <tr id="hoursModalHeaderRow"></tr>
-                        </thead>
-                        <tbody id="hoursModalBodyRows"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Modal: Oyuncu Randevu Alma -->
 <div class="modal fade" id="playerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header border-bottom">
-                <h5 class="modal-title fw-bold"><i class="fa-solid fa-futbol text-primary me-2"></i> Halı Saha Randevusu Al</h5>
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-futbol text-primary me-2"></i> Spor Tesisi Randevusu Al</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="playerBookForm" onsubmit="handlePlayerBook(event)">
@@ -344,7 +305,7 @@ $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
                         <label class="form-label text-muted fs-7 fw-semibold">ABONMAN PAKETİ SEÇİN</label>
                         <select class="form-select" id="facSubTierSelect">
                             <option value="Aylık Fix (4.000 TL/Ay)">🔵 Aylık Fix Paket - 4.000 TL / Ay (%10 İndirim + Sabit Saat)</option>
-                            <option value="Sezonluk Efsane VIP (21.500 TL/Sezon)" selected>👑 Sezonluk Efsane VIP - 21.500 TL / Sezon (Drone Özet + VIP Garantili)</option>
+                            <option value="Sezonluk Efsane VIP (21.500 TL/Sezon)" selected>👑 Sezonluk Efsane VIP - 21.500 TL / Sezon (HD Özet + VIP Garantili)</option>
                             <option value="Kemik Kadro (11.000 TL/3 Ay)">🟡 Kemik Kadro Paket - 11.000 TL / 3 Ay (%15 İndirim + 1 Bedava Maç)</option>
                         </select>
                     </div>
@@ -376,19 +337,19 @@ const CITIES_DISTRICTS = {
     'Antalya': ['Tüm İlçeler', 'Muratpaşa', 'Konyaaltı', 'Kepez', 'Alanya']
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    onCityChange('<?php echo htmlspecialchars($selected_district); ?>');
-    const todayStr = new Date().toISOString().split('T')[0];
-    document.getElementById('hoursModalDate').value = todayStr;
-});
-
-function onCityChange(defaultDistrict = null) {
+function onCityChange() {
     const city = document.getElementById('portalCity').value;
     const distSelect = document.getElementById('portalDistrict');
     const districts = CITIES_DISTRICTS[city] || ['Tüm İlçeler'];
 
-    distSelect.innerHTML = districts.map(d => `<option value="${d}" ${d === defaultDistrict ? 'selected' : ''}>${d}</option>`).join('');
-    document.getElementById('summaryLocation').innerText = `${city} / ${distSelect.value}`;
+    let html = `<option value="" disabled selected>İlçe Seçiniz</option>`;
+    html += districts.map(d => `<option value="${d}">${d}</option>`).join('');
+    distSelect.innerHTML = html;
+    document.getElementById('summaryLocation').innerText = `${city} / (İlçe Seçiniz)`;
+}
+
+function togglePill(id) {
+    document.getElementById(id).classList.toggle('active');
 }
 
 function switchTeamTheme(team) {
@@ -401,25 +362,33 @@ function switchTeamTheme(team) {
 }
 
 let currentFacilities = [];
-let activeHoursFacility = null;
 
 function executeSearch(e) {
     if (e) e.preventDefault();
+
+    const city = document.getElementById('portalCity').value;
+    const districtSelect = document.getElementById('portalDistrict').value;
+
+    if (!city) {
+        alert('Lütfen bir İl seçiniz!');
+        return;
+    }
+
     loadFacilities();
 }
 
 async function loadFacilities() {
     const city = document.getElementById('portalCity').value;
     const districtSelect = document.getElementById('portalDistrict').value;
-    const district = (districtSelect === 'Tüm İlçeler') ? '' : districtSelect;
+    const district = (!districtSelect || districtSelect === 'Tüm İlçeler' || districtSelect === 'İlçe Seçiniz') ? '' : districtSelect;
 
-    document.getElementById('summaryLocation').innerText = `${city} / ${districtSelect}`;
+    document.getElementById('summaryLocation').innerText = `${city} / ${districtSelect || 'Tüm İlçeler'}`;
 
-    // Update active filter pills in right column
+    // Update active filter pills
     let filterPills = '';
-    if (document.getElementById('filterCamera').checked) filterPills += `<span class="badge bg-success bg-opacity-10 text-success border me-1">📹 HD Kamera</span>`;
-    if (document.getElementById('filterWater').checked) filterPills += `<span class="badge bg-info bg-opacity-10 text-info border me-1">💧 Ücretsiz Su</span>`;
-    if (document.getElementById('filterShower').checked) filterPills += `<span class="badge bg-primary bg-opacity-10 text-primary border me-1">🚿 Duş</span>`;
+    if (document.getElementById('pillCamera').classList.contains('active')) filterPills += `<span class="badge bg-success bg-opacity-10 text-success border me-1">📹 HD Kamera</span>`;
+    if (document.getElementById('pillWater').classList.contains('active')) filterPills += `<span class="badge bg-info bg-opacity-10 text-info border me-1">💧 Ücretsiz Su</span>`;
+    if (document.getElementById('pillShower').classList.contains('active')) filterPills += `<span class="badge bg-primary bg-opacity-10 text-primary border me-1">🚿 Duş</span>`;
     document.getElementById('summaryFilters').innerHTML = filterPills || `<span class="badge bg-light text-dark border">Tüm Tesisler</span>`;
 
     const res = await fetch(`api/facility.php?action=list_public&city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}`);
@@ -429,7 +398,7 @@ async function loadFacilities() {
     if (json.status === 'success') {
         currentFacilities = json.data;
 
-        document.getElementById('facilityCountBadge').innerText = `${currentFacilities.length} Saha Bulundu`;
+        document.getElementById('facilityCountBadge').innerText = `${currentFacilities.length} Tesis Bulundu`;
 
         if (currentFacilities.length === 0) {
             listContainer.innerHTML = `<div class="minimal-card p-5 text-center text-muted">Seçilen il/ilçede kayıtlı tesis bulunamadı. Lütfen başka bir il veya ilçe seçiniz.</div>`;
@@ -449,7 +418,7 @@ async function loadFacilities() {
                     </div>
                 </div>
 
-                <!-- Clean Field Names Badges -->
+                <!-- Clean Field Badges -->
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                     <span class="text-muted fs-8 fw-bold">SAHALAR:</span>
                     ${fac.fields.map(f => `<span class="badge bg-light text-dark border fs-8"><i class="fa-solid fa-futbol text-success me-1"></i>${escapeHtml(f.field_name)} (₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')})</span>`).join('')}
@@ -460,18 +429,29 @@ async function loadFacilities() {
                     <span><i class="fa-solid fa-video text-success me-1"></i> HD Kamera Kaydı var</span>
                     <span><i class="fa-solid fa-bottle-water text-info me-1"></i> Ücretsiz İkram</span>
                     <span><i class="fa-solid fa-shower text-primary me-1"></i> Soyunma Odası & Duş</span>
-                    <span><i class="fa-solid fa-wifi text-secondary me-1"></i> Ücretsiz Wi-Fi</span>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="d-flex flex-wrap gap-2 mt-3 pt-2 border-top">
-                    <button class="btn btn-team flex-grow-1 py-2 fs-7 fw-bold" onclick="openHoursModal(${fac.id})">
+                    <button class="btn btn-team flex-grow-1 py-2 fs-7 fw-bold" onclick="toggleAccordionDrawer(${fac.id})">
                         <i class="fa-solid fa-calendar-days me-1"></i> Saatleri Gör & Randevu Al
                     </button>
                     <button class="btn btn-outline-secondary py-2 fs-7 fw-bold" onclick="openFacilitySubModal(${fac.id}, '${escapeHtml(fac.name)}')">
                         <i class="fa-solid fa-crown text-warning me-1"></i> İncele & Abone Ol
                     </button>
                 </div>
+
+                <!-- INLINE SLIDE-DOWN ACCORDION RESERVATION DRAWER -->
+                <div id="drawer-fac-${fac.id}" class="facility-accordion-drawer d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clock text-primary me-1"></i> Uygun Saat Seçimi (${fac.name})</h6>
+                        <input type="date" class="form-control form-control-sm max-w-150" id="date-fac-${fac.id}" value="${new Date().toISOString().split('T')[0]}" onchange="renderInlineDrawerTimeline(${fac.id})">
+                    </div>
+                    <div id="timeline-container-${fac.id}" class="table-responsive">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+
             </div>`;
         });
 
@@ -480,27 +460,35 @@ async function loadFacilities() {
     }
 }
 
-function openHoursModal(facId) {
-    activeHoursFacility = currentFacilities.find(f => f.id == facId);
-    if (!activeHoursFacility) return;
+async function toggleAccordionDrawer(facId) {
+    const drawer = document.getElementById(`drawer-fac-${facId}`);
+    if (!drawer) return;
 
-    document.getElementById('hoursModalTitle').innerText = `${activeHoursFacility.name} - Açık Saatler`;
-    document.getElementById('hoursModalSubTitle').innerText = `İşletmenin Çalışma Saatleri: ${activeHoursFacility.open_time} - ${activeHoursFacility.close_time}`;
+    if (!drawer.classList.contains('d-none')) {
+        drawer.classList.add('d-none');
+        return;
+    }
 
-    loadHoursModalTimeline();
-    new bootstrap.Modal(document.getElementById('facilityHoursModal')).show();
+    // Hide all other open drawers first
+    document.querySelectorAll('.facility-accordion-drawer').forEach(el => el.classList.add('d-none'));
+
+    drawer.classList.remove('d-none');
+    await renderInlineDrawerTimeline(facId);
 }
 
-async function loadHoursModalTimeline() {
-    if (!activeHoursFacility) return;
-    const date = document.getElementById('hoursModalDate').value;
+async function renderInlineDrawerTimeline(facId) {
+    const fac = currentFacilities.find(f => f.id == facId);
+    if (!fac) return;
 
-    const res = await fetch(`api/reservations.php?action=list&facility_id=${activeHoursFacility.id}`);
+    const dateInput = document.getElementById(`date-fac-${facId}`);
+    const date = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+
+    const res = await fetch(`api/reservations.php?action=list&facility_id=${facId}`);
     const json = await res.json();
     const reservations = json.data || [];
 
-    const openH = parseInt(activeHoursFacility.open_time || '13');
-    let closeH = parseInt(activeHoursFacility.close_time || '01');
+    const openH = parseInt(fac.open_time || '13');
+    let closeH = parseInt(fac.close_time || '01');
     if (closeH <= openH) closeH += 24;
 
     const hours = [];
@@ -509,43 +497,35 @@ async function loadHoursModalTimeline() {
         hours.push((realH < 10 ? '0' : '') + realH + ':00');
     }
 
-    const headerRow = document.getElementById('hoursModalHeaderRow');
-    let hHtml = `<th class="text-start">SAHA ADI</th>`;
+    let hHtml = `<table class="table table-borderless text-center align-middle m-0 fs-8"><thead class="border-bottom text-muted"><tr><th class="text-start">SAHA</th>`;
     hours.forEach(h => hHtml += `<th>${h}</th>`);
-    headerRow.innerHTML = hHtml;
+    hHtml += `</tr></thead><tbody>`;
 
-    const bodyRows = document.getElementById('hoursModalBodyRows');
-    let bHtml = '';
-
-    activeHoursFacility.fields.forEach(field => {
-        bHtml += `<tr><td class="fw-bold text-dark text-start py-2"><i class="fa-solid fa-futbol text-primary me-1"></i>${escapeHtml(field.field_name)}</td>`;
+    fac.fields.forEach(field => {
+        hHtml += `<tr><td class="fw-bold text-dark text-start py-2">${escapeHtml(field.field_name)}</td>`;
 
         hours.forEach(h => {
             const isBooked = reservations.some(r => r.field_id == field.id && r.reservation_date === date && r.reservation_time === h && r.status !== 'İptal');
 
             if (isBooked) {
-                bHtml += `<td><div class="slot-badge slot-busy"><i class="fa-solid fa-lock me-1"></i>DOLU</div></td>`;
+                hHtml += `<td><div class="slot-badge slot-busy-normal"><i class="fa-solid fa-lock me-1"></i>DOLU</div></td>`;
             } else {
-                bHtml += `<td>
-                    <div class="slot-badge slot-free" onclick="openPlayerBookModal(${activeHoursFacility.id}, ${field.id}, '${escapeHtml(field.field_name)}', '${date}', '${h}', ${field.hourly_fee})">
+                hHtml += `<td>
+                    <div class="slot-badge slot-free" onclick="openPlayerBookModal(${fac.id}, ${field.id}, '${escapeHtml(field.field_name)}', '${date}', '${h}', ${field.hourly_fee})">
                         +${h}
                     </div>
                 </td>`;
             }
         });
 
-        bHtml += `</tr>`;
+        hHtml += `</tr>`;
     });
 
-    bodyRows.innerHTML = bHtml;
+    hHtml += `</tbody></table>`;
+    document.getElementById(`timeline-container-${facId}`).innerHTML = hHtml;
 }
 
 function openPlayerBookModal(facId, fieldId, fieldName, date, time, fee) {
-    // Hide hours modal if open
-    const modalHoursEl = document.getElementById('facilityHoursModal');
-    const modalHours = bootstrap.Modal.getInstance(modalHoursEl);
-    if (modalHours) modalHours.hide();
-
     document.getElementById('modalFacId').value = facId;
     document.getElementById('modalFieldId').value = fieldId;
     document.getElementById('modalFieldName').value = fieldName;
@@ -583,7 +563,8 @@ async function handlePlayerBook(e) {
     if (json.status === 'success') {
         alert('🎉 Randevunuz başarıyla oluşturuldu!');
         bootstrap.Modal.getInstance(document.getElementById('playerModal')).hide();
-        if (activeHoursFacility) loadHoursModalTimeline();
+        const facId = document.getElementById('modalFacId').value;
+        renderInlineDrawerTimeline(facId);
     } else {
         alert(json.message);
     }

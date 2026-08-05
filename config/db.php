@@ -1,5 +1,5 @@
 <?php
-// config/db.php - SahaNet PRO Database Connection with Auto Schema Initialization
+// config/db.php - SahaNet PRO Database Connection with Auto Migration Check
 
 $db_host = getenv('DB_HOST') ?: '127.0.0.1';
 $db_name = getenv('DB_NAME') ?: 'halisaha_db';
@@ -36,7 +36,7 @@ try {
     }
 }
 
-// Ensure all tables exist on every request to prevent 1146 missing table errors
+// Ensure all tables and columns exist on every request to prevent 1146 and 1054 SQL errors
 try {
     $autoIncrement = ($db_type === 'mysql') ? "AUTO_INCREMENT" : "AUTOINCREMENT";
 
@@ -82,8 +82,8 @@ try {
     // 4. Field Reservations
     $pdo->exec("CREATE TABLE IF NOT EXISTS field_reservations (
         id INTEGER PRIMARY KEY {$autoIncrement},
-        facility_id INTEGER NOT NULL,
-        field_id INTEGER NOT NULL,
+        facility_id INTEGER NOT NULL DEFAULT 1,
+        field_id INTEGER NOT NULL DEFAULT 1,
         field_name VARCHAR(100) NOT NULL,
         team_name VARCHAR(100) NOT NULL,
         contact_name VARCHAR(100) NOT NULL,
@@ -100,6 +100,10 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );");
 
+    // SQL MIGRATION FIX: Add facility_id and field_id if missing in old SQLite/MySQL table
+    try { $pdo->exec("ALTER TABLE field_reservations ADD COLUMN facility_id INTEGER DEFAULT 1"); } catch (PDOException $ex) {}
+    try { $pdo->exec("ALTER TABLE field_reservations ADD COLUMN field_id INTEGER DEFAULT 1"); } catch (PDOException $ex) {}
+
     // Check if facilities is empty; if so, seed default demo accounts
     $stmtFacCheck = $pdo->query("SELECT COUNT(*) as cnt FROM facilities");
     if ($stmtFacCheck->fetch()['cnt'] == 0) {
@@ -108,7 +112,7 @@ try {
         // Demo Facility
         $insFac = $pdo->prepare("INSERT INTO facilities (name, owner_name, username, password, city, district, address, phone, open_time, close_time, favorite_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $insFac->execute([
-            'Kadıköy Şampiyonlar Halı Saha Kompleksi',
+            'Kadıköy Şampiyonlar Spor Kompleksi',
             'Mehmet Kaya',
             'kadikoy_arena',
             $passHash,
@@ -123,9 +127,8 @@ try {
 
         // Demo Fields
         $insFld = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee) VALUES (?, ?, ?, ?)");
-        $insFld->execute([1, 'Saha 1 (Kapalı UEFA Çim)', 'Kapalı Suni Çim', 1200.00]);
-        $insFld->execute([1, 'Saha 2 (Açık Hibrit Çim)', 'Açık Hibrit', 1100.00]);
-        $insFld->execute([1, 'Saha 3 (VIP Pro Kamera Kayıtlı)', 'VIP Kapalı Çim', 1400.00]);
+        $insFld->execute([1, 'Saha 1', 'Kapalı Saha', 1200.00]);
+        $insFld->execute([1, 'Saha 2', 'Açık Saha', 1100.00]);
 
         // Demo Player
         $insU = $pdo->prepare("INSERT INTO users (full_name, username, password, phone, favorite_team) VALUES (?, ?, ?, ?, ?)");

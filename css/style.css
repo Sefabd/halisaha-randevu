@@ -1,4 +1,4 @@
-/* SahaNet PRO - Minimalist Light Mode & Dynamic Süper Lig Team Color Engine */
+/* SahaNet PRO - Minimalist Light Mode & Deep Team Color Engine */
 
 :root {
   /* Base Light Palette */
@@ -12,23 +12,19 @@
   --text-muted: #64748b;
   --text-light: #94a3b8;
   
-  /* Default Neutral Team Theme (Emerald) */
+  /* Default Emerald Theme */
   --team-primary: #059669;
   --team-secondary: #10b981;
   --team-light: #ecfdf5;
   --team-border: #a7f3d0;
-  --team-glow: rgba(16, 185, 129, 0.12);
+  --team-glow: rgba(16, 185, 129, 0.15);
   --team-gradient: linear-gradient(135deg, #059669, #10b981);
   
   --font-heading: 'Outfit', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* ==========================================================================
-   SÜPER LİG DYNAMIC TEAM COLOR THEMES
-   ========================================================================== */
-
-/* 🟡🔴 Galatasaray Theme */
+/* Süper Lig Team Color Engines */
 [data-team="galatasaray"] {
   --team-primary: #d6001c;
   --team-secondary: #fdb913;
@@ -38,7 +34,6 @@
   --team-gradient: linear-gradient(135deg, #d6001c, #fdb913);
 }
 
-/* 🔵🟡 Fenerbahçe Theme */
 [data-team="fenerbahce"] {
   --team-primary: #002b66;
   --team-secondary: #ffed00;
@@ -48,7 +43,6 @@
   --team-gradient: linear-gradient(135deg, #002b66, #0055b8);
 }
 
-/* ⬛⚪ Beşiktaş Theme */
 [data-team="besiktas"] {
   --team-primary: #111827;
   --team-secondary: #4b5563;
@@ -58,7 +52,6 @@
   --team-gradient: linear-gradient(135deg, #111827, #374151);
 }
 
-/* 🟣🔴 Trabzonspor Theme */
 [data-team="trabzonspor"] {
   --team-primary: #77001e;
   --team-secondary: #2b547e;
@@ -68,7 +61,6 @@
   --team-gradient: linear-gradient(135deg, #77001e, #2b547e);
 }
 
-/* Base Layout & Typography */
 body {
   background-color: var(--bg-body);
   color: var(--text-main);
@@ -83,23 +75,25 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   letter-spacing: -0.02em;
 }
 
-/* Minimalist Cards */
+/* Minimalist Cards with Team Top Accent */
 .minimal-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 18px;
+  border-top: 3px solid var(--team-primary);
+  border-radius: 16px;
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .minimal-card:hover {
   border-color: var(--border-hover);
+  border-top-color: var(--team-primary);
   box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
 }
 
 /* Clean Header Navbar */
 .minimal-navbar {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
@@ -112,34 +106,13 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   color: #ffffff;
   font-weight: 800;
   padding: 6px 14px;
-  border-radius: 12px;
+  border-radius: 10px;
   box-shadow: 0 4px 12px var(--team-glow);
 }
 
-/* Team Selector Selector Options */
-.team-pill {
-  padding: 8px 16px;
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-  background: #ffffff;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.team-pill.active, .team-pill:hover {
-  border-color: var(--team-primary);
-  background: var(--team-light);
-  color: var(--team-primary);
-}
-
-/* Role Cards in Login */
+/* Role Cards */
 .role-card {
-  padding: 24px;
+  padding: 20px;
   border-radius: 16px;
   border: 2px solid var(--border-color);
   background: #ffffff;
@@ -155,79 +128,88 @@ h1, h2, h3, h4, h5, h6, .brand-font {
 }
 
 .role-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
   background: var(--team-light);
   color: var(--team-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  margin-bottom: 12px;
+  font-size: 1.4rem;
+  margin-bottom: 10px;
 }
 
-/* Minimal Facility Card */
-.facility-card {
-  background: #ffffff;
+/* Minimal Filter Pills */
+.filter-pill {
+  padding: 8px 14px;
+  border-radius: 20px;
   border: 1px solid var(--border-color);
-  border-radius: 18px;
-  padding: 24px;
-  transition: all 0.25s;
-  position: relative;
-  overflow: hidden;
-}
-
-.facility-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 4px;
-  background: var(--team-gradient);
-  opacity: 0;
-  transition: opacity 0.25s;
-}
-
-.facility-card:hover {
-  border-color: var(--team-primary);
-  box-shadow: 0 10px 30px var(--team-glow);
-  transform: translateY(-3px);
-}
-
-.facility-card:hover::before {
-  opacity: 1;
-}
-
-/* Minimal Hourly Slot Badges */
-.slot-badge {
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-weight: 700;
+  background: #ffffff;
+  cursor: pointer;
   font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.filter-pill.active, .filter-pill:hover {
+  border-color: var(--team-primary);
+  background: var(--team-light);
+  color: var(--team-primary);
+}
+
+/* Hourly Slot Badges (Owner & Player) */
+.slot-badge {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
   border: 1px solid transparent;
 }
 
+/* 🟢 Yeşil: Boş Randevu */
 .slot-free {
-  background: var(--team-light);
-  color: var(--team-primary);
-  border-color: var(--team-border);
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
 }
 
 .slot-free:hover {
-  background: var(--team-primary);
+  background: #10b981;
   color: #ffffff;
-  box-shadow: 0 4px 12px var(--team-glow);
-  transform: scale(1.04);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transform: scale(1.05);
 }
 
-.slot-busy {
+/* 🔴 Kırmızı: Alınan Normal Randevu */
+.slot-busy-normal {
   background: #fef2f2;
-  color: #ef4444;
-  border-color: #fecaca;
-  cursor: not-allowed;
-  opacity: 0.7;
+  color: #dc2626;
+  border-color: #fca5a5;
+  cursor: pointer;
+}
+
+.slot-busy-normal:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+/* 🟡 Sarı: Haftalık Abonmanlı Randevu */
+.slot-busy-sub {
+  background: #fefce8;
+  color: #d97706;
+  border-color: #fde047;
+  cursor: pointer;
+}
+
+.slot-busy-sub:hover {
+  background: #d97706;
+  color: #ffffff;
 }
 
 /* Clean Form Controls */
@@ -236,8 +218,8 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   border: 1px solid var(--border-color) !important;
   color: var(--text-main) !important;
   border-radius: 10px !important;
-  padding: 10px 14px !important;
-  font-size: 0.92rem;
+  padding: 9px 13px !important;
+  font-size: 0.9rem;
 }
 
 .form-control:focus, .form-select:focus {
@@ -245,14 +227,14 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   box-shadow: 0 0 0 3px var(--team-glow) !important;
 }
 
-/* Minimal Buttons */
+/* Buttons */
 .btn-team {
   background: var(--team-gradient);
   color: #ffffff;
   border: none;
   font-weight: 700;
   border-radius: 10px;
-  padding: 10px 20px;
+  padding: 9px 18px;
   box-shadow: 0 4px 14px var(--team-glow);
   transition: all 0.25s;
 }
@@ -263,108 +245,17 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   color: #ffffff;
 }
 
-/* Subscription Cards */
-.sub-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 28px;
-  transition: all 0.3s;
-  position: relative;
-}
-
-.sub-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
-}
-
-.sub-card-vip {
-  border: 2px solid var(--team-primary);
-  box-shadow: 0 10px 30px var(--team-glow);
-}
-
-.vip-badge {
-  position: absolute;
-  top: -12px;
-  right: 20px;
-  background: var(--team-gradient);
-  color: #ffffff;
-  font-size: 0.72rem;
-  font-weight: 800;
-  padding: 4px 12px;
+/* Inline Slide-Down Accordion Panel */
+.facility-accordion-drawer {
+  background: #f8fafc;
+  border: 1px solid var(--team-border);
   border-radius: 12px;
-  letter-spacing: 0.5px;
+  padding: 20px;
+  margin-top: 15px;
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Clean Tables */
-.table-minimal {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 6px;
-}
-
-.table-minimal th {
-  padding: 12px 16px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.table-minimal td {
-  background: #ffffff;
-  padding: 14px 16px;
-  vertical-align: middle;
-  border-top: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.table-minimal td:first-child {
-  border-left: 1px solid var(--border-color);
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
-}
-
-.table-minimal td:last-child {
-  border-right: 1px solid var(--border-color);
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
-}
-
-/* Floating Bottom Nav */
-.bottom-nav {
-  position: fixed;
-  bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 30px);
-  max-width: 480px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
-  border-radius: 25px;
-  padding: 8px 16px;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  z-index: 1050;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
-}
-
-.nav-item-btn {
-  color: var(--text-muted);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.nav-item-btn:hover, .nav-item-btn.active {
-  color: var(--team-primary);
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
