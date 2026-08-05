@@ -1,38 +1,81 @@
-/* SahaNet PRO - FIFA Stadium Aesthetic & Glassmorphism Design System */
+/* SahaNet PRO - Minimalist Light Mode & Dynamic Süper Lig Team Color Engine */
 
 :root {
-  --stadium-dark: #06090e;
-  --stadium-pitch-green: #052e16;
-  --pitch-grass-bright: #10b981;
-  --pitch-grass-glow: rgba(16, 185, 129, 0.4);
+  /* Base Light Palette */
+  --bg-body: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --border-color: #e2e8f0;
+  --border-hover: #cbd5e1;
   
-  --uefa-blue: #0284c7;
-  --uefa-blue-glow: rgba(2, 132, 199, 0.5);
-  --gold-vip: #f59e0b;
-  --gold-glow: rgba(245, 158, 11, 0.6);
-  --danger-red: #ef4444;
-
-  --glass-bg: rgba(10, 15, 26, 0.82);
-  --glass-bg-hover: rgba(20, 30, 48, 0.9);
-  --glass-border: rgba(255, 255, 255, 0.12);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  
+  /* Default Neutral Team Theme (Emerald) */
+  --team-primary: #059669;
+  --team-secondary: #10b981;
+  --team-light: #ecfdf5;
+  --team-border: #a7f3d0;
+  --team-glow: rgba(16, 185, 129, 0.12);
+  --team-gradient: linear-gradient(135deg, #059669, #10b981);
   
   --font-heading: 'Outfit', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
 }
 
+/* ==========================================================================
+   SÜPER LİG DYNAMIC TEAM COLOR THEMES
+   ========================================================================== */
+
+/* 🟡🔴 Galatasaray Theme */
+[data-team="galatasaray"] {
+  --team-primary: #d6001c;
+  --team-secondary: #fdb913;
+  --team-light: #fff5f5;
+  --team-border: #fca5a5;
+  --team-glow: rgba(214, 0, 28, 0.15);
+  --team-gradient: linear-gradient(135deg, #d6001c, #fdb913);
+}
+
+/* 🔵🟡 Fenerbahçe Theme */
+[data-team="fenerbahce"] {
+  --team-primary: #002b66;
+  --team-secondary: #ffed00;
+  --team-light: #f0f7ff;
+  --team-border: #93c5fd;
+  --team-glow: rgba(0, 43, 102, 0.15);
+  --team-gradient: linear-gradient(135deg, #002b66, #0055b8);
+}
+
+/* ⬛⚪ Beşiktaş Theme */
+[data-team="besiktas"] {
+  --team-primary: #111827;
+  --team-secondary: #4b5563;
+  --team-light: #f3f4f6;
+  --team-border: #d1d5db;
+  --team-glow: rgba(17, 24, 39, 0.15);
+  --team-gradient: linear-gradient(135deg, #111827, #374151);
+}
+
+/* 🟣🔴 Trabzonspor Theme */
+[data-team="trabzonspor"] {
+  --team-primary: #77001e;
+  --team-secondary: #2b547e;
+  --team-light: #fff0f3;
+  --team-border: #fca5a5;
+  --team-glow: rgba(119, 0, 30, 0.15);
+  --team-gradient: linear-gradient(135deg, #77001e, #2b547e);
+}
+
+/* Base Layout & Typography */
 body {
-  background-color: var(--stadium-dark);
-  color: #f8fafc;
+  background-color: var(--bg-body);
+  color: var(--text-main);
   font-family: var(--font-body);
   min-height: 100vh;
   margin: 0;
   padding-bottom: 80px;
-  background-image: 
-    radial-gradient(circle at 50% -10%, rgba(16, 185, 129, 0.25), transparent 60%),
-    radial-gradient(circle at 90% 40%, rgba(2, 132, 199, 0.15), transparent 50%),
-    radial-gradient(circle at 10% 80%, rgba(245, 158, 11, 0.12), transparent 50%),
-    linear-gradient(to bottom, rgba(6, 9, 14, 0.85), rgba(6, 9, 14, 0.95));
-  background-attachment: fixed;
 }
 
 h1, h2, h3, h4, h5, h6, .brand-font {
@@ -40,251 +83,288 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   letter-spacing: -0.02em;
 }
 
-/* Glassmorphism Containers */
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Minimalist Cards */
+.minimal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.22);
+.minimal-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
 }
 
-/* FIFA Header Navbar */
-.fifa-navbar {
-  background: rgba(6, 9, 14, 0.9);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--glass-border);
+/* Clean Header Navbar */
+.minimal-navbar {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 1000;
 }
 
-.brand-logo {
-  background: linear-gradient(135deg, #10b981, #047857);
-  color: #fff;
-  font-weight: 900;
+.brand-badge {
+  background: var(--team-gradient);
+  color: #ffffff;
+  font-weight: 800;
   padding: 6px 14px;
   border-radius: 12px;
-  box-shadow: 0 0 20px var(--pitch-grass-glow);
+  box-shadow: 0 4px 12px var(--team-glow);
 }
 
-/* Role Selection Login Cards */
-.role-card {
-  padding: 30px;
-  border-radius: 24px;
+/* Team Selector Selector Options */
+.team-pill {
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
   cursor: pointer;
-  border: 2px solid transparent;
-  background: rgba(15, 23, 42, 0.7);
-  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.team-pill.active, .team-pill:hover {
+  border-color: var(--team-primary);
+  background: var(--team-light);
+  color: var(--team-primary);
+}
+
+/* Role Cards in Login */
+.role-card {
+  padding: 24px;
+  border-radius: 16px;
+  border: 2px solid var(--border-color);
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.25s;
 }
 
 .role-card:hover, .role-card.active {
-  border-color: var(--pitch-grass-bright);
-  background: rgba(16, 185, 129, 0.1);
-  box-shadow: 0 0 30px var(--pitch-grass-glow);
-  transform: translateY(-4px);
+  border-color: var(--team-primary);
+  background: var(--team-light);
+  box-shadow: 0 8px 25px var(--team-glow);
+  transform: translateY(-2px);
 }
 
 .role-icon {
-  width: 70px;
-  height: 70px;
-  border-radius: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--team-light);
+  color: var(--team-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  margin-bottom: 15px;
+  font-size: 1.5rem;
+  margin-bottom: 12px;
 }
 
-/* Facility Card (Player Portal) */
+/* Minimal Facility Card */
 .facility-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
   padding: 24px;
-  border-radius: 20px;
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(5, 46, 22, 0.3));
-  border: 1px solid var(--glass-border);
-  transition: all 0.3s ease;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.facility-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 4px;
+  background: var(--team-gradient);
+  opacity: 0;
+  transition: opacity 0.25s;
 }
 
 .facility-card:hover {
-  transform: translateY(-5px);
-  border-color: var(--pitch-grass-bright);
-  box-shadow: 0 10px 30px var(--pitch-grass-glow);
+  border-color: var(--team-primary);
+  box-shadow: 0 10px 30px var(--team-glow);
+  transform: translateY(-3px);
 }
 
-.badge-hours {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.78rem;
+.facility-card:hover::before {
+  opacity: 1;
 }
 
-/* 3D ABONMAN PAKETLERİ CARDS */
-.subscription-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-  align-items: center;
-}
-
-.sub-card {
-  position: relative;
-  padding: 30px 24px;
-  border-radius: 24px;
-  transition: all 0.4s ease;
-}
-
-.sub-card:hover {
-  transform: translateY(-8px);
-}
-
-.sub-card-blue {
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 132, 199, 0.2));
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  box-shadow: 0 10px 30px rgba(2, 132, 199, 0.2);
-}
-
-.sub-card-vip {
-  background: linear-gradient(145deg, rgba(30, 10, 15, 0.95), rgba(245, 158, 11, 0.25));
-  border: 2px solid var(--gold-vip);
-  box-shadow: 0 0 35px var(--gold-glow);
-  transform: scale(1.04);
-  z-index: 2;
-}
-
-.sub-card-yellow {
-  background: linear-gradient(145deg, rgba(20, 20, 20, 0.95), rgba(234, 179, 8, 0.2));
-  border: 1px solid rgba(234, 179, 8, 0.4);
-  box-shadow: 0 10px 30px rgba(234, 179, 8, 0.2);
-}
-
-.vip-banner {
-  position: absolute;
-  top: -14px;
-  right: 25px;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: #000;
-  font-weight: 900;
-  font-size: 0.75rem;
-  padding: 4px 14px;
-  border-radius: 20px;
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.6);
-}
-
-/* Hourly Slot Badges */
+/* Minimal Hourly Slot Badges */
 .slot-badge {
-  padding: 10px 14px;
-  border-radius: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
   text-align: center;
   border: 1px solid transparent;
 }
 
 .slot-free {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border-color: rgba(52, 211, 153, 0.3);
+  background: var(--team-light);
+  color: var(--team-primary);
+  border-color: var(--team-border);
 }
 
 .slot-free:hover {
-  background: #10b981;
-  color: #fff;
-  box-shadow: 0 0 15px var(--pitch-grass-glow);
-  transform: scale(1.05);
+  background: var(--team-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--team-glow);
+  transform: scale(1.04);
 }
 
 .slot-busy {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border-color: rgba(248, 113, 113, 0.3);
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
-/* Dark Controls */
+/* Clean Form Controls */
 .form-control, .form-select {
-  background-color: rgba(15, 23, 42, 0.85) !important;
-  border: 1px solid var(--glass-border) !important;
-  color: #f8fafc !important;
-  border-radius: 12px !important;
-  padding: 10px 16px !important;
+  background-color: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-size: 0.92rem;
 }
 
 .form-control:focus, .form-select:focus {
-  border-color: var(--pitch-grass-bright) !important;
-  box-shadow: 0 0 12px var(--pitch-grass-glow) !important;
+  border-color: var(--team-primary) !important;
+  box-shadow: 0 0 0 3px var(--team-glow) !important;
 }
 
-/* FIFA Buttons */
-.btn-fifa {
-  background: linear-gradient(135deg, var(--pitch-grass-bright), #047857);
-  color: #fff;
+/* Minimal Buttons */
+.btn-team {
+  background: var(--team-gradient);
+  color: #ffffff;
   border: none;
   font-weight: 700;
-  border-radius: 12px;
-  padding: 10px 22px;
-  box-shadow: 0 4px 15px var(--pitch-grass-glow);
-  transition: all 0.3s;
+  border-radius: 10px;
+  padding: 10px 20px;
+  box-shadow: 0 4px 14px var(--team-glow);
+  transition: all 0.25s;
 }
 
-.btn-fifa:hover {
+.btn-team:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 22px var(--pitch-grass-glow);
-  color: #fff;
+  box-shadow: 0 6px 20px var(--team-glow);
+  color: #ffffff;
 }
 
-/* Modals */
-.modal-content-glass {
-  background: rgba(10, 15, 26, 0.96);
-  backdrop-filter: blur(25px);
-  border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  color: #f8fafc;
+/* Subscription Cards */
+.sub-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 28px;
+  transition: all 0.3s;
+  position: relative;
 }
 
-/* Bottom Nav */
+.sub-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+}
+
+.sub-card-vip {
+  border: 2px solid var(--team-primary);
+  box-shadow: 0 10px 30px var(--team-glow);
+}
+
+.vip-badge {
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: var(--team-gradient);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* Clean Tables */
+.table-minimal {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+}
+
+.table-minimal th {
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table-minimal td {
+  background: #ffffff;
+  padding: 14px 16px;
+  vertical-align: middle;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table-minimal td:first-child {
+  border-left: 1px solid var(--border-color);
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.table-minimal td:last-child {
+  border-right: 1px solid var(--border-color);
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* Floating Bottom Nav */
 .bottom-nav {
   position: fixed;
   bottom: 15px;
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 30px);
-  max-width: 500px;
-  background: rgba(10, 15, 26, 0.94);
-  backdrop-filter: blur(24px);
-  border: 1px solid var(--glass-border);
-  border-radius: 30px;
-  padding: 10px 20px;
+  max-width: 480px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  border-radius: 25px;
+  padding: 8px 16px;
   display: flex;
   justify-content: space-around;
   align-items: center;
   z-index: 1050;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
 }
 
 .nav-item-btn {
-  color: #94a3b8;
+  color: var(--text-muted);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  font-size: 0.72rem;
+  gap: 2px;
+  font-size: 0.7rem;
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s;
 }
 
 .nav-item-btn:hover, .nav-item-btn.active {
-  color: #34d399;
+  color: var(--team-primary);
 }

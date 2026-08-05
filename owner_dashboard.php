@@ -1,10 +1,9 @@
 <?php
-// owner_dashboard.php - Halı Saha İşletmecisi Özel Yönetim Paneli
+// owner_dashboard.php - Halı Saha İşletmecisi Yönetim Paneli (Light Mode & Team Engine)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Redirect to login if not authenticated as owner
 if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
     header('Location: login.php');
     exit;
@@ -12,37 +11,47 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
 
 $facility_name = $_SESSION['facility_name'] ?? 'Halı Saha Tesisim';
 $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
+$current_team = $_SESSION['user_team'] ?? 'galatasaray';
 ?>
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-team="<?php echo htmlspecialchars($current_team); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($facility_name); ?> - İşletmeci Yönetim Paneli</title>
+    <title><?php echo htmlspecialchars($facility_name); ?> - İşletmeci Paneli</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<!-- Header -->
-<header class="fifa-navbar py-3 mb-4">
+<!-- Header Navbar -->
+<header class="minimal-navbar py-3 mb-4">
     <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-3">
-            <div class="brand-logo">
+            <div class="brand-badge">
                 <i class="fa-solid fa-stadium me-1"></i> İŞLETME PANELİ
             </div>
             <div>
-                <h4 class="fw-bold text-white mb-0 fs-5"><?php echo htmlspecialchars($facility_name); ?></h4>
-                <span class="text-muted fs-7"><i class="fa-solid fa-user-check text-success me-1"></i> Hoşgeldin, <?php echo htmlspecialchars($owner_name); ?></span>
+                <h4 class="fw-bold text-dark mb-0 fs-5"><?php echo htmlspecialchars($facility_name); ?></h4>
+                <span class="text-muted fs-7"><i class="fa-solid fa-circle-check text-success me-1"></i> Hoşgeldin, <?php echo htmlspecialchars($owner_name); ?></span>
             </div>
         </div>
 
         <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-fifa btn-sm rounded-3" data-bs-toggle="modal" data-bs-target="#walkinModal">
-                <i class="fa-solid fa-plus-circle me-1"></i> Hızlı Randevu Ekle (Elden Müşteri)
+            <!-- Team Quick Switcher -->
+            <select class="form-select form-select-sm max-w-140" onchange="switchTeamTheme(this.value)">
+                <option value="galatasaray" <?php echo $current_team === 'galatasaray' ? 'selected' : ''; ?>>🟡🔴 GS</option>
+                <option value="fenerbahce" <?php echo $current_team === 'fenerbahce' ? 'selected' : ''; ?>>🔵🟡 FB</option>
+                <option value="besiktas" <?php echo $current_team === 'besiktas' ? 'selected' : ''; ?>>⬛⚪ BJK</option>
+                <option value="trabzonspor" <?php echo $current_team === 'trabzonspor' ? 'selected' : ''; ?>>🟣🔴 TS</option>
+                <option value="neutral" <?php echo $current_team === 'neutral' ? 'selected' : ''; ?>>🟢⚪ Nötr</option>
+            </select>
+
+            <button class="btn btn-team btn-sm" data-bs-toggle="modal" data-bs-target="#walkinModal">
+                <i class="fa-solid fa-plus-circle me-1"></i> Elden Hızlı Randevu Ekle
             </button>
             <a href="api/auth.php?action=logout" class="btn btn-outline-danger btn-sm rounded-3">
                 <i class="fa-solid fa-right-from-bracket me-1"></i> Çıkış Yap
@@ -53,43 +62,41 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
 
 <div class="container-fluid px-4">
     
-    <!-- Top Stats for Owner -->
+    <!-- Top Stats -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
-            <div class="glass-panel p-3">
-                <div class="text-muted fs-7 font-heading fw-semibold">TOPLAM RANDEVUM</div>
-                <div class="fs-3 fw-bold text-white mt-1" id="ownerStatTotal">0</div>
+            <div class="minimal-card p-3">
+                <div class="text-muted fs-7 fw-bold uppercase">TOPLAM RANDEVUM</div>
+                <div class="fs-3 fw-extrabold text-dark mt-1" id="ownerStatTotal">0</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="glass-panel p-3">
-                <div class="text-muted fs-7 font-heading fw-semibold">BUGÜNKÜ RANDEVUM</div>
-                <div class="fs-3 fw-bold text-warning mt-1" id="ownerStatToday">0</div>
+            <div class="minimal-card p-3">
+                <div class="text-muted fs-7 fw-bold uppercase">BUGÜNKÜ RANDEVUM</div>
+                <div class="fs-3 fw-extrabold text-warning mt-1" id="ownerStatToday">0</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="glass-panel p-3">
-                <div class="text-muted fs-7 font-heading fw-semibold">ONAYLANAN</div>
-                <div class="fs-3 fw-bold text-success mt-1" id="ownerStatApproved">0</div>
+            <div class="minimal-card p-3">
+                <div class="text-muted fs-7 fw-bold uppercase">ONAYLANAN</div>
+                <div class="fs-3 fw-extrabold text-success mt-1" id="ownerStatApproved">0</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="glass-panel p-3">
-                <div class="text-muted fs-7 font-heading fw-semibold">BUGÜNKÜ KAZANÇ</div>
-                <div class="fs-3 fw-bold text-info mt-1" id="ownerStatIncome">0 ₺</div>
+            <div class="minimal-card p-3">
+                <div class="text-muted fs-7 fw-bold uppercase">BUGÜNKÜ KAZANÇ</div>
+                <div class="fs-3 fw-extrabold text-primary mt-1" id="ownerStatIncome">0 ₺</div>
             </div>
         </div>
     </div>
 
     <div class="row g-4 mb-5">
-        <!-- 1. İŞLETME BİLGİLERİ VE ÇALIŞMA SAATLERİ DÜZENLEME KARTI -->
+        <!-- 1. İŞLETME BİLGİLERİ VE ÇALIŞMA SAATLERİ KARTI -->
         <div class="col-lg-5">
-            <div class="glass-panel p-4 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-white mb-0">
-                        <i class="fa-solid fa-sliders text-warning me-2"></i> Tesis & Çalışma Saatleri Ayarları
-                    </h5>
-                </div>
+            <div class="minimal-card p-4 h-100">
+                <h5 class="fw-bold text-dark mb-3">
+                    <i class="fa-solid fa-sliders text-warning me-2"></i> Tesis & Çalışma Saatleri Ayarları
+                </h5>
 
                 <form id="facilityProfileForm" onsubmit="saveFacilityProfile(event)">
                     <div class="row g-3">
@@ -114,9 +121,9 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
                             <input type="text" class="form-control" name="phone" id="fac_phone" required>
                         </div>
                         
-                        <!-- Çalışma Saatleri Ayarı -->
+                        <!-- Çalışma Saatleri -->
                         <div class="col-6">
-                            <label class="form-label text-warning fs-7 fw-bold">AÇILIŞ SAATİ</label>
+                            <label class="form-label text-primary fs-7 fw-bold">AÇILIŞ SAATİ</label>
                             <select class="form-select" name="open_time" id="fac_open_time">
                                 <option value="08:00">08:00</option>
                                 <option value="09:00">09:00</option>
@@ -128,7 +135,7 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
                             </select>
                         </div>
                         <div class="col-6">
-                            <label class="form-label text-warning fs-7 fw-bold">KAPANIŞ SAATİ</label>
+                            <label class="form-label text-primary fs-7 fw-bold">KAPANIŞ SAATİ</label>
                             <select class="form-select" name="close_time" id="fac_close_time">
                                 <option value="22:00">22:00</option>
                                 <option value="23:00">23:00</option>
@@ -140,7 +147,7 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
                         </div>
 
                         <div class="col-12 mt-3">
-                            <button type="submit" class="btn btn-warning text-dark w-100 fw-bold">
+                            <button type="submit" class="btn btn-team w-100 fw-bold">
                                 <i class="fa-solid fa-floppy-disk me-1"></i> Ayarları Kaydet
                             </button>
                         </div>
@@ -151,23 +158,23 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
 
         <!-- 2. SAHALARIM YÖNETİM KARTI -->
         <div class="col-lg-7">
-            <div class="glass-panel p-4 h-100">
+            <div class="minimal-card p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <h5 class="fw-bold text-white mb-0">
+                        <h5 class="fw-bold text-dark mb-0">
                             <i class="fa-solid fa-vector-square text-success me-2"></i> Tesis Sahalarım
                         </h5>
                         <span class="text-muted fs-7">İşletmenize bağlı tüm sahalar ve ücret tanımları</span>
                     </div>
-                    <button class="btn btn-fifa btn-sm" onclick="openAddFieldModal()">
+                    <button class="btn btn-team btn-sm" onclick="openAddFieldModal()">
                         <i class="fa-solid fa-plus me-1"></i> Yeni Saha Ekle
                     </button>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-dark table-borderless align-middle m-0">
+                    <table class="table table-borderless align-middle m-0">
                         <thead>
-                            <tr class="text-muted fs-7 border-bottom border-secondary border-opacity-25">
+                            <tr class="text-muted fs-7 border-bottom">
                                 <th>SAHA ADI</th>
                                 <th>TİPİ</th>
                                 <th>SAATLİK ÜCRET</th>
@@ -184,10 +191,10 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
     </div>
 
     <!-- 3. KENDİ SAHALARIMIN RANDEVU LİSTESİ -->
-    <section class="glass-panel p-4 mb-5">
+    <section class="minimal-card p-4 mb-5">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
-                <h4 class="fw-bold text-white mb-0">
+                <h4 class="fw-bold text-dark mb-0">
                     <i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevularım
                 </h4>
                 <span class="text-muted fs-7">Sadece sizin tesisinize yapılan rezervasyonlar listelenir.</span>
@@ -195,12 +202,12 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
         </div>
 
         <div class="table-responsive">
-            <table class="table-dark-glass">
+            <table class="table-minimal">
                 <thead>
                     <tr>
                         <th>TAKIM ADI</th>
                         <th>YETKİLİ KİŞİ</th>
-                        <th>TELEFON / WHATSAPP</th>
+                        <th>TELEFON</th>
                         <th>SAHA</th>
                         <th>TARİH</th>
                         <th>SAAT</th>
@@ -221,17 +228,17 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
 <!-- Modal: Saha Ekle / Düzenle -->
 <div class="modal fade" id="fieldModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-content-glass">
-            <div class="modal-header border-bottom border-secondary border-opacity-25">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-bold" id="fieldModalTitle">Yeni Saha Ekle</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="fieldForm" onsubmit="saveField(event)">
                 <div class="modal-body p-4">
                     <input type="hidden" name="field_id" id="modal_field_id" value="0">
                     <div class="mb-3">
                         <label class="form-label text-muted fs-7 fw-semibold">SAHA ADI *</label>
-                        <input type="text" class="form-control" name="field_name" id="modal_field_name" required placeholder="Örn: Saha 1 (Kapalı UEFA Çim)">
+                        <input type="text" class="form-control" name="field_name" id="modal_field_name" required placeholder="Örn: Saha 1 (Kapalı Suni Çim)">
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-muted fs-7 fw-semibold">SAHA TİPİ</label>
@@ -246,9 +253,9 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
                         <input type="number" step="0.01" class="form-control" name="hourly_fee" id="modal_hourly_fee" required value="1200.00">
                     </div>
                 </div>
-                <div class="modal-footer border-top border-secondary border-opacity-25">
+                <div class="modal-footer border-top">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-fifa">Kaydet</button>
+                    <button type="submit" class="btn btn-team">Kaydet</button>
                 </div>
             </form>
         </div>
@@ -258,10 +265,10 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
 <!-- Modal: Walk-in / Elden Hızlı Randevu Ekle -->
 <div class="modal fade" id="walkinModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content modal-content-glass">
-            <div class="modal-header border-bottom border-secondary border-opacity-25">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus text-success me-2"></i> Hızlı Randevu Kaydı (İşletmeci)</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="walkinForm" onsubmit="saveWalkinReservation(event)">
                 <div class="modal-body p-4">
@@ -304,9 +311,9 @@ $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-top border-secondary border-opacity-25">
+                <div class="modal-footer border-top">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-fifa">Randevuyu Kaydet</button>
+                    <button type="submit" class="btn btn-team">Randevuyu Kaydet</button>
                 </div>
             </form>
         </div>
@@ -323,6 +330,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateInput = document.getElementById('walkinDate');
     if (dateInput) dateInput.value = todayStr;
 });
+
+function switchTeamTheme(team) {
+    document.documentElement.setAttribute('data-team', team);
+    fetch('api/auth.php?action=set_team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `team=${encodeURIComponent(team)}`
+    });
+}
 
 let ownerFieldsData = [];
 let ownerFacilityData = null;
@@ -358,9 +374,9 @@ function renderOwnerFields(fields) {
     let html = '';
     fields.forEach(f => {
         html += `<tr>
-            <td class="fw-bold text-white"><i class="fa-solid fa-futbol text-success me-2"></i>${escapeHtml(f.field_name)}</td>
-            <td><span class="badge bg-secondary bg-opacity-50">${escapeHtml(f.field_type)}</span></td>
-            <td class="fw-bold text-warning">₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
+            <td class="fw-bold text-dark"><i class="fa-solid fa-futbol text-success me-2"></i>${escapeHtml(f.field_name)}</td>
+            <td><span class="badge bg-light text-dark border">${escapeHtml(f.field_type)}</span></td>
+            <td class="fw-bold text-dark">₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-info me-1" onclick="editField(${f.id}, '${escapeHtml(f.field_name)}', '${escapeHtml(f.field_type)}', ${f.hourly_fee})"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteField(${f.id})"><i class="fa-solid fa-trash"></i></button>
@@ -459,12 +475,12 @@ async function loadOwnerReservations() {
             if (r.status === 'Onaylandı') approvedCount++;
 
             html += `<tr>
-                <td class="fw-bold text-white">${escapeHtml(r.team_name)}</td>
+                <td class="fw-bold text-dark">${escapeHtml(r.team_name)}</td>
                 <td>${escapeHtml(r.contact_name)}</td>
                 <td>${escapeHtml(r.phone)}</td>
-                <td><span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-50">${escapeHtml(r.field_name)}</span></td>
-                <td class="text-info">${r.reservation_date}</td>
-                <td class="text-warning fw-bold">${r.reservation_time}</td>
+                <td><span class="badge bg-light text-dark border">${escapeHtml(r.field_name)}</span></td>
+                <td class="text-primary fw-semibold">${r.reservation_date}</td>
+                <td class="text-dark fw-bold">${r.reservation_time}</td>
                 <td class="text-success fw-bold">₺${parseFloat(r.fee).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
                 <td>${getStatusBadge(r.status)}</td>
                 <td class="text-end">
@@ -508,10 +524,10 @@ async function cancelReservation(id) {
 
 function getStatusBadge(status) {
     switch (status) {
-        case 'Onaylandı': return `<span class="badge bg-success bg-opacity-25 text-success border border-success">Onaylandı</span>`;
-        case 'Tamamlandı': return `<span class="badge bg-info bg-opacity-25 text-info border border-info">Tamamlandı</span>`;
-        case 'İptal': return `<span class="badge bg-danger bg-opacity-25 text-danger border border-danger">İptal</span>`;
-        default: return `<span class="badge bg-warning bg-opacity-25 text-warning border border-warning">Bekliyor</span>`;
+        case 'Onaylandı': return `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Onaylandı</span>`;
+        case 'Tamamlandı': return `<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">Tamamlandı</span>`;
+        case 'İptal': return `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">İptal</span>`;
+        default: return `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">Bekliyor</span>`;
     }
 }
 
