@@ -1,5 +1,5 @@
 <?php
-// owner_dashboard.php - Tesis İşletmecisi Paneli (Tesis Seviyesi İmkanlar & Hassas Saat Aralıklı Saha Kapama)
+// owner_dashboard.php - Tesis İşletmecisi Paneli (Canlı İstemci Saati İle Geçmiş Saatler GEÇTİ Rozeti Düzeltmesi)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -13,7 +13,6 @@ $facility_name = $_SESSION['facility_name'] ?? 'Tesisim';
 $owner_name = $_SESSION['owner_name'] ?? 'İşletmeci';
 $current_team = $_SESSION['user_team'] ?? 'neutral';
 $today_str = date('Y-m-d');
-$current_hour = (int)date('H');
 ?>
 <!DOCTYPE html>
 <html lang="tr" data-team="<?php echo htmlspecialchars($current_team); ?>">
@@ -107,6 +106,7 @@ $current_hour = (int)date('H');
             <div class="d-flex align-items-center gap-3">
                 <div class="d-flex align-items-center gap-2 fs-8 d-none d-md-flex">
                     <span class="badge bg-success bg-opacity-10 text-success border border-success">🟢 Boş (Elden Kayıt)</span>
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">🕒 Geçti</span>
                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">🔴 Alınan Randevu</span>
                     <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">🟡 Abonmanlı</span>
                 </div>
@@ -391,7 +391,7 @@ $current_hour = (int)date('H');
                         <div class="row g-2">
                             <div class="col-6">
                                 <label class="fs-8 text-muted">Başlangıç Tarihi</label>
-                                <input type="date" class="form-control form-control-sm" id="fieldClosedStartDate" min="<?php echo $today_str; ?>">
+                                <input type="date" class="form-control form-control-sm" id="fieldClosedStartDate">
                             </div>
                             <div class="col-6">
                                 <label class="fs-8 text-muted">Başlangıç Saati</label>
@@ -399,7 +399,7 @@ $current_hour = (int)date('H');
                             </div>
                             <div class="col-6">
                                 <label class="fs-8 text-muted">Bitiş Tarihi</label>
-                                <input type="date" class="form-control form-control-sm" id="fieldClosedEndDate" min="<?php echo $today_str; ?>">
+                                <input type="date" class="form-control form-control-sm" id="fieldClosedEndDate">
                             </div>
                             <div class="col-6">
                                 <label class="fs-8 text-muted">Bitiş Saati</label>
@@ -437,7 +437,7 @@ $current_hour = (int)date('H');
     </div>
 </div>
 
-<!-- Modal: Saha Ekle / Düzenle (Özelllik Tik Kutuları Tesis Ayarlarına Taşındı) -->
+<!-- Modal: Saha Ekle / Düzenle -->
 <div class="modal fade" id="fieldModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -538,7 +538,30 @@ $current_hour = (int)date('H');
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const TODAY_STR = '<?php echo $today_str; ?>';
+function getLiveClientDateAndHour() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    const currentHour = now.getHours();
+    return { todayStr, currentHour };
+}
+
+function isSlotInPast(dateStr, timeStr, openTimeStr) {
+    const { todayStr, currentHour } = getLiveClientDateAndHour();
+    if (dateStr < todayStr) return true;
+    if (dateStr > todayStr) return false;
+
+    // dateStr === todayStr
+    const hourNum = parseInt(timeStr.split(':')[0], 10);
+    const openH = parseInt((openTimeStr || '13').split(':')[0], 10);
+
+    if (hourNum < openH) {
+        return true; // Early morning hours of TODAY passed earlier today
+    }
+    return (hourNum <= currentHour);
+}
 
 const CITIES_DISTRICTS = {
     'İstanbul': ['Kadıköy', 'Beşiktaş', 'Üsküdar', 'Şişli', 'Beyoğlu', 'Maltepe', 'Ataşehir', 'Ümraniye', 'Bakırköy', 'Fatih', 'Pendik', 'Sarıyer'],
@@ -608,7 +631,6 @@ async function loadOwnerFacility() {
         document.getElementById('fac_open_time_weekend').value = json.facility.open_time_weekend || '09:00';
         document.getElementById('fac_close_time_weekend').value = json.facility.close_time_weekend || '03:00';
 
-        // Set facility feature checkboxes
         const facFeats = json.facility.features_array || [];
         document.getElementById('fac_feat_camera').checked = facFeats.includes('HD Kamera Kaydı');
         document.getElementById('fac_feat_water').checked = facFeats.includes('Ücretsiz Su & İkram');
@@ -673,9 +695,8 @@ function renderOwnerFields(fields) {
         return;
     }
 
-    const now = new Date();
-    const currentH = now.getHours();
-    const currentFormattedH = (currentH < 10 ? '0' : '') + currentH + ':00';
+    const { todayStr, currentHour } = getLiveClientDateAndHour();
+    const currentFormattedH = (currentHour < 10 ? '0' : '') + currentHour + ':00';
 
     let html = '';
     fields.forEach(f => {
@@ -687,7 +708,7 @@ function renderOwnerFields(fields) {
         if (f.status === 'Pasif') {
             liveStatusBadge = `<span class="badge bg-danger text-white">🔴 Kapalı</span>`;
         } else {
-            const isBookedNow = ownerReservationsData.some(r => r.field_id == f.id && r.reservation_date === TODAY_STR && r.reservation_time === currentFormattedH && r.status !== 'İptal');
+            const isBookedNow = ownerReservationsData.some(r => r.field_id == f.id && r.reservation_date === todayStr && r.reservation_time === currentFormattedH && r.status !== 'İptal');
             if (isBookedNow) {
                 liveStatusBadge = `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger">🔴 Dolu (Maç Var)</span>`;
             } else {
@@ -714,15 +735,18 @@ function renderOwnerFields(fields) {
 }
 
 function openFieldStatusModal(fieldId, fieldName, currentStatus) {
+    const { todayStr } = getLiveClientDateAndHour();
     const f = ownerFieldsData.find(item => item.id == fieldId);
     document.getElementById('statusFieldId').value = fieldId;
     document.getElementById('statusFieldName').value = fieldName;
     document.getElementById('statusSelect').value = currentStatus || 'Aktif';
 
     const range = (f && f.closed_range_obj) ? f.closed_range_obj : {};
-    document.getElementById('fieldClosedStartDate').value = range.start_date || TODAY_STR;
+    document.getElementById('fieldClosedStartDate').value = range.start_date || todayStr;
+    document.getElementById('fieldClosedStartDate').min = todayStr;
     document.getElementById('fieldClosedStartTime').value = range.start_time || '00:00';
-    document.getElementById('fieldClosedEndDate').value = range.end_date || TODAY_STR;
+    document.getElementById('fieldClosedEndDate').value = range.end_date || todayStr;
+    document.getElementById('fieldClosedEndDate').min = todayStr;
     document.getElementById('fieldClosedEndTime').value = range.end_time || '23:59';
     document.getElementById('fieldClosedReason').value = range.reason || 'Bakım / Tamir';
 
@@ -755,14 +779,11 @@ function onMatrixDateInput(inputEl) {
     renderOwnerMatrix();
 }
 
-// HASSAS SAAT ARALIKLI KAPAMA MANTIĞI (SADECE BELİRTİLEN SAATLER KAPALI)
 function isSlotClosedByRange(dateStr, timeStr, fieldObj) {
     if (!fieldObj) return false;
     const range = fieldObj.closed_range_obj;
 
-    // Direct passive with no date range
     if (fieldObj.status === 'Pasif' && (!range || !range.start_date)) return true;
-
     if (!range || !range.start_date) return false;
 
     const slotDt = `${dateStr} ${timeStr}`;
@@ -772,11 +793,12 @@ function isSlotClosedByRange(dateStr, timeStr, fieldObj) {
     return (slotDt >= startDt && slotDt <= endDt);
 }
 
-// KRONOLOJİK SAAT DİZİLİMİ VE HASSAS KAPAMA MATRİSİ
+// YÖNETİCİ MATRİSİNDE CANLI İSTEMCİ SAATİ İLE GEÇMİŞ SAATLERİ GEÇTİ ROZETİ OLARAK BASMA FIX
 function renderOwnerMatrix() {
     if (!ownerFacilityData || ownerFieldsData.length === 0) return;
+    const { todayStr } = getLiveClientDateAndHour();
     const dateInput = document.getElementById('matrixDate');
-    const date = (dateInput && dateInput.value && dateInput.value.length === 10) ? dateInput.value : TODAY_STR;
+    const date = (dateInput && dateInput.value && dateInput.value.length === 10) ? dateInput.value : todayStr;
 
     const openH = parseInt(ownerFacilityData.open_time || '13');
     let closeH = parseInt(ownerFacilityData.close_time || '01');
@@ -825,6 +847,9 @@ function renderOwnerMatrix() {
                         <i class="fa-solid ${iconClass} me-1"></i>${h}
                     </div>
                 </td>`;
+            } else if (isSlotInPast(date, h, ownerFacilityData.open_time)) {
+                // YÖNETİCİ MATRİSİNDE GEÇMİŞ SAATLERİ GEÇTİ (GRİ ROZET) OLARAK BAS
+                bHtml += `<td><div class="slot-badge bg-secondary bg-opacity-10 text-muted border border-secondary border-opacity-25" style="cursor:not-allowed;" title="Saat Geçti"><i class="fa-solid fa-clock-rotate-left me-1"></i>GEÇTİ</div></td>`;
             } else {
                 bHtml += `<td>
                     <div class="slot-badge slot-free" onclick="quickWalkinModal(${field.id}, '${date}', '${h}')" title="Hızlı Elden Kayıt">
@@ -859,12 +884,9 @@ function showBookingDetails(id) {
 }
 
 function quickWalkinModal(fieldId, date, time) {
-    const now = new Date();
-    const currentH = now.getHours();
-    const resH = parseInt(time.split(':')[0]);
-
-    if (date < TODAY_STR || (date === TODAY_STR && resH < currentH && resH >= 8)) {
-        alert('⚠️ Geçmiş bir saate randevu eklenemez!');
+    const openTime = ownerFacilityData ? ownerFacilityData.open_time : '13:00';
+    if (isSlotInPast(date, time, openTime)) {
+        alert('⚠️ Geçmiş bir tarihe veya saate randevu eklenemez!');
         return;
     }
 
@@ -990,13 +1012,8 @@ function sortReservationsBy(column) {
 }
 
 function computeMatchStatusBadge(resDate, resTime) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1 < 10 ? '0' : '') + (now.getMonth() + 1);
-    const day = (now.getDate() < 10 ? '0' : '') + now.getDate();
-    const todayStr = `${year}-${month}-${day}`;
-    const currentHour = now.getHours();
-    const resHour = parseInt(resTime.split(':')[0]);
+    const { todayStr, currentHour } = getLiveClientDateAndHour();
+    const resHour = parseInt(resTime.split(':')[0], 10);
 
     if (resDate < todayStr) {
         return `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1"><i class="fa-solid fa-flag-checkered me-1"></i>🏁 Bitti</span>`;
@@ -1015,6 +1032,7 @@ function computeMatchStatusBadge(resDate, resTime) {
 }
 
 function filterReservations() {
+    const { todayStr, currentHour } = getLiveClientDateAndHour();
     const query = document.getElementById('searchReservationQuery').value.toLowerCase().trim();
     const selectedFieldId = document.getElementById('filterReservationField').value;
     const tbody = document.getElementById('ownerReservationsBody');
@@ -1025,17 +1043,14 @@ function filterReservations() {
     let income = 0;
     let playedOrFinishedCount = 0;
 
-    const now = new Date();
-    const currentH = now.getHours();
-
     ownerReservationsData.forEach(r => {
-        const resH = parseInt(r.reservation_time.split(':')[0]);
+        const resH = parseInt(r.reservation_time.split(':')[0], 10);
 
-        if (r.reservation_date === TODAY_STR) {
+        if (r.reservation_date === todayStr) {
             todayRes.push(r);
             income += parseFloat(r.fee);
-            if (resH <= currentH) playedOrFinishedCount++;
-        } else if (r.reservation_date > TODAY_STR) {
+            if (resH <= currentHour) playedOrFinishedCount++;
+        } else if (r.reservation_date > todayStr) {
             futureRes.push(r);
         } else {
             pastRes.push(r);

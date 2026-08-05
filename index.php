@@ -10,7 +10,6 @@ $current_team = $is_logged_in ? ($_SESSION['user_team'] ?? 'neutral') : 'neutral
 $user_name = $_SESSION['user_name'] ?? ($_SESSION['owner_name'] ?? null);
 $user_name_upper = $user_name ? mb_strtoupper($user_name, 'UTF-8') : '';
 $today_str = date('Y-m-d');
-$current_hour = (int)date('H');
 ?>
 <!DOCTYPE html>
 <html lang="tr" data-team="<?php echo htmlspecialchars($current_team); ?>">
@@ -444,8 +443,31 @@ $current_hour = (int)date('H');
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const IS_LOGGED_IN = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
-const TODAY_STR = '<?php echo $today_str; ?>';
-const CURRENT_HOUR = <?php echo $current_hour; ?>;
+
+function getLiveClientDateAndHour() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    const currentHour = now.getHours();
+    return { todayStr, currentHour };
+}
+
+function isSlotInPast(dateStr, timeStr, openTimeStr) {
+    const { todayStr, currentHour } = getLiveClientDateAndHour();
+    if (dateStr < todayStr) return true;
+    if (dateStr > todayStr) return false;
+
+    // dateStr === todayStr
+    const hourNum = parseInt(timeStr.split(':')[0], 10);
+    const openH = parseInt((openTimeStr || '13').split(':')[0], 10);
+
+    if (hourNum < openH) {
+        return true; // Early morning hours of TODAY passed earlier today
+    }
+    return (hourNum <= currentHour);
+}
 
 const CITIES_DISTRICTS = {
     'İstanbul': ['Tüm İlçeler', 'Kadıköy', 'Beşiktaş', 'Üsküdar', 'Şişli', 'Beyoğlu', 'Maltepe', 'Ataşehir', 'Ümraniye', 'Bakırköy', 'Fatih', 'Pendik', 'Sarıyer'],
@@ -630,6 +652,8 @@ function renderFacilitiesList(facilities) {
         return;
     }
 
+    const { todayStr } = getLiveClientDateAndHour();
+
     let html = '';
     facilities.forEach((fac) => {
         const featList = fac.features_array || ["HD Kamera Kaydı", "Ücretsiz Su & İkram", "Soyunma Odası & Duş"];
@@ -681,9 +705,9 @@ function renderFacilitiesList(facilities) {
                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3 pb-2 border-bottom">
                     <div>
                         <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-check text-primary me-2"></i> Uygun Saat Seçimi</h6>
-                        <span class="badge bg-white text-dark border mt-1 fs-7 fw-bold" id="day-label-fac-${fac.id}">${formatTurkishDate(TODAY_STR)}</span>
+                        <span class="badge bg-white text-dark border mt-1 fs-7 fw-bold" id="day-label-fac-${fac.id}">${formatTurkishDate(todayStr)}</span>
                     </div>
-                    <input type="date" class="form-control form-control-sm max-w-160 fw-bold" id="date-fac-${fac.id}" min="${TODAY_STR}" value="${TODAY_STR}" onchange="onDrawerDateChange(${fac.id}, this)">
+                    <input type="date" class="form-control form-control-sm max-w-160 fw-bold" id="date-fac-${fac.id}" min="${todayStr}" value="${todayStr}" onchange="onDrawerDateChange(${fac.id}, this)">
                 </div>
                 <div id="timeline-container-${fac.id}" class="table-responsive">
                     <!-- Populated dynamically via JS -->
@@ -708,9 +732,11 @@ function onDrawerDateChange(facId, inputEl) {
     const year = parseInt(parts[0]);
     if (isNaN(year) || year < 2026) return;
 
-    if (val < TODAY_STR) {
+    const { todayStr } = getLiveClientDateAndHour();
+
+    if (val < todayStr) {
         alert('⚠️ Geçmiş bir tarihe randevu alınamaz!');
-        inputEl.value = TODAY_STR;
+        inputEl.value = todayStr;
         return;
     }
 
@@ -748,13 +774,14 @@ function isSlotClosedByRange(dateStr, timeStr, fieldObj) {
     return (slotDt >= startDt && slotDt <= endDt);
 }
 
-// KRONOLOJİK SAAT DİZİLİMİ VE HASSAS VARDİYA GEÇMİŞ SAAT DENETİMİ
+// CANLI DİNAMİK İSTEMCİ SAATİ İLE VARDİYA GEÇMİŞ SAAT DENETİMİ
 async function renderInlineDrawerTimeline(facId) {
     const fac = currentFacilities.find(f => f.id == facId);
     if (!fac) return;
 
+    const { todayStr } = getLiveClientDateAndHour();
     const dateInput = document.getElementById(`date-fac-${facId}`);
-    let date = (dateInput && dateInput.value && dateInput.value.length === 10) ? dateInput.value : TODAY_STR;
+    let date = (dateInput && dateInput.value && dateInput.value.length === 10) ? dateInput.value : todayStr;
 
     const dayLabel = document.getElementById(`day-label-fac-${facId}`);
     if (dayLabel) dayLabel.innerText = formatTurkishDate(date);
@@ -816,32 +843,16 @@ async function renderInlineDrawerTimeline(facId) {
                 return;
             }
 
-            const hourNum = parseInt(h.split(':')[0]);
-            const isToday = (date === TODAY_STR);
-
-            // VARDİYA GEÇMİŞ SAAT DENETİMİ FIX:
-            // Eğer seçilen tarih TODAY (örneğin 05.08.2026 saat 16:06 iken):
-            // - Sabah 00:00, 01:00, 02:00 (açılış saati 08:00'den küçük) saatleri bugün sabah tamamlandığı için GEÇTİ'dir!
-            // - 08:00 ile 16:00 arası (hourNum <= CURRENT_HOUR) GEÇTİ'dir!
-            // - 17:00 ve sonrası ALINABİLİR'dir.
-            let isPastHour = (date < TODAY_STR);
-            if (isToday) {
-                if (hourNum < openH) {
-                    isPastHour = true; // Early morning hours of TODAY passed earlier today
-                } else if (hourNum <= CURRENT_HOUR) {
-                    isPastHour = true;
-                }
-            }
-
+            const isPast = isSlotInPast(date, h, fac.open_time);
             const isBooked = reservations.some(r => r.field_id == field.id && r.reservation_date === date && r.reservation_time === h && r.status !== 'İptal');
 
             if (isBooked) {
                 hHtml += `<td><div class="slot-badge slot-busy-normal"><i class="fa-solid fa-lock me-1"></i>DOLU</div></td>`;
-            } else if (isPastHour) {
+            } else if (isPast) {
                 hHtml += `<td><div class="slot-badge bg-secondary bg-opacity-10 text-muted border border-secondary border-opacity-25" style="cursor:not-allowed;" title="Saat Geçti"><i class="fa-solid fa-clock-rotate-left me-1"></i>GEÇTİ</div></td>`;
             } else {
                 hHtml += `<td>
-                    <div class="slot-badge slot-free" onclick="handleSlotClick(${fac.id}, ${field.id}, '${escapeHtml(field.field_name)}', '${date}', '${h}', ${field.hourly_fee})">
+                    <div class="slot-badge slot-free" onclick="handleSlotClick(${fac.id}, ${field.id}, '${escapeHtml(field.field_name)}', '${date}', '${h}', ${field.hourly_fee}, '${fac.open_time}')">
                         +${h}
                     </div>
                 </td>`;
@@ -859,28 +870,28 @@ function isObject(val) {
     return val !== null && typeof val === 'object';
 }
 
-function handleSlotClick(facId, fieldId, fieldName, date, time, fee) {
+function handleSlotClick(facId, fieldId, fieldName, date, time, fee, openTime) {
     if (!IS_LOGGED_IN) {
         new bootstrap.Modal(document.getElementById('authRequiredModal')).show();
         return;
     }
-    if (date < TODAY_STR) {
-        alert('⚠️ Geçmiş bir tarihe randevu alınamaz!');
+    
+    if (isSlotInPast(date, time, openTime)) {
+        alert('⚠️ Geçmiş bir tarihe veya saate randevu alınamaz!');
         return;
     }
-    const hourNum = parseInt(time.split(':')[0]);
-    if (date === TODAY_STR && (hourNum < 8 || hourNum <= CURRENT_HOUR)) {
-        alert('⚠️ Geçmiş bir saate randevu alınamaz!');
-        return;
-    }
+
     openPlayerBookModal(facId, fieldId, fieldName, date, time, fee);
 }
 
 function openPlayerBookModal(facId, fieldId, fieldName, date, time, fee) {
+    const { todayStr } = getLiveClientDateAndHour();
+
     document.getElementById('modalFacId').value = facId;
     document.getElementById('modalFieldId').value = fieldId;
     document.getElementById('modalFieldName').value = fieldName;
     document.getElementById('modalDate').value = date;
+    document.getElementById('modalDate').min = todayStr;
     document.getElementById('modalTime').value = time;
     document.getElementById('modalFee').value = fee;
     document.getElementById('modalSubPlan').value = 'Standart';
