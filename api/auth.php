@@ -1,5 +1,5 @@
 <?php
-// api/auth.php - Authentication, Profile, OTP Email Password Reset & User Reservations API
+// api/auth.php - Authentication, Email Registration, Email Link Password Reset & User Reservations API
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -17,13 +17,13 @@ try {
         $role = trim($_POST['role'] ?? 'player');
 
         if (empty($username) || empty($password)) {
-            echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı ve şifrenizi giriniz.']);
+            echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı/e-posta ve şifrenizi giriniz.']);
             exit;
         }
 
         if ($role === 'owner') {
-            $stmt = $pdo->prepare("SELECT * FROM facilities WHERE username = ?");
-            $stmt->execute([$username]);
+            $stmt = $pdo->prepare("SELECT * FROM facilities WHERE username = ? OR email = ?");
+            $stmt->execute([$username, $username]);
             $owner = $stmt->fetch();
 
             if ($owner && password_verify($password, $owner['password'])) {
@@ -39,13 +39,13 @@ try {
                 echo json_encode(['status' => 'success', 'redirect' => 'owner_dashboard.php']);
                 exit;
             } else {
-                echo json_encode(['status' => 'error', 'message' => 'Tesis Girişi Başarısız: Kullanıcı adı veya şifre hatalı.']);
+                echo json_encode(['status' => 'error', 'message' => 'Tesis Girişi Başarısız: Kullanıcı adı/e-posta veya şifre hatalı.']);
                 exit;
             }
         } else {
             // Player
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-            $stmt->execute([$username]);
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? OR email = ?");
+            $stmt->execute([$username, $username]);
             $user = $stmt->fetch();
 
             if ($user && password_verify($password, $user['password'])) {
@@ -59,34 +59,35 @@ try {
                 echo json_encode(['status' => 'success', 'redirect' => 'index.php']);
                 exit;
             } else {
-                echo json_encode(['status' => 'error', 'message' => 'Oyuncu Girişi Başarısız: Kullanıcı adı veya şifre hatalı.']);
+                echo json_encode(['status' => 'error', 'message' => 'Oyuncu Girişi Başarısız: Kullanıcı adı/e-posta veya şifre hatalı.']);
                 exit;
             }
         }
     }
 
-    // 2. REGISTER
+    // 2. REGISTER PLAYER (WITH EMAIL)
     if ($action === 'register') {
         $full_name = mb_strtoupper(trim($_POST['full_name'] ?? ''), 'UTF-8');
         $username = trim($_POST['username'] ?? '');
+        $email = trim($_POST['email'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
         $password = trim($_POST['password'] ?? '');
 
-        if (empty($full_name) || empty($username) || empty($phone) || empty($password)) {
-            echo json_encode(['status' => 'error', 'message' => 'Lütfen tüm alanları doldurunuz.']);
+        if (empty($full_name) || empty($username) || empty($email) || empty($phone) || empty($password)) {
+            echo json_encode(['status' => 'error', 'message' => 'Lütfen e-posta dahil tüm alanları doldurunuz.']);
             exit;
         }
 
-        $chk = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-        $chk->execute([$username]);
+        $chk = $pdo->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
+        $chk->execute([$username, $email]);
         if ($chk->fetch()) {
-            echo json_encode(['status' => 'error', 'message' => 'Bu kullanıcı adı zaten kullanılmaktadır.']);
+            echo json_encode(['status' => 'error', 'message' => 'Bu kullanıcı adı veya E-Posta adresi zaten kullanılmaktadır.']);
             exit;
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("INSERT INTO users (full_name, username, password, phone) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$full_name, $username, $hash, $phone]);
+        $stmt = $pdo->prepare("INSERT INTO users (full_name, username, email, password, phone) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$full_name, $username, $email, $hash, $phone]);
 
         $_SESSION['user_role'] = 'player';
         $_SESSION['user_id'] = $pdo->lastInsertId();
@@ -99,92 +100,148 @@ try {
         exit;
     }
 
-    // 3. SEND EMAIL OTP CODE FOR PASSWORD RESET
-    if ($action === 'send_reset_code') {
-        $account = trim($_POST['account'] ?? '');
+    // 2.5 REGISTER OWNER (WITH EMAIL)
+    if ($action === 'register_owner') {
+        $facility_name = trim($_POST['facility_name'] ?? '');
+        $owner_name = mb_strtoupper(trim($_POST['owner_name'] ?? ''), 'UTF-8');
+        $username = trim($_POST['username'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $password = trim($_POST['password'] ?? '');
+        $city = trim($_POST['city'] ?? 'İstanbul');
+        $district = trim($_POST['district'] ?? 'Kadıköy');
+        $address = trim($_POST['address'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
 
-        if (empty($account)) {
-            echo json_encode(['status' => 'error', 'message' => 'Lütfen kullanıcı adı veya telefon adresinizi giriniz.']);
+        if (empty($facility_name) || empty($owner_name) || empty($username) || empty($email) || empty($password)) {
+            echo json_encode(['status' => 'error', 'message' => 'Lütfen tüm alanları doldurunuz.']);
             exit;
         }
 
-        $user_found = false;
-        $account_type = 'player';
-        $user_id = 0;
+        $chk = $pdo->prepare("SELECT id FROM facilities WHERE username = ? OR email = ?");
+        $chk->execute([$username, $email]);
+        if ($chk->fetch()) {
+            echo json_encode(['status' => 'error', 'message' => 'Bu kullanıcı adı veya E-Posta adresi zaten kullanılmaktadır.']);
+            exit;
+        }
 
-        // Check users
-        $stmt = $pdo->prepare("SELECT id, username, full_name FROM users WHERE username = ? OR phone = ?");
-        $stmt->execute([$account, $account]);
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("INSERT INTO facilities (name, owner_name, username, email, password, city, district, address, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$facility_name, $owner_name, $username, $email, $hash, $city, $district, $address, $phone]);
+
+        $fac_id = $pdo->lastInsertId();
+
+        // Seed default field
+        $insField = $pdo->prepare("INSERT INTO facility_fields (facility_id, field_name, field_type, hourly_fee, status) VALUES (?, ?, ?, ?, ?)");
+        $insField->execute([$fac_id, 'Saha 1', 'Kapalı Futbol Sahası', 1200.00, 'Aktif']);
+
+        $_SESSION['user_role'] = 'owner';
+        $_SESSION['owner_id'] = $fac_id;
+        $_SESSION['owner_name'] = $owner_name;
+        $_SESSION['facility_id'] = $fac_id;
+        $_SESSION['facility_name'] = $facility_name;
+        $_SESSION['city'] = $city;
+        $_SESSION['district'] = $district;
+        $_SESSION['user_team'] = 'neutral';
+
+        echo json_encode(['status' => 'success', 'redirect' => 'owner_dashboard.php']);
+        exit;
+    }
+
+    // 3. SEND EMAIL PASSWORD RESET LINK
+    if ($action === 'send_reset_email') {
+        $email_or_user = trim($_POST['email'] ?? '');
+
+        if (empty($email_or_user)) {
+            echo json_encode(['status' => 'error', 'message' => 'Lütfen E-Posta adresinizi veya kullanıcı adınızı giriniz.']);
+            exit;
+        }
+
+        $target_email = '';
+        $account_type = 'player';
+
+        // Search in users
+        $stmt = $pdo->prepare("SELECT email FROM users WHERE email = ? OR username = ?");
+        $stmt->execute([$email_or_user, $email_or_user]);
         $u = $stmt->fetch();
 
         if ($u) {
-            $user_found = true;
+            $target_email = $u['email'];
             $account_type = 'player';
-            $user_id = $u['id'];
         } else {
-            // Check facilities (owner)
-            $stmtFac = $pdo->prepare("SELECT id, username, name FROM facilities WHERE username = ? OR phone = ?");
-            $stmtFac->execute([$account, $account]);
+            // Search in facilities
+            $stmtFac = $pdo->prepare("SELECT email FROM facilities WHERE email = ? OR username = ?");
+            $stmtFac->execute([$email_or_user, $email_or_user]);
             $f = $stmtFac->fetch();
 
             if ($f) {
-                $user_found = true;
+                $target_email = $f['email'];
                 $account_type = 'owner';
-                $user_id = $f['id'];
             }
         }
 
-        if (!$user_found) {
-            echo json_encode(['status' => 'error', 'message' => 'Girilen kullanıcı adı veya telefon numarası sistemde bulunamadı.']);
+        if (empty($target_email)) {
+            echo json_encode(['status' => 'error', 'message' => 'Girilen E-Posta adresi veya kullanıcı adı sistemde bulunamadı.']);
             exit;
         }
 
-        // Generate 6-digit OTP
-        $otp = sprintf("%06d", mt_rand(100000, 999999));
-        $_SESSION['reset_otp'] = $otp;
-        $_SESSION['reset_user_id'] = $user_id;
-        $_SESSION['reset_account_type'] = $account_type;
+        // Generate secure 32-char hex token
+        $token = bin2hex(random_bytes(16));
+
+        // Delete previous tokens for this email
+        $del = $pdo->prepare("DELETE FROM password_resets WHERE email = ?");
+        $del->execute([$target_email]);
+
+        // Insert new token
+        $ins = $pdo->prepare("INSERT INTO password_resets (email, token, account_type) VALUES (?, ?, ?)");
+        $ins->execute([$target_email, $token, $account_type]);
+
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
+        $reset_link = "{$protocol}://{$host}/reset_password.php?token={$token}";
 
         echo json_encode([
             'status' => 'success',
-            'code' => $otp,
-            'message' => "📧 Gelen Gmail İletisi (Simülasyon): 6 Haneli Doğrulama Kodunuz [ {$otp} ]"
+            'email' => $target_email,
+            'reset_link' => $reset_link,
+            'message' => "📧 E-Posta Gönderildi! Şifre sıfırlama bağlantınız {$target_email} adresinize ulaştırıldı."
         ]);
         exit;
     }
 
-    // 4. VERIFY OTP AND RESET PASSWORD
-    if ($action === 'verify_reset_code') {
-        $code = trim($_POST['code'] ?? '');
+    // 4. RESET PASSWORD WITH TOKEN (USED BY reset_password.php)
+    if ($action === 'reset_password_with_token') {
+        $token = trim($_POST['token'] ?? '');
         $new_password = trim($_POST['new_password'] ?? '');
 
-        if (empty($code) || empty($new_password)) {
-            echo json_encode(['status' => 'error', 'message' => 'Lütfen doğrulama kodunu ve yeni şifrenizi giriniz.']);
+        if (empty($token) || empty($new_password)) {
+            echo json_encode(['status' => 'error', 'message' => 'Lütfen geçerli bağlantı ve yeni şifrenizi giriniz.']);
             exit;
         }
 
-        if (!isset($_SESSION['reset_otp']) || $_SESSION['reset_otp'] !== $code) {
-            echo json_encode(['status' => 'error', 'message' => 'Girdiğiniz 6 haneli doğrulama kodu hatalı veya süresi dolmuş!']);
+        $stmt = $pdo->prepare("SELECT * FROM password_resets WHERE token = ?");
+        $stmt->execute([$token]);
+        $row = $stmt->fetch();
+
+        if (!$row) {
+            echo json_encode(['status' => 'error', 'message' => 'Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş!']);
             exit;
         }
 
-        $user_id = $_SESSION['reset_user_id'];
-        $account_type = $_SESSION['reset_account_type'];
         $newHash = password_hash($new_password, PASSWORD_DEFAULT);
 
-        if ($account_type === 'player') {
-            $up = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-            $up->execute([$newHash, $user_id]);
+        if ($row['account_type'] === 'player') {
+            $up = $pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
+            $up->execute([$newHash, $row['email']]);
         } else {
-            $up = $pdo->prepare("UPDATE facilities SET password = ? WHERE id = ?");
-            $up->execute([$newHash, $user_id]);
+            $up = $pdo->prepare("UPDATE facilities SET password = ? WHERE email = ?");
+            $up->execute([$newHash, $row['email']]);
         }
 
-        unset($_SESSION['reset_otp']);
-        unset($_SESSION['reset_user_id']);
-        unset($_SESSION['reset_account_type']);
+        // Delete used token
+        $del = $pdo->prepare("DELETE FROM password_resets WHERE token = ?");
+        $del->execute([$token]);
 
-        echo json_encode(['status' => 'success', 'message' => '🎉 Şifreniz başarıyla güncellendi! Yeni şifrenizle giriş yapabilirsiniz.']);
+        echo json_encode(['status' => 'success', 'message' => '🎉 Şifreniz başarıyla sıfırlandı! Yeni şifrenizle giriş yapabilirsiniz.']);
         exit;
     }
 
@@ -214,7 +271,7 @@ try {
 
         if ($_SESSION['user_role'] === 'player') {
             $user_id = $_SESSION['user_id'];
-            $stmt = $pdo->prepare("SELECT id, full_name, username, phone, favorite_team FROM users WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT id, full_name, username, email, phone, favorite_team FROM users WHERE id = ?");
             $stmt->execute([$user_id]);
             $user = $stmt->fetch();
 
@@ -226,7 +283,7 @@ try {
             exit;
         } else {
             $owner_id = $_SESSION['owner_id'];
-            $stmt = $pdo->prepare("SELECT id, owner_name as full_name, username, phone, favorite_team FROM facilities WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT id, owner_name as full_name, username, email, phone, favorite_team FROM facilities WHERE id = ?");
             $stmt->execute([$owner_id]);
             $owner = $stmt->fetch();
 
@@ -244,6 +301,7 @@ try {
 
         $full_name = mb_strtoupper(trim($_POST['full_name'] ?? ''), 'UTF-8');
         $phone = trim($_POST['phone'] ?? '');
+        $email = trim($_POST['email'] ?? '');
         $current_password = trim($_POST['current_password'] ?? '');
         $new_password = trim($_POST['new_password'] ?? '');
 
@@ -259,11 +317,11 @@ try {
                     exit;
                 }
                 $newHash = password_hash($new_password, PASSWORD_DEFAULT);
-                $up = $pdo->prepare("UPDATE users SET full_name = ?, phone = ?, password = ? WHERE id = ?");
-                $up->execute([$full_name, $phone, $newHash, $user_id]);
+                $up = $pdo->prepare("UPDATE users SET full_name = ?, phone = ?, email = ?, password = ? WHERE id = ?");
+                $up->execute([$full_name, $phone, $email, $newHash, $user_id]);
             } else {
-                $up = $pdo->prepare("UPDATE users SET full_name = ?, phone = ? WHERE id = ?");
-                $up->execute([$full_name, $phone, $user_id]);
+                $up = $pdo->prepare("UPDATE users SET full_name = ?, phone = ?, email = ? WHERE id = ?");
+                $up->execute([$full_name, $phone, $email, $user_id]);
             }
 
             $_SESSION['user_name'] = $full_name;
