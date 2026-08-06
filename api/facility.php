@@ -541,12 +541,20 @@ try {
             }
             $user_id = (int)$uRow['id'];
         } else {
-            $username = '';
+            // Generate unique walk-in customer code for unregistered subscriptions
+            $username = "ELDEN-" . rand(1000, 9999);
         }
 
         $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, username, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $insSub->execute([$user_id, $username, $user_name, $user_phone, $facility_id, $fac['name'], $field_id, $fieldName, $packageName, $package_type, $totalMatches, $usedMatches, $remainingMatches, $discountRate, $totalPrice, $booking_mode, $preferred_day, $preferred_time, 'Aktif']);
         $subId = $pdo->lastInsertId();
+
+        // If unregistered, refine code with subscription ID for 100% uniqueness
+        if ($is_registered_user === 0) {
+            $username = "ELDEN-" . (100 + $subId);
+            $upCode = $pdo->prepare("UPDATE user_subscriptions SET username = ? WHERE id = ?");
+            $upCode->execute([$username, $subId]);
+        }
 
         if ($booking_mode === 'periodic' && $field_id > 0) {
             $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, username, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, subscription_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");

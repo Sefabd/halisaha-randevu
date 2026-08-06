@@ -322,78 +322,60 @@ $today_str = date('Y-m-d');
         </div>
     </section>
 
-    <!-- 4. RANDEVU LİSTELERİNDE SIRALANABİLİR KOLONLAR VE ŞIK BİRLEŞİK FİLTRELEME ÇUBUĞU -->
-    <section class="minimal-card p-4 mb-5">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
-            <div>
-                <h4 class="fw-bold text-dark mb-0 fs-5"><i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevu Yönetimi</h4>
-                <span class="text-muted fs-7">Müşteri karışıklığını önlemek için benzersiz @kullanıcı_adı ve telefon numaraları gösterilmektedir.</span>
+    <!-- 4. RANDEVU LİSTELERİ VE AKILLI BİRLEŞİK KONTROL PANELİ -->
+    <section class="minimal-card p-0 mb-5 overflow-hidden border shadow-sm">
+        <!-- HEADER CONTAINER -->
+        <div class="p-3 bg-white border-bottom">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div>
+                    <h4 class="fw-bold text-dark mb-0 fs-5"><i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevu Yönetimi</h4>
+                    <span class="text-muted fs-7">Randevularınızı sekmeler, tarih, saha veya kullanıcı aramalarıyla anlık inceleyin.</span>
+                </div>
             </div>
         </div>
 
-        <!-- YENİ BİRLEŞİK FİLTRELEME ARAÇ ÇUBUĞU -->
-        <div class="p-3 bg-light rounded-3 border mb-3">
-            <div class="row g-3 align-items-center">
+        <!-- BİRLEŞİK AKILLI KONTROL ÇUBUĞU (SEKMELER + FİLTRELER TEK SATIRDA) -->
+        <div class="p-3 bg-light border-bottom">
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
                 <!-- SEKMELER (Bugün, Gelecek, Geçmiş) -->
-                <div class="col-xl-5 col-lg-6">
-                    <ul class="nav nav-pills" id="reservationFilterTabs">
-                        <li class="nav-item">
-                            <button class="nav-link active fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('today')">
-                                <i class="fa-solid fa-calendar-day me-1 text-warning"></i> Bugün <span class="badge bg-white text-dark ms-1" id="tabCountToday">0</span>
-                            </button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('future')">
-                                <i class="fa-solid fa-clock me-1 text-primary"></i> Gelecek <span class="badge bg-white text-dark ms-1" id="tabCountFuture">0</span>
-                            </button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('past')">
-                                <i class="fa-solid fa-history me-1 text-secondary"></i> Geçmiş <span class="badge bg-white text-dark ms-1" id="tabCountPast">0</span>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- BİRLEŞİK KONTROLLER (Tarih, Saha, Arama, Sıfırla) -->
-                <div class="col-xl-7 col-lg-6">
-                    <div class="d-flex flex-wrap align-items-center justify-content-lg-end gap-2">
-                        <div class="input-group input-group-sm max-w-170">
-                            <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-calendar-days text-primary"></i></span>
-                            <input type="date" class="form-control border-start-0 border-primary fw-bold" id="filterReservationDate" onchange="filterReservations()" title="Tarihe Göre Seç">
-                        </div>
-
-                        <select class="form-select form-select-sm max-w-160 border-primary fw-bold" id="filterReservationField" onchange="filterReservations()">
-                            <option value="all">Tüm Sahalar</option>
-                        </select>
-
-                        <div class="max-w-180">
-                            <input type="text" class="form-control form-control-sm border-primary" id="searchReservationQuery" placeholder="🔍 @kullanıcı, Takım..." oninput="filterReservations()">
-                        </div>
-
-                        <button class="btn btn-sm btn-outline-secondary py-1 px-2.5 fw-bold" onclick="resetReservationDateFilter()" title="Filtreleri Sıfırla">
-                            <i class="fa-solid fa-rotate-left me-1"></i> Temizle
+                <ul class="nav nav-pills" id="reservationFilterTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('today')">
+                            <i class="fa-solid fa-calendar-day me-1 text-warning"></i> Bugün <span class="badge bg-white text-dark ms-1" id="tabCountToday">0</span>
                         </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('future')">
+                            <i class="fa-solid fa-clock me-1 text-primary"></i> Gelecek <span class="badge bg-white text-dark ms-1" id="tabCountFuture">0</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('past')">
+                            <i class="fa-solid fa-history me-1 text-secondary"></i> Geçmiş <span class="badge bg-white text-dark ms-1" id="tabCountPast">0</span>
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- AKILLI FİLTRELER (Tarih, Saha, Arama, Temizle) -->
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <div class="input-group input-group-sm max-w-160">
+                        <span class="input-group-text bg-white"><i class="fa-solid fa-calendar-days text-primary"></i></span>
+                        <input type="date" class="form-control border-primary fw-bold" id="filterReservationDate" onchange="filterReservations()" title="Tarihe Göre Seç">
                     </div>
+
+                    <select class="form-select form-select-sm max-w-150 border-primary fw-bold" id="filterReservationField" onchange="filterReservations()">
+                        <option value="all">Tüm Sahalar</option>
+                    </select>
+
+                    <div class="max-w-180">
+                        <input type="text" class="form-control form-control-sm border-primary" id="searchReservationQuery" placeholder="🔍 @kullanıcı, Takım..." oninput="filterReservations()">
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-secondary py-1 px-2.5 fw-bold" onclick="resetReservationDateFilter()" title="Tüm Filtreleri Temizle">
+                        <i class="fa-solid fa-rotate-left me-1"></i> Temizle
+                    </button>
                 </div>
             </div>
-        </div>
-                <li class="nav-item">
-                    <button class="nav-link active fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('today')">
-                        <i class="fa-solid fa-calendar-day me-1 text-warning"></i> Bugünkü Randevular <span class="badge bg-white text-dark ms-1" id="tabCountToday">0</span>
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('future')">
-                        <i class="fa-solid fa-clock me-1 text-primary"></i> Gelecek Randevular <span class="badge bg-white text-dark ms-1" id="tabCountFuture">0</span>
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('past')">
-                        <i class="fa-solid fa-history me-1 text-secondary"></i> Geçmiş Randevular <span class="badge bg-white text-dark ms-1" id="tabCountPast">0</span>
-                    </button>
-                </li>
-            </ul>
         </div>
 
         <!-- SIRALANABİLİR KOLONLAR (ASC / DESC İKONLARI VE SABİT YÜKSEKLİKLİ İÇ SCROLLBAR) -->
@@ -689,7 +671,7 @@ $today_str = date('Y-m-d');
                                     <label class="form-label text-warning fs-8 fw-bold mb-1"><i class="fa-solid fa-magnifying-glass me-1"></i> MÜŞTERİ ABONMANI ARA (@kullanıcı_adı, İsim veya Telefon)</label>
                                     <input type="text" class="form-control form-control-sm fw-bold border-warning mb-2" id="walkinSubSearchInput" placeholder="Örn: @oyuncu1, Ahmet Yılmaz, 0532..." oninput="filterWalkinSubPicker()">
                                     
-                                    <div id="walkinSubCardList" class="d-flex flex-column gap-2 overflow-auto" style="max-height: 180px;">
+                                    <div id="walkinSubCardList" class="d-flex flex-column gap-2 overflow-auto pe-1" style="max-height: 200px;">
                                         <!-- Dynamic cards populated here -->
                                     </div>
                                 </div>
@@ -1131,7 +1113,15 @@ function renderOwnerSubscriptions(list) {
     list.forEach(s => {
         const modeBadge = (s.booking_mode === 'periodic') ? `<span class="badge bg-info bg-opacity-10 text-info border border-info">📅 Periyodik (${escapeHtml(s.preferred_day)} ${s.preferred_time})</span>` : `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary">🎯 Esnek Kredi</span>`;
         const statusBadge = (s.status === 'Aktif') ? `<span class="badge bg-success text-white">✅ Aktif</span>` : `<span class="badge bg-secondary text-white">🏁 Tamamlandı</span>`;
-        const usernameTag = s.username ? `@${escapeHtml(s.username)}` : '@oyuncu1';
+        
+        let usernameTag = '';
+        if (s.username && s.username.startsWith('ELDEN-')) {
+            usernameTag = `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary fs-8"><i class="fa-solid fa-receipt me-1"></i>#${escapeHtml(s.username)}</span>`;
+        } else if (s.username) {
+            usernameTag = `<span class="badge bg-light text-primary border fs-8">@${escapeHtml(s.username)}</span>`;
+        } else {
+            usernameTag = `<span class="badge bg-light text-secondary border fs-8">📝 Elden Müşteri</span>`;
+        }
 
         html += `<tr>
             <td class="px-3 py-3">
@@ -1292,12 +1282,19 @@ function showBookingDetails(id) {
     const r = ownerReservationsData.find(item => item.id == id);
     if (!r) return;
 
-    const usernameTag = r.username ? `@${escapeHtml(r.username)}` : '@oyuncu1';
+    let usernameTag = '';
+    if (r.username && r.username.startsWith('ELDEN-')) {
+        usernameTag = `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">📝 #${escapeHtml(r.username)}</span>`;
+    } else if (r.username) {
+        usernameTag = `<span class="badge bg-light text-primary border">@${escapeHtml(r.username)}</span>`;
+    } else {
+        usernameTag = `<span class="badge bg-light text-secondary border">📝 Elden Müşteri</span>`;
+    }
 
     document.getElementById('detailTitle').innerText = `Randevu #${r.id}`;
     document.getElementById('detailContent').innerHTML = `
         <p class="mb-1"><strong>Takım Adı:</strong> ${escapeHtml(r.team_name)}</p>
-        <p class="mb-1"><strong>Yetkili / @Kullanıcı:</strong> ${escapeHtml(r.contact_name)} <span class="badge bg-light text-primary border">${usernameTag}</span></p>
+        <p class="mb-1"><strong>Yetkili / Kullanıcı:</strong> ${escapeHtml(r.contact_name)} ${usernameTag}</p>
         <p class="mb-1"><strong>Telefon:</strong> ${escapeHtml(r.phone)}</p>
         <p class="mb-1"><strong>Saha:</strong> ${escapeHtml(r.field_name)}</p>
         <p class="mb-1"><strong>Tarih / Saat:</strong> ${r.reservation_date} - ${r.reservation_time}</p>
@@ -1365,11 +1362,37 @@ function filterWalkinSubPicker() {
 
     let html = '';
     filtered.forEach(s => {
-        const usernameTag = s.username ? `@${escapeHtml(s.username)}` : '@oyuncu1';
-        html += `<div class="p-2.5 bg-white rounded-3 border d-flex align-items-center justify-content-between cursor-pointer hover-shadow" onclick="selectWalkinSubCard(${s.id})">
+        let usernameTag = '';
+        if (s.username && s.username.startsWith('ELDEN-')) {
+            usernameTag = `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary ms-1">📝 #${escapeHtml(s.username)}</span>`;
+        } else if (s.username) {
+            usernameTag = `<span class="badge bg-light text-primary border ms-1">@${escapeHtml(s.username)}</span>`;
+        }
+
+        let packageBadge = '';
+        let cardBorderClass = 'border-start border-4 border-secondary';
+
+        if (s.package_name && s.package_name.includes('6 Aylık')) {
+            packageBadge = `<span class="badge bg-warning bg-opacity-20 text-dark border border-warning fw-bold"><i class="fa-solid fa-gem me-1 text-warning"></i> ${escapeHtml(s.package_name)}</span>`;
+            cardBorderClass = 'border-start border-4 border-warning';
+        } else if (s.package_name && s.package_name.includes('3 Aylık')) {
+            packageBadge = `<span class="badge bg-success bg-opacity-15 text-success border border-success fw-bold"><i class="fa-solid fa-crown me-1"></i> ${escapeHtml(s.package_name)}</span>`;
+            cardBorderClass = 'border-start border-4 border-success';
+        } else if (s.package_name && s.package_name.includes('Aylık')) {
+            packageBadge = `<span class="badge bg-primary bg-opacity-15 text-primary border border-primary fw-bold"><i class="fa-solid fa-calendar-days me-1"></i> ${escapeHtml(s.package_name)}</span>`;
+            cardBorderClass = 'border-start border-4 border-primary';
+        } else {
+            packageBadge = `<span class="badge bg-info bg-opacity-15 text-info border border-info fw-bold">${escapeHtml(s.package_name)}</span>`;
+            cardBorderClass = 'border-start border-4 border-info';
+        }
+
+        html += `<div class="p-2.5 bg-white rounded-3 border ${cardBorderClass} d-flex align-items-center justify-content-between cursor-pointer hover-shadow transition-all" onclick="selectWalkinSubCard(${s.id})">
             <div>
-                <div class="fw-bold text-dark fs-7">${escapeHtml(s.user_name)} <span class="badge bg-light text-primary border ms-1">${usernameTag}</span></div>
-                <span class="text-muted fs-8"><i class="fa-solid fa-phone text-success me-1"></i>${escapeHtml(s.user_phone)} &bull; <strong class="text-warning">${escapeHtml(s.package_name)}</strong></span>
+                <div class="fw-bold text-dark fs-7 mb-1">${escapeHtml(s.user_name)} ${usernameTag}</div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="text-muted fs-8"><i class="fa-solid fa-phone text-success me-1"></i>${escapeHtml(s.user_phone)}</span>
+                    ${packageBadge}
+                </div>
             </div>
             <div class="text-end">
                 <span class="badge bg-success text-white fw-bold fs-8">🎁 Kalan: ${s.remaining_matches} Maç</span>
@@ -1385,7 +1408,7 @@ function selectWalkinSubCard(subId) {
     if (!s) return;
 
     document.getElementById('walkinUseSubId').value = s.id;
-    document.getElementById('walkinUsername').value = s.username || 'oyuncu1';
+    document.getElementById('walkinUsername').value = s.username || '';
 
     document.getElementById('walkinContactName').value = s.user_name;
     document.getElementById('walkinPhone').value = s.user_phone;
@@ -1393,7 +1416,7 @@ function selectWalkinSubCard(subId) {
     document.getElementById('walkinFeeInput').value = '0.00 (Abonman Kredisi)';
 
     document.getElementById('selectedSubCustomerName').innerText = s.user_name;
-    document.getElementById('selectedSubUsername').innerText = s.username ? `@${s.username}` : '@oyuncu1';
+    document.getElementById('selectedSubUsername').innerText = (s.username && s.username.startsWith('ELDEN-')) ? `#${s.username}` : (s.username ? `@${s.username}` : '📝 Elden Müşteri');
     document.getElementById('selectedSubPhone').innerText = s.user_phone;
     document.getElementById('selectedSubRemaining').innerText = `Kalan: ${s.remaining_matches} Maç Kredisi`;
 
@@ -1556,6 +1579,13 @@ function computeMatchStatusBadge(resDate, resTime) {
 function resetReservationDateFilter() {
     const dateInput = document.getElementById('filterReservationDate');
     if (dateInput) dateInput.value = '';
+
+    const fieldSelect = document.getElementById('filterReservationField');
+    if (fieldSelect) fieldSelect.value = 'all';
+
+    const searchInput = document.getElementById('searchReservationQuery');
+    if (searchInput) searchInput.value = '';
+
     filterReservations();
 }
 
