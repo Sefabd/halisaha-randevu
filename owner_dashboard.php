@@ -124,15 +124,47 @@ $today_str = date('Y-m-d');
         </div>
     </section>
 
-    <div class="row g-4 mb-4">
-        <!-- 1. GELİŞMİŞ TESİS & ÇALIŞMA SAATLERİ -->
-        <div class="col-lg-5">
-            <div class="minimal-card p-4 h-100">
-                <h5 class="fw-bold text-dark mb-3">
-                    <i class="fa-solid fa-sliders text-warning me-2"></i> Tesis & Gelişmiş Çalışma Saatleri
+    <!-- 1. SAHALARIM YÖNETİM KARTI (TAM GENİŞLİK - BOŞLUKSUZ VE SIKI) -->
+    <section class="minimal-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-vector-square text-success me-2"></i> Tesis Sahalarım
                 </h5>
+                <span class="text-muted fs-7">Sahalarınız, anlık doluluk durumları ve kapalı kalacağı tarih/saat aralığı ayarları</span>
+            </div>
+            <button class="btn btn-team btn-sm" onclick="openAddFieldModal()">
+                <i class="fa-solid fa-plus me-1"></i> Yeni Saha Ekle
+            </button>
+        </div>
 
-                <form id="facilityProfileForm" onsubmit="saveFacilityProfile(event)">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle m-0 fs-7">
+                <thead class="table-light text-muted border-bottom">
+                    <tr>
+                        <th>SAHA ADI</th>
+                        <th>TİPİ</th>
+                        <th>ANLIK DOLULUK</th>
+                        <th>DURUM AYARI</th>
+                        <th>SAATLİK ÜCRET</th>
+                        <th class="text-end">İŞLEMLER</th>
+                    </tr>
+                </thead>
+                <tbody id="ownerFieldsList"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 2. GELİŞMİŞ TESİS & ÇALIŞMA SAATLERİ (YENİLENMİŞ TAM GENİŞLİK FORMU) -->
+    <section class="minimal-card p-4 mb-4">
+        <h5 class="fw-bold text-dark mb-3">
+            <i class="fa-solid fa-sliders text-warning me-2"></i> Tesis Profili & Gelişmiş Çalışma Saatleri
+        </h5>
+
+        <form id="facilityProfileForm" onsubmit="saveFacilityProfile(event)">
+            <div class="row g-4">
+                <!-- Sol Kolon: Tesis Genel Bilgileri -->
+                <div class="col-lg-6 border-end-lg">
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label text-muted fs-7 fw-semibold">TESİS ADI</label>
@@ -162,7 +194,12 @@ $today_str = date('Y-m-d');
                             <label class="form-label text-muted fs-7 fw-semibold">TELEFON</label>
                             <input type="text" class="form-control" name="phone" id="fac_phone" required>
                         </div>
-                        
+                    </div>
+                </div>
+
+                <!-- Sağ Kolon: Çalışma Saatleri & İmkânlar -->
+                <div class="col-lg-6">
+                    <div class="row g-3">
                         <!-- HAFTA İÇİ SAATLERİ -->
                         <div class="col-6">
                             <label class="form-label text-primary fs-8 fw-bold">HAFTA İÇİ AÇILIŞ</label>
@@ -192,7 +229,7 @@ $today_str = date('Y-m-d');
                         </div>
 
                         <!-- TESİS SEVİYESİ İMKANLAR FORMU -->
-                        <div class="col-12 border-top pt-3">
+                        <div class="col-12 border-top pt-2">
                             <label class="form-label text-dark fs-8 fw-bold mb-2"><i class="fa-solid fa-list-check text-primary me-1"></i> TESİS İMKANLARI VE HİZMETLERİ</label>
                             <div class="row g-2 fs-7">
                                 <div class="col-6">
@@ -223,7 +260,7 @@ $today_str = date('Y-m-d');
                         </div>
 
                         <!-- ÖNCEDEN KAPALI GÜN / TARİH ARALIĞI EKLEME -->
-                        <div class="col-12 border-top pt-3">
+                        <div class="col-12 border-top pt-2">
                             <label class="form-label text-danger fs-8 fw-bold mb-1"><i class="fa-solid fa-ban me-1"></i> TESİS KAPALI TARİH ARALIĞI EKLE</label>
                             <div class="row g-2 mb-2">
                                 <div class="col-6">
@@ -241,49 +278,16 @@ $today_str = date('Y-m-d');
                             <div class="d-flex flex-wrap gap-1 fs-8" id="closedDatesBadgeList"></div>
                         </div>
 
-                        <div class="col-12 mt-3">
+                        <div class="col-12 mt-2">
                             <button type="submit" class="btn btn-team w-100 fw-bold">
                                 <i class="fa-solid fa-floppy-disk me-1"></i> Ayarları Kaydet
                             </button>
                         </div>
                     </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- 2. SAHALARIM YÖNETİM KARTI -->
-        <div class="col-lg-7">
-            <div class="minimal-card p-4 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <h5 class="fw-bold text-dark mb-0">
-                            <i class="fa-solid fa-vector-square text-success me-2"></i> Tesis Sahalarım
-                        </h5>
-                        <span class="text-muted fs-7">Sahalarınız, anlık doluluk durumları ve kapalı kalacağı tarih/saat aralığı ayarları</span>
-                    </div>
-                    <button class="btn btn-team btn-sm" onclick="openAddFieldModal()">
-                        <i class="fa-solid fa-plus me-1"></i> Yeni Saha Ekle
-                    </button>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle m-0 fs-7">
-                        <thead class="bg-light text-muted border-bottom">
-                            <tr>
-                                <th>SAHA ADI</th>
-                                <th>TİPİ</th>
-                                <th>ANLIK DURUM</th>
-                                <th>DURUM</th>
-                                <th>SAATLİK ÜCRET</th>
-                                <th class="text-end">İŞLEMLER</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ownerFieldsList"></tbody>
-                    </table>
                 </div>
             </div>
-        </div>
-    </div>
+        </form>
+    </section>
 
     <!-- 3. ABONMAN YÖNETİMİ & SATIŞ TAKİBİ KARTI (@KULLANICI ADI DESTEKLİ) -->
     <section class="minimal-card p-4 mb-4">
@@ -318,35 +322,62 @@ $today_str = date('Y-m-d');
         </div>
     </section>
 
-    <!-- 4. RANDEVU LİSTELERİNDE SIRALANABİLİR KOLONLAR VE SAHA FİLTRESİ -->
+    <!-- 4. RANDEVU LİSTELERİNDE SIRALANABİLİR KOLONLAR VE ŞIK BİRLEŞİK FİLTRELEME ÇUBUĞU -->
     <section class="minimal-card p-4 mb-5">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
             <div>
                 <h4 class="fw-bold text-dark mb-0 fs-5"><i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevu Yönetimi</h4>
                 <span class="text-muted fs-7">Müşteri karışıklığını önlemek için benzersiz @kullanıcı_adı ve telefon numaraları gösterilmektedir.</span>
             </div>
+        </div>
 
-            <!-- CANLI ARAMA KUTUSU, SAHA VE TARİH FİLTRESİ -->
-            <div class="d-flex flex-wrap align-items-center gap-2">
-                <div class="d-flex align-items-center gap-1">
-                    <label class="fs-8 text-muted fw-bold d-none d-lg-block"><i class="fa-solid fa-calendar-days text-primary me-1"></i> TARİH SEÇİN:</label>
-                    <input type="date" class="form-control form-control-sm border-primary fw-bold max-w-160" id="filterReservationDate" onchange="filterReservations()" title="Tarihe Göre Filtrele (Örn: Dünkü Tarih)">
-                    <button class="btn btn-sm btn-outline-secondary py-1 px-2" onclick="resetReservationDateFilter()" title="Tarih Filtresini Sıfırla"><i class="fa-solid fa-rotate-left"></i></button>
+        <!-- YENİ BİRLEŞİK FİLTRELEME ARAÇ ÇUBUĞU -->
+        <div class="p-3 bg-light rounded-3 border mb-3">
+            <div class="row g-3 align-items-center">
+                <!-- SEKMELER (Bugün, Gelecek, Geçmiş) -->
+                <div class="col-xl-5 col-lg-6">
+                    <ul class="nav nav-pills" id="reservationFilterTabs">
+                        <li class="nav-item">
+                            <button class="nav-link active fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('today')">
+                                <i class="fa-solid fa-calendar-day me-1 text-warning"></i> Bugün <span class="badge bg-white text-dark ms-1" id="tabCountToday">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('future')">
+                                <i class="fa-solid fa-clock me-1 text-primary"></i> Gelecek <span class="badge bg-white text-dark ms-1" id="tabCountFuture">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('past')">
+                                <i class="fa-solid fa-history me-1 text-secondary"></i> Geçmiş <span class="badge bg-white text-dark ms-1" id="tabCountPast">0</span>
+                            </button>
+                        </li>
+                    </ul>
                 </div>
 
-                <select class="form-select form-select-sm max-w-160 border-primary fw-bold" id="filterReservationField" onchange="filterReservations()">
-                    <option value="all">Tüm Sahalar</option>
-                </select>
+                <!-- BİRLEŞİK KONTROLLER (Tarih, Saha, Arama, Sıfırla) -->
+                <div class="col-xl-7 col-lg-6">
+                    <div class="d-flex flex-wrap align-items-center justify-content-lg-end gap-2">
+                        <div class="input-group input-group-sm max-w-170">
+                            <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-calendar-days text-primary"></i></span>
+                            <input type="date" class="form-control border-start-0 border-primary fw-bold" id="filterReservationDate" onchange="filterReservations()" title="Tarihe Göre Seç">
+                        </div>
 
-                <div class="max-w-200">
-                    <input type="text" class="form-control form-control-sm" id="searchReservationQuery" placeholder="🔍 @kullanıcı, Takım veya Tel Ara..." oninput="filterReservations()">
+                        <select class="form-select form-select-sm max-w-160 border-primary fw-bold" id="filterReservationField" onchange="filterReservations()">
+                            <option value="all">Tüm Sahalar</option>
+                        </select>
+
+                        <div class="max-w-180">
+                            <input type="text" class="form-control form-control-sm border-primary" id="searchReservationQuery" placeholder="🔍 @kullanıcı, Takım..." oninput="filterReservations()">
+                        </div>
+
+                        <button class="btn btn-sm btn-outline-secondary py-1 px-2.5 fw-bold" onclick="resetReservationDateFilter()" title="Filtreleri Sıfırla">
+                            <i class="fa-solid fa-rotate-left me-1"></i> Temizle
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- 3 FILTER TABS -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <ul class="nav nav-pills" id="reservationFilterTabs">
                 <li class="nav-item">
                     <button class="nav-link active fw-bold py-1.5 px-3 fs-7" onclick="setReservationTab('today')">
                         <i class="fa-solid fa-calendar-day me-1 text-warning"></i> Bugünkü Randevular <span class="badge bg-white text-dark ms-1" id="tabCountToday">0</span>

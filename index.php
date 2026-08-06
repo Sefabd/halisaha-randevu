@@ -245,26 +245,26 @@ $today_str = date('Y-m-d');
 
 <!-- Modal: KULLANICI PROFİLİ, ŞİFRE DEĞİŞTİRME, RANDEVULARIM VE ABONMANLARIM -->
 <div class="modal fade" id="userProfileModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header border-bottom">
-                <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-circle text-primary me-2"></i> Kullanıcı Hesabı & Profilim</h5>
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header border-bottom bg-light">
+                <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-circle-user text-primary me-2 fs-5"></i> Kullanıcı Hesabı & Profil Yönetimi</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <ul class="nav nav-tabs mb-3" id="profileTabs">
+            <div class="modal-body p-4 overflow-auto" style="max-height: 80vh;">
+                <ul class="nav nav-pills mb-4 gap-2" id="profileTabs">
                     <li class="nav-item">
-                        <button class="nav-link active fw-bold fs-7" data-bs-toggle="tab" data-bs-target="#tabProfile">
+                        <button class="nav-link active fw-bold py-2 px-3 fs-7" data-bs-toggle="tab" data-bs-target="#tabProfile">
                             <i class="fa-solid fa-user me-1 text-primary"></i> Profil Bilgilerim & Şifre Değiştir
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link fw-bold fs-7" data-bs-toggle="tab" data-bs-target="#tabMyReservations" onclick="loadMyReservations()">
+                        <button class="nav-link fw-bold py-2 px-3 fs-7" data-bs-toggle="tab" data-bs-target="#tabMyReservations" onclick="loadMyReservations()">
                             <i class="fa-solid fa-calendar-check me-1 text-success"></i> Randevularım
                         </button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link fw-bold fs-7" data-bs-toggle="tab" data-bs-target="#tabMySubscriptions" onclick="loadMySubscriptions()">
+                        <button class="nav-link fw-bold py-2 px-3 fs-7" data-bs-toggle="tab" data-bs-target="#tabMySubscriptions" onclick="loadMySubscriptions()">
                             <i class="fa-solid fa-crown me-1 text-warning"></i> Abonmanlarım & Maç Kredilerim
                         </button>
                     </li>
@@ -303,16 +303,16 @@ $today_str = date('Y-m-d');
 
                     <!-- TAB 2: RANDEVULARIM -->
                     <div class="tab-pane fade" id="tabMyReservations">
-                        <div class="table-responsive">
+                        <div class="scrollable-table-container border rounded-3 overflow-auto" style="max-height: 400px;">
                             <table class="table table-hover align-middle fs-7 m-0">
-                                <thead class="table-light text-muted border-bottom">
+                                <thead class="table-light text-muted border-bottom sticky-top">
                                     <tr>
-                                        <th>TESİS ADI</th>
-                                        <th>SAHA</th>
-                                        <th>TARİH</th>
-                                        <th>SAAT</th>
-                                        <th>ÜCRET</th>
-                                        <th class="text-end">İŞLEMLER</th>
+                                        <th class="py-3 px-3">TESİS ADI</th>
+                                        <th class="py-3 px-3">SAHA</th>
+                                        <th class="py-3 px-3">TARİH</th>
+                                        <th class="py-3 px-3">SAAT</th>
+                                        <th class="py-3 px-3">ÜCRET</th>
+                                        <th class="py-3 px-3 text-end">İŞLEMLER</th>
                                     </tr>
                                 </thead>
                                 <tbody id="myReservationsList"></tbody>
@@ -322,18 +322,18 @@ $today_str = date('Y-m-d');
 
                     <!-- TAB 3: ABONMANLARIM & MAÇ KREDİLERİM -->
                     <div class="tab-pane fade" id="tabMySubscriptions">
-                        <div class="table-responsive">
+                        <div class="scrollable-table-container border rounded-3 overflow-auto" style="max-height: 400px;">
                             <table class="table table-hover align-middle fs-7 m-0">
-                                <thead class="table-light text-muted border-bottom">
+                                <thead class="table-light text-muted border-bottom sticky-top">
                                     <tr>
-                                        <th>TESİS ADI</th>
-                                        <th>PAKET</th>
-                                        <th>SAHA</th>
-                                        <th>MOD</th>
-                                        <th>TOPLAM MAÇ</th>
-                                        <th>KALAN HAK</th>
-                                        <th>TUTAR</th>
-                                        <th>DURUM</th>
+                                        <th class="py-3 px-3">TESİS ADI</th>
+                                        <th class="py-3 px-3">PAKET</th>
+                                        <th class="py-3 px-3">SAHA</th>
+                                        <th class="py-3 px-3">KULLANIM MODU</th>
+                                        <th class="py-3 px-3">TOPLAM MAÇ</th>
+                                        <th class="py-3 px-3">KALAN KREDİ</th>
+                                        <th class="py-3 px-3">TUTAR</th>
+                                        <th class="py-3 px-3">DURUM</th>
                                     </tr>
                                 </thead>
                                 <tbody id="mySubscriptionsList"></tbody>

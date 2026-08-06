@@ -84,6 +84,13 @@ try {
             exit;
         }
 
+        $chkPhone = $pdo->prepare("SELECT id FROM users WHERE phone = ?");
+        $chkPhone->execute([$phone]);
+        if ($chkPhone->fetch()) {
+            echo json_encode(['status' => 'error', 'message' => "Bu telefon numarası ({$phone}) ile zaten kayıtlı bir kullanıcı hesabı mevcuttur! Lütfen giriş yapınız veya farklı bir telefon numarası giriniz."]);
+            exit;
+        }
+
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare("INSERT INTO users (full_name, username, password, phone) VALUES (?, ?, ?, ?)");
         $stmt->execute([$full_name, $username, $hash, $phone]);

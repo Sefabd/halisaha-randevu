@@ -16,7 +16,7 @@ try {
         full_name TEXT NOT NULL,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        phone TEXT NOT NULL,
+        phone TEXT UNIQUE NOT NULL,
         favorite_team TEXT DEFAULT 'neutral',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
