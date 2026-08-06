@@ -1062,10 +1062,17 @@ async function openPlayerBookModal(facId, fieldId, fieldName, date, time, fee) {
         const json = await res.json();
 
         if (json.status === 'success' && json.data) {
-            const availableSubs = json.data.filter(s => s.facility_id == facId && s.remaining_matches > 0 && s.status === 'Aktif');
-            availableSubs.forEach(s => {
-                selectEl.innerHTML += `<option value="${s.id}">🎁 ${escapeHtml(s.package_name)} (Kalan: ${s.remaining_matches} Maç - ₺0.00)</option>`;
-            });
+            // ONLY Flexible Credit subscriptions (Esnek Kredi) can be redeemed for ad-hoc match slots.
+            // Fixed Periodic Subscriptions (Periyodik) auto-reserve fixed recurring dates and shouldn't appear here!
+            const availableSubs = json.data.filter(s => s.facility_id == facId && s.remaining_matches > 0 && s.status === 'Aktif' && s.booking_mode === 'flexible');
+            
+            if (availableSubs.length === 0) {
+                // Keep default normal payment
+            } else {
+                availableSubs.forEach(s => {
+                    selectEl.innerHTML += `<option value="${s.id}">🎁 ${escapeHtml(s.package_name)} (Esnek Kredi - Kalan: ${s.remaining_matches} Maç - ₺0.00)</option>`;
+                });
+            }
         }
     }
 
@@ -1234,6 +1241,16 @@ function escapeHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+
+// Global modal cleanup listener to prevent stuck pitch-black backdrop screen
+document.addEventListener('hidden.bs.modal', function () {
+    if (document.querySelectorAll('.modal.show').length === 0) {
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    }
+});
 </script>
 
 </body>

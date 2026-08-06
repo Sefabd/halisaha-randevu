@@ -1343,7 +1343,9 @@ function filterWalkinSubPicker() {
     const query = document.getElementById('walkinSubSearchInput').value.toLowerCase().trim();
     const container = document.getElementById('walkinSubCardList');
 
-    const activeSubs = ownerSubscriptionsData.filter(s => s.remaining_matches > 0 && s.status === 'Aktif');
+    // ONLY Flexible Credit subscriptions (Esnek Kredi) can be redeemed for ad-hoc match slots.
+    // Fixed Periodic Subscriptions (Periyodik) auto-reserve fixed recurring dates and shouldn't appear here!
+    const activeSubs = ownerSubscriptionsData.filter(s => s.remaining_matches > 0 && s.status === 'Aktif' && s.booking_mode === 'flexible');
 
     let filtered = activeSubs;
     if (query) {
@@ -1370,23 +1372,23 @@ function filterWalkinSubPicker() {
         }
 
         let packageBadge = '';
-        let cardBorderClass = 'border-start border-4 border-secondary';
+        let cardBgClass = 'bg-secondary bg-opacity-10 border border-secondary border-opacity-25';
 
         if (s.package_name && s.package_name.includes('6 Aylık')) {
-            packageBadge = `<span class="badge bg-warning bg-opacity-20 text-dark border border-warning fw-bold"><i class="fa-solid fa-gem me-1 text-warning"></i> ${escapeHtml(s.package_name)}</span>`;
-            cardBorderClass = 'border-start border-4 border-warning';
+            packageBadge = `<span class="badge bg-warning text-dark fw-bold"><i class="fa-solid fa-gem me-1 text-dark"></i> ${escapeHtml(s.package_name)}</span>`;
+            cardBgClass = 'bg-warning bg-opacity-10 border border-warning border-opacity-50';
         } else if (s.package_name && s.package_name.includes('3 Aylık')) {
-            packageBadge = `<span class="badge bg-success bg-opacity-15 text-success border border-success fw-bold"><i class="fa-solid fa-crown me-1"></i> ${escapeHtml(s.package_name)}</span>`;
-            cardBorderClass = 'border-start border-4 border-success';
+            packageBadge = `<span class="badge bg-success text-white fw-bold"><i class="fa-solid fa-crown me-1"></i> ${escapeHtml(s.package_name)}</span>`;
+            cardBgClass = 'bg-success bg-opacity-10 border border-success border-opacity-50';
         } else if (s.package_name && s.package_name.includes('Aylık')) {
-            packageBadge = `<span class="badge bg-primary bg-opacity-15 text-primary border border-primary fw-bold"><i class="fa-solid fa-calendar-days me-1"></i> ${escapeHtml(s.package_name)}</span>`;
-            cardBorderClass = 'border-start border-4 border-primary';
+            packageBadge = `<span class="badge bg-primary text-white fw-bold"><i class="fa-solid fa-calendar-days me-1"></i> ${escapeHtml(s.package_name)}</span>`;
+            cardBgClass = 'bg-primary bg-opacity-10 border border-primary border-opacity-50';
         } else {
-            packageBadge = `<span class="badge bg-info bg-opacity-15 text-info border border-info fw-bold">${escapeHtml(s.package_name)}</span>`;
-            cardBorderClass = 'border-start border-4 border-info';
+            packageBadge = `<span class="badge bg-info text-dark fw-bold">${escapeHtml(s.package_name)}</span>`;
+            cardBgClass = 'bg-info bg-opacity-10 border border-info border-opacity-50';
         }
 
-        html += `<div class="p-2.5 bg-white rounded-3 border ${cardBorderClass} d-flex align-items-center justify-content-between cursor-pointer hover-shadow transition-all" onclick="selectWalkinSubCard(${s.id})">
+        html += `<div class="p-2.5 rounded-3 ${cardBgClass} d-flex align-items-center justify-content-between cursor-pointer hover-shadow transition-all" onclick="selectWalkinSubCard(${s.id})">
             <div>
                 <div class="fw-bold text-dark fs-7 mb-1">${escapeHtml(s.user_name)} ${usernameTag}</div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -1395,8 +1397,8 @@ function filterWalkinSubPicker() {
                 </div>
             </div>
             <div class="text-end">
-                <span class="badge bg-success text-white fw-bold fs-8">🎁 Kalan: ${s.remaining_matches} Maç</span>
-                <span class="d-block text-muted fs-8">₺0.00 / Maç</span>
+                <span class="badge bg-success text-white fw-bold fs-8 px-2 py-1"><i class="fa-solid fa-ticket me-1"></i> Kalan: ${s.remaining_matches} Maç</span>
+                <span class="d-block text-muted fs-8 mt-1">₺0.00 / Maç</span>
             </div>
         </div>`;
     });
