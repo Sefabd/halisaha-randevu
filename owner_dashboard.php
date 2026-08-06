@@ -1231,7 +1231,15 @@ async function handleSaveOwnerSubscription(e) {
 
     try {
         const res = await fetch('api/facility.php?action=add_owner_subscription', { method: 'POST', body: formData });
-        const json = await res.json();
+        const text = await res.text();
+        let json;
+        try {
+            json = JSON.parse(text);
+        } catch (err) {
+            console.error('Sunucu Yanıtı:', text);
+            alert('Sunucudan beklenmeyen bir yanıt alındı.');
+            return;
+        }
         
         alert(json.message);
         

@@ -506,6 +506,9 @@ try {
 
         $totalPrice = ($hourlyFee * $totalMatches) * (1 - ($discountRate / 100));
 
+        $usedMatches = 0;
+        $remainingMatches = $totalMatches;
+
         // Pre-check for Periodic Subscription Conflicts
         if ($booking_mode === 'periodic' && $field_id > 0) {
             $checkResult = checkPeriodicSubscriptionConflicts($pdo, $field_id, $package_type, $preferred_day, $preferred_time);
