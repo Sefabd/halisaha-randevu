@@ -326,13 +326,19 @@ $today_str = date('Y-m-d');
                 <span class="text-muted fs-7">Müşteri karışıklığını önlemek için benzersiz @kullanıcı_adı ve telefon numaraları gösterilmektedir.</span>
             </div>
 
-            <!-- CANLI ARAMA KUTUSU VE SAHA FİLTRESİ DROPDOWN'U -->
+            <!-- CANLI ARAMA KUTUSU, SAHA VE TARİH FİLTRESİ -->
             <div class="d-flex flex-wrap align-items-center gap-2">
-                <select class="form-select form-select-sm max-w-180 border-primary fw-bold" id="filterReservationField" onchange="filterReservations()">
+                <div class="d-flex align-items-center gap-1">
+                    <label class="fs-8 text-muted fw-bold d-none d-lg-block"><i class="fa-solid fa-calendar-days text-primary me-1"></i> TARİH SEÇİN:</label>
+                    <input type="date" class="form-control form-control-sm border-primary fw-bold max-w-160" id="filterReservationDate" onchange="filterReservations()" title="Tarihe Göre Filtrele (Örn: Dünkü Tarih)">
+                    <button class="btn btn-sm btn-outline-secondary py-1 px-2" onclick="resetReservationDateFilter()" title="Tarih Filtresini Sıfırla"><i class="fa-solid fa-rotate-left"></i></button>
+                </div>
+
+                <select class="form-select form-select-sm max-w-160 border-primary fw-bold" id="filterReservationField" onchange="filterReservations()">
                     <option value="all">Tüm Sahalar</option>
                 </select>
 
-                <div class="max-w-220">
+                <div class="max-w-200">
                     <input type="text" class="form-control form-control-sm" id="searchReservationQuery" placeholder="🔍 @kullanıcı, Takım veya Tel Ara..." oninput="filterReservations()">
                 </div>
             </div>
@@ -463,16 +469,29 @@ $today_str = date('Y-m-d');
             <form onsubmit="handleSaveOwnerSubscription(event)">
                 <div class="modal-body p-4">
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-muted fs-7 fw-semibold">MÜŞTERİ AD SOYAD *</label>
-                            <input type="text" class="form-control fw-bold" name="user_name" required placeholder="Örn: Ahmet Yılmaz">
+                        <div class="col-12">
+                            <label class="form-label text-dark fs-7 fw-bold mb-2">ABONMAN TANIMLANACAK MÜŞTERİ TİPİ</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="is_registered_user" id="subCustomerRegistered" value="1" checked onchange="toggleOwnerSubCustomerType('registered')">
+                                <label class="btn btn-outline-primary fw-bold fs-7 py-2" for="subCustomerRegistered"><i class="fa-solid fa-user-check me-1"></i> Kayıtlı Üye Hesabına (@username ile)</label>
+
+                                <input type="radio" class="btn-check" name="is_registered_user" id="subCustomerWalkin" value="0" onchange="toggleOwnerSubCustomerType('walkin')">
+                                <label class="btn btn-outline-secondary fw-bold fs-7 py-2" for="subCustomerWalkin"><i class="fa-solid fa-pen-to-square me-1"></i> Elden / Üyesiz Müşteri Abonmanı</label>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted fs-7 fw-semibold">BENZERSİZ KULLANICI ADI (@username)</label>
+
+                        <div class="col-md-6" id="ownerSubUsernameContainer">
+                            <label class="form-label text-muted fs-7 fw-semibold">KAYITLI KULLANICI ADI (@username) *</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light">@</span>
-                                <input type="text" class="form-control fw-bold" name="username" placeholder="oyuncu1">
+                                <input type="text" class="form-control fw-bold" name="username" id="ownerSubUsernameInput" placeholder="oyuncu1" required>
                             </div>
+                            <span class="fs-8 text-muted d-block mt-1"><i class="fa-solid fa-circle-info me-1 text-primary"></i> Müşterinin hesabı varsa kullanıcı adını girin.</span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">MÜŞTERİ AD SOYAD *</label>
+                            <input type="text" class="form-control fw-bold" name="user_name" id="ownerSubUserNameInput" required placeholder="Örn: Ahmet Yılmaz">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
@@ -1160,6 +1179,20 @@ async function checkOwnerPeriodicAvailabilityLive() {
     }
 }
 
+function toggleOwnerSubCustomerType(type) {
+    const usernameContainer = document.getElementById('ownerSubUsernameContainer');
+    const usernameInput = document.getElementById('ownerSubUsernameInput');
+
+    if (type === 'walkin') {
+        usernameContainer.classList.add('d-none');
+        usernameInput.required = false;
+        usernameInput.value = '';
+    } else {
+        usernameContainer.classList.remove('d-none');
+        usernameInput.required = true;
+    }
+}
+
 async function deleteSubscription(subId) {
     if (!confirm('Bu abonmanlık kaydını iptal etmek / silmek istediğinize emin misiniz?')) return;
     const formData = new FormData();
@@ -1178,6 +1211,14 @@ async function deleteSubscription(subId) {
 function openOwnerAddSubModal() {
     const selectEl = document.getElementById('ownerSubFieldSelect');
     selectEl.innerHTML = ownerFieldsData.map(f => `<option value="${f.id}">${escapeHtml(f.field_name)} (₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')}/Saat)</option>`).join('');
+    
+    // Reset customer type to registered
+    document.getElementById('subCustomerRegistered').checked = true;
+    toggleOwnerSubCustomerType('registered');
+
+    const submitBtn = document.getElementById('ownerSubSubmitBtn');
+    if (submitBtn) submitBtn.disabled = false;
+
     new bootstrap.Modal(document.getElementById('ownerAddSubModal')).show();
 }
 
@@ -1185,13 +1226,26 @@ async function handleSaveOwnerSubscription(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
 
-    const res = await fetch('api/facility.php?action=add_owner_subscription', { method: 'POST', body: formData });
-    const json = await res.json();
-    alert(json.message);
-    if (json.status === 'success') {
-        bootstrap.Modal.getInstance(document.getElementById('ownerAddSubModal')).hide();
-        loadOwnerSubscriptions();
-        loadOwnerReservations();
+    const submitBtn = document.getElementById('ownerSubSubmitBtn');
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+        const res = await fetch('api/facility.php?action=add_owner_subscription', { method: 'POST', body: formData });
+        const json = await res.json();
+        
+        alert(json.message);
+        
+        if (json.status === 'success') {
+            const modalEl = document.getElementById('ownerAddSubModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+            loadOwnerSubscriptions();
+            loadOwnerReservations();
+        }
+    } catch (err) {
+        alert('Sunucu ile iletişim kurulurken bir hata oluştu: ' + err.message);
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 
@@ -1460,10 +1514,17 @@ function computeMatchStatusBadge(resDate, resTime) {
     }
 }
 
+function resetReservationDateFilter() {
+    const dateInput = document.getElementById('filterReservationDate');
+    if (dateInput) dateInput.value = '';
+    filterReservations();
+}
+
 function filterReservations() {
     const { todayStr, currentHour } = getLiveClientDateAndHour();
     const query = document.getElementById('searchReservationQuery').value.toLowerCase().trim();
     const selectedFieldId = document.getElementById('filterReservationField').value;
+    const selectedDate = document.getElementById('filterReservationDate') ? document.getElementById('filterReservationDate').value : '';
     const tbody = document.getElementById('ownerReservationsBody');
 
     let todayRes = [];
@@ -1475,15 +1536,14 @@ function filterReservations() {
     ownerReservationsData.forEach(r => {
         const resH = parseInt(r.reservation_time.split(':')[0], 10);
 
-        if (r.reservation_date === todayStr) {
-            todayRes.push(r);
-            income += parseFloat(r.fee);
-            if (resH <= currentHour) playedOrFinishedCount++;
-        } else if (r.reservation_date > todayStr) {
-            futureRes.push(r);
-        } else {
+        if (r.reservation_date < todayStr || (r.reservation_date === todayStr && resH < currentHour)) {
             pastRes.push(r);
             playedOrFinishedCount++;
+        } else if (r.reservation_date === todayStr) {
+            todayRes.push(r);
+            income += parseFloat(r.fee);
+        } else {
+            futureRes.push(r);
         }
     });
 
@@ -1497,6 +1557,11 @@ function filterReservations() {
     document.getElementById('ownerStatIncome').innerText = income.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' ₺';
 
     let activeList = (activeReservationTab === 'today') ? todayRes : ((activeReservationTab === 'future') ? futureRes : pastRes);
+
+    // If specific date is picked from calendar filter, display all reservations on that date
+    if (selectedDate && selectedDate.length === 10) {
+        activeList = ownerReservationsData.filter(r => r.reservation_date === selectedDate);
+    }
 
     if (selectedFieldId !== 'all') {
         activeList = activeList.filter(r => r.field_id == selectedFieldId);

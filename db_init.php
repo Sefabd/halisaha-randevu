@@ -140,10 +140,17 @@ try {
     $insField->execute([$fac2_id, 'VIP Arena 1', 'Kapalı Futbol Sahası', 1400.00, 'Aktif', $defaultFeats]);
     $insField->execute([$fac2_id, 'VIP Arena 2', 'Açık Futbol Sahası', 1300.00, 'Aktif', $defaultFeats]);
 
-    // Demo Reservations for Today
+    // Demo Reservations for Today and Yesterday
     $today = date('Y-m-d');
+    $yesterday = date('Y-m-d', strtotime('-1 day'));
+
     $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, username, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
+    // Yesterday Past Reservations
+    $insRes->execute([$fac1_id, 1, 'Saha 1', 'Kadıköy Efsaneleri', 'oyuncu1', 'AHMET YILMAZ', '05321112233', 'İstanbul', 'Kadıköy', $yesterday, '19:00', 1200.00, 'Onaylandı', 'Standart']);
+    $insRes->execute([$fac1_id, 2, 'Saha 2', 'Moda Sahil FC', 'caner_er', 'CANER ERTEKİN', '05334445566', 'İstanbul', 'Kadıköy', $yesterday, '21:00', 1100.00, 'Onaylandı', 'Aylık Paket (4 Maç)']);
+
+    // Today Reservations
     $insRes->execute([$fac1_id, 1, 'Saha 1', 'Moda Gençlik', 'ali_kaptan', 'KAPTAN ALİ', '05321112233', 'İstanbul', 'Kadıköy', $today, '11:00', 1200.00, 'Onaylandı', 'Standart']);
     $insRes->execute([$fac1_id, 1, 'Saha 1', 'Fenerbahçe Veteran', 'oyuncu1', 'AHMET YILMAZ', '05352223344', 'İstanbul', 'Kadıköy', $today, '12:00', 1200.00, 'Onaylandı', 'Aylık Paket (4 Maç)']);
     $insRes->execute([$fac1_id, 2, 'Saha 2', 'Kadıköy Gücü', 'caner_er', 'CANER ERTEKİN', '05334445566', 'İstanbul', 'Kadıköy', $today, '14:00', 1100.00, 'Onaylandı', 'Standart']);

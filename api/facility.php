@@ -517,13 +517,32 @@ try {
             }
         }
 
+        $is_registered_user = intval($_POST['is_registered_user'] ?? 1);
         $username = trim($_POST['username'] ?? '');
-        if (empty($username)) {
-            $username = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $user_name));
+
+        $user_id = 0;
+        if ($is_registered_user === 1) {
+            if (empty($username)) {
+                echo json_encode(['status' => 'error', 'message' => 'Lütfen kayıtlı üyenin kullanıcı adını (@username) giriniz.']);
+                exit;
+            }
+
+            // Verify if username exists in users table
+            $uStmt = $pdo->prepare("SELECT id, full_name, phone FROM users WHERE username = ?");
+            $uStmt->execute([$username]);
+            $uRow = $uStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$uRow) {
+                echo json_encode(['status' => 'error', 'message' => "⚠️ '@{$username}' kullanıcı adına sahip kayıtlı üye bulunamadı!\nLütfen doğru kullanıcı adını giriniz veya 'Elden / Üyesiz Müşteri Abonmanı' seçeneğini tercih ediniz."]);
+                exit;
+            }
+            $user_id = (int)$uRow['id'];
+        } else {
+            $username = '';
         }
 
         $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, username, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $insSub->execute([0, $username, $user_name, $user_phone, $facility_id, $fac['name'], $field_id, $fieldName, $packageName, $package_type, $totalMatches, $usedMatches, $remainingMatches, $discountRate, $totalPrice, $booking_mode, $preferred_day, $preferred_time, 'Aktif']);
+        $insSub->execute([$user_id, $username, $user_name, $user_phone, $facility_id, $fac['name'], $field_id, $fieldName, $packageName, $package_type, $totalMatches, $usedMatches, $remainingMatches, $discountRate, $totalPrice, $booking_mode, $preferred_day, $preferred_time, 'Aktif']);
         $subId = $pdo->lastInsertId();
 
         if ($booking_mode === 'periodic' && $field_id > 0) {
