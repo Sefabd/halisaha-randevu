@@ -52,10 +52,36 @@ try {
 
             if (!empty($sport_type) && $sport_type !== 'Tümü') {
                 $hasSport = false;
+                $st = mb_strtolower($sport_type, 'UTF-8');
+
                 foreach ($fields as $f) {
-                    if (mb_strpos($f['field_type'], $sport_type, 0, 'UTF-8') !== false || mb_strpos($f['field_name'], $sport_type, 0, 'UTF-8') !== false) {
-                        $hasSport = true;
-                        break;
+                    $ft = mb_strtolower($f['field_type'] . ' ' . $f['field_name'], 'UTF-8');
+
+                    if (str_contains($st, 'halı') || str_contains($st, 'futbol')) {
+                        if (str_contains($ft, 'futbol') || str_contains($ft, 'saha') || str_contains($ft, 'halı')) {
+                            $hasSport = true;
+                            break;
+                        }
+                    } elseif (str_contains($st, 'basketbol')) {
+                        if (str_contains($ft, 'basketbol')) {
+                            $hasSport = true;
+                            break;
+                        }
+                    } elseif (str_contains($st, 'tenis')) {
+                        if (str_contains($ft, 'tenis')) {
+                            $hasSport = true;
+                            break;
+                        }
+                    } elseif (str_contains($st, 'voleybol')) {
+                        if (str_contains($ft, 'voleybol')) {
+                            $hasSport = true;
+                            break;
+                        }
+                    } else {
+                        if (str_contains($ft, $st)) {
+                            $hasSport = true;
+                            break;
+                        }
                     }
                 }
                 if (!$hasSport) continue;
