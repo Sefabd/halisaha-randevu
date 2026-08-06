@@ -59,6 +59,7 @@ try {
     $pdo->exec("CREATE TABLE user_subscriptions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
+        username TEXT DEFAULT '',
         user_name TEXT NOT NULL,
         user_phone TEXT NOT NULL,
         facility_id INTEGER NOT NULL,
@@ -88,6 +89,7 @@ try {
         field_id INTEGER NOT NULL,
         field_name TEXT NOT NULL,
         team_name TEXT NOT NULL,
+        username TEXT DEFAULT '',
         contact_name TEXT NOT NULL,
         phone TEXT NOT NULL,
         city TEXT DEFAULT 'İstanbul',
@@ -127,8 +129,8 @@ try {
     $insField->execute([$fac1_id, 'Tenis Kortu 1', 'Açık Tenis Kortu', 1400.00, 'Aktif', $defaultFeats]);
 
     // Seed Demo User Subscription for oyuncu1
-    $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $insSub->execute([$user1_id, 'AHMET YILMAZ', '0532 111 22 33', $fac1_id, 'Kadıköy Şampiyonlar Spor Kompleksi', $field1_id, 'Saha 1', 'Aylık Paket (4 Maç - %10 İndirim)', '1_month', 4, 1, 3, 10, 4320.00, 'flexible', 'Çarşamba', '20:00', 'Aktif']);
+    $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, username, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $insSub->execute([$user1_id, 'oyuncu1', 'AHMET YILMAZ', '0532 111 22 33', $fac1_id, 'Kadıköy Şampiyonlar Spor Kompleksi', $field1_id, 'Saha 1', 'Aylık Paket (4 Maç - %10 İndirim)', '1_month', 4, 1, 3, 10, 4320.00, 'flexible', 'Çarşamba', '20:00', 'Aktif']);
 
     // Owner 2
     $pdo->prepare("INSERT INTO facilities (name, owner_name, username, password, city, district, address, phone, open_time, close_time, open_time_weekend, close_time_weekend, favorite_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
@@ -140,11 +142,11 @@ try {
 
     // Demo Reservations for Today
     $today = date('Y-m-d');
-    $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, username, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-    $insRes->execute([$fac1_id, 1, 'Saha 1', 'Moda Gençlik', 'KAPTAN ALİ', '05321112233', 'İstanbul', 'Kadıköy', $today, '11:00', 1200.00, 'Onaylandı', 'Standart']);
-    $insRes->execute([$fac1_id, 1, 'Saha 1', 'Fenerbahçe Veteran', 'SERKAN HOCA', '05352223344', 'İstanbul', 'Kadıköy', $today, '12:00', 1200.00, 'Onaylandı', 'Aylık Paket (4 Maç)']);
-    $insRes->execute([$fac1_id, 2, 'Saha 2', 'Kadıköy Gücü', 'CANER ERTEKİN', '05334445566', 'İstanbul', 'Kadıköy', $today, '14:00', 1100.00, 'Onaylandı', 'Standart']);
+    $insRes->execute([$fac1_id, 1, 'Saha 1', 'Moda Gençlik', 'ali_kaptan', 'KAPTAN ALİ', '05321112233', 'İstanbul', 'Kadıköy', $today, '11:00', 1200.00, 'Onaylandı', 'Standart']);
+    $insRes->execute([$fac1_id, 1, 'Saha 1', 'Fenerbahçe Veteran', 'oyuncu1', 'AHMET YILMAZ', '05352223344', 'İstanbul', 'Kadıköy', $today, '12:00', 1200.00, 'Onaylandı', 'Aylık Paket (4 Maç)']);
+    $insRes->execute([$fac1_id, 2, 'Saha 2', 'Kadıköy Gücü', 'caner_er', 'CANER ERTEKİN', '05334445566', 'İstanbul', 'Kadıköy', $today, '14:00', 1100.00, 'Onaylandı', 'Standart']);
 
     echo "<h2>⚽ SahaNet PRO Veritabanı Kurulumu</h2>";
     echo "<p>🎉 Veritabanı Sıfırlandı ve Abonman Tablosuyla Yenilendi!</p>";

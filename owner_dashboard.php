@@ -1,5 +1,5 @@
 <?php
-// owner_dashboard.php - Tesis İşletmecisi Paneli (Field Re-Opening Fix, Weekend Hours Fix & Subscription Management)
+// owner_dashboard.php - Tesis İşletmecisi Paneli (Unique Username Disambiguation & Searchable Subscription Picker)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -285,12 +285,12 @@ $today_str = date('Y-m-d');
         </div>
     </div>
 
-    <!-- 3. ABONMAN YÖNETİMİ & SATIŞ TAKİBİ KARTI (İPTAL ET / SİL BUTONUYLA) -->
+    <!-- 3. ABONMAN YÖNETİMİ & SATIŞ TAKİBİ KARTI (@KULLANICI ADI DESTEKLİ) -->
     <section class="minimal-card p-4 mb-4">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
             <div>
                 <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-crown text-warning me-2"></i> ABONMAN YÖNETİMİ & SATIŞ TAKİBİ</h5>
-                <span class="text-muted fs-7">Tesisinize abone olan oyuncuları, kalan maç kredilerini ve sabit gün/saat tercihlerini yönetin.</span>
+                <span class="text-muted fs-7">Tesisinize abone olan oyuncuları, kullanıcı adlarını (@kullanıcı_adı) ve kalan maç kredilerini yönetin.</span>
             </div>
             <button class="btn btn-warning text-dark fw-bold btn-sm shadow-sm" onclick="openOwnerAddSubModal()">
                 <i class="fa-solid fa-plus me-1"></i> Müşteriye Abonman Tanımla
@@ -301,7 +301,7 @@ $today_str = date('Y-m-d');
             <table class="table table-hover align-middle m-0 fs-7">
                 <thead class="table-light text-muted border-bottom sticky-top">
                     <tr>
-                        <th>MÜŞTERİ AD SOYAD</th>
+                        <th>MÜŞTERİ AD SOYAD / @KULLANICI ADI</th>
                         <th>TELEFON</th>
                         <th>PAKET</th>
                         <th>SAHA</th>
@@ -323,7 +323,7 @@ $today_str = date('Y-m-d');
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
             <div>
                 <h4 class="fw-bold text-dark mb-0 fs-5"><i class="fa-solid fa-list-check text-primary me-2"></i> İşletme Randevu Yönetimi</h4>
-                <span class="text-muted fs-7">Kolon başlıklarına tıklayarak sıralayabilir, saha açılır menüsünden filtreleyebilirsiniz.</span>
+                <span class="text-muted fs-7">Müşteri karışıklığını önlemek için benzersiz @kullanıcı_adı ve telefon numaraları gösterilmektedir.</span>
             </div>
 
             <!-- CANLI ARAMA KUTUSU VE SAHA FİLTRESİ DROPDOWN'U -->
@@ -333,7 +333,7 @@ $today_str = date('Y-m-d');
                 </select>
 
                 <div class="max-w-220">
-                    <input type="text" class="form-control form-control-sm" id="searchReservationQuery" placeholder="🔍 Takım veya Yetkili Ara..." oninput="filterReservations()">
+                    <input type="text" class="form-control form-control-sm" id="searchReservationQuery" placeholder="🔍 @kullanıcı, Takım veya Tel Ara..." oninput="filterReservations()">
                 </div>
             </div>
         </div>
@@ -368,7 +368,7 @@ $today_str = date('Y-m-d');
                             TAKIM ADI <span id="sort-team_name"><i class="fa-solid fa-sort text-muted fs-8 ms-1"></i></span>
                         </th>
                         <th class="py-3 sortable-th" onclick="sortReservationsBy('contact_name')">
-                            YETKİLİ KİŞİ <span id="sort-contact_name"><i class="fa-solid fa-sort text-muted fs-8 ms-1"></i></span>
+                            YETKİLİ KİŞİ / @KULLANICI ADI <span id="sort-contact_name"><i class="fa-solid fa-sort text-muted fs-8 ms-1"></i></span>
                         </th>
                         <th class="py-3">TELEFON</th>
                         <th class="py-3">SAHA</th>
@@ -466,6 +466,13 @@ $today_str = date('Y-m-d');
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">MÜŞTERİ AD SOYAD *</label>
                             <input type="text" class="form-control fw-bold" name="user_name" required placeholder="Örn: Ahmet Yılmaz">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">BENZERSİZ KULLANICI ADI (@username)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">@</span>
+                                <input type="text" class="form-control fw-bold" name="username" placeholder="oyuncu1">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
@@ -600,7 +607,7 @@ $today_str = date('Y-m-d');
     </div>
 </div>
 
-<!-- Modal: Walk-in / Elden Hızlı Randevu Ekle (ABONMAN KREDİSİ DESTEKLİ) -->
+<!-- Modal: Walk-in / Elden Hızlı Randevu Ekle (SEARCHABLE ABONMAN PICKER CARD SYSTEM) -->
 <div class="modal fade" id="walkinModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -612,12 +619,47 @@ $today_str = date('Y-m-d');
                 <div class="modal-body p-4">
                     <div class="row g-3">
 
-                        <!-- MÜŞTERİ KREDİSİ SEÇİMİ (İÇTEN KREDİ DÜŞME) -->
+                        <!-- YENİLENEN ARAMA DESTEKLİ MÜŞTERİ & ABONMAN SEÇİM ARAYÜZÜ -->
                         <div class="col-12">
-                            <label class="form-label text-warning fs-7 fw-bold"><i class="fa-solid fa-crown me-1"></i> MÜŞTERİ ABONMAN KREDİSİ KULLAN (İSTEĞE BAĞLI)</label>
-                            <select class="form-select border-warning fw-bold" name="use_subscription_id" id="walkinUseSubSelect" onchange="onOwnerWalkinSubChange(this)">
-                                <option value="0" selected>💵 Standart Elden Ödeme (Ücretli)</option>
-                            </select>
+                            <label class="form-label text-dark fs-7 fw-bold mb-2"><i class="fa-solid fa-credit-card me-1 text-primary"></i> ÖDEME YÖNTEMİ VE MÜŞTERİ SEÇİMİ</label>
+                            <input type="hidden" name="use_subscription_id" id="walkinUseSubId" value="0">
+                            <input type="hidden" name="username" id="walkinUsername" value="">
+
+                            <div class="btn-group w-100 mb-3" role="group">
+                                <input type="radio" class="btn-check" name="payment_mode_radio" id="payModeStandard" value="standard" checked onchange="switchWalkinPayMode('standard')">
+                                <label class="btn btn-outline-secondary fw-bold fs-7 py-2" for="payModeStandard">💵 Standart Elden Ödeme (Ücretli)</label>
+
+                                <input type="radio" class="btn-check" name="payment_mode_radio" id="payModeSub" value="subscription" onchange="switchWalkinPayMode('subscription')">
+                                <label class="btn btn-outline-warning text-dark fw-bold fs-7 py-2" for="payModeSub">🎁 Müşteri Abonman Kredisi Kullan</label>
+                            </div>
+
+                            <!-- SEARCHABLE ABONMAN PICKER CONTAINER -->
+                            <div id="walkinSubPickerContainer" class="p-3 bg-light rounded-3 border d-none">
+                                <div id="walkinSubSearchState">
+                                    <label class="form-label text-warning fs-8 fw-bold mb-1"><i class="fa-solid fa-magnifying-glass me-1"></i> MÜŞTERİ ABONMANI ARA (@kullanıcı_adı, İsim veya Telefon)</label>
+                                    <input type="text" class="form-control form-control-sm fw-bold border-warning mb-2" id="walkinSubSearchInput" placeholder="Örn: @oyuncu1, Ahmet Yılmaz, 0532..." oninput="filterWalkinSubPicker()">
+                                    
+                                    <div id="walkinSubCardList" class="d-flex flex-column gap-2 overflow-auto" style="max-height: 180px;">
+                                        <!-- Dynamic cards populated here -->
+                                    </div>
+                                </div>
+
+                                <!-- SELECTED SUBSCRIPTION BADGE CARD -->
+                                <div id="walkinSubSelectedState" class="d-none p-3 bg-warning bg-opacity-10 border border-warning rounded-3">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-warning text-dark fs-7"><i class="fa-solid fa-crown me-1"></i> SEÇİLİ ABONMAN</span>
+                                            <div>
+                                                <div class="fw-bold text-dark fs-6" id="selectedSubCustomerName">--</div>
+                                                <span class="badge bg-light text-primary border" id="selectedSubUsername">@--</span>
+                                                <span class="text-muted fs-8 ms-1" id="selectedSubPhone">--</span>
+                                                <span class="badge bg-success text-white ms-2" id="selectedSubRemaining">Kalan: -- Maç Kredisi</span>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger fw-bold" onclick="clearWalkinSelectedSub()">❌ Değiştir / Kaldır</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-md-6">
@@ -890,7 +932,6 @@ function onStatusSelectChange(selectEl) {
     }
 }
 
-// FIELD RE-OPENING BUG FIX: Clear range inputs if Aktif
 async function handleSaveFieldStatusRange(e) {
     e.preventDefault();
     const statusVal = document.getElementById('statusSelect').value;
@@ -944,14 +985,12 @@ function isSlotClosedByRange(dateStr, timeStr, fieldObj) {
     return (slotDt >= startDt && slotDt <= endDt);
 }
 
-// HAFTA SONU SAATLERİ FIX & CANLI MATRİS RENDER
 function renderOwnerMatrix() {
     if (!ownerFacilityData || ownerFieldsData.length === 0) return;
     const { todayStr } = getLiveClientDateAndHour();
     const dateInput = document.getElementById('matrixDate');
     const date = (dateInput && dateInput.value && dateInput.value.length === 10) ? dateInput.value : todayStr;
 
-    // HAFTA SONU SAATLERİ FIX:
     const parts = date.split('-');
     const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
     const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
@@ -1042,44 +1081,27 @@ function renderOwnerSubscriptions(list) {
     list.forEach(s => {
         const modeBadge = (s.booking_mode === 'periodic') ? `<span class="badge bg-info bg-opacity-10 text-info border border-info">📅 Periyodik (${escapeHtml(s.preferred_day)} ${s.preferred_time})</span>` : `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary">🎯 Esnek Kredi</span>`;
         const statusBadge = (s.status === 'Aktif') ? `<span class="badge bg-success text-white">✅ Aktif</span>` : `<span class="badge bg-secondary text-white">🏁 Tamamlandı</span>`;
+        const usernameTag = s.username ? `@${escapeHtml(s.username)}` : '@oyuncu1';
 
         html += `<tr>
-            <td class="fw-bold text-dark">${escapeHtml(s.user_name)}</td>
-            <td>${escapeHtml(s.user_phone)}</td>
-            <td><span class="badge bg-warning bg-opacity-10 text-warning border border-warning fw-bold">${escapeHtml(s.package_name)}</span></td>
-            <td class="fw-semibold">${escapeHtml(s.field_name)}</td>
-            <td>${modeBadge}</td>
-            <td class="fw-bold">${s.total_matches} Maç</td>
-            <td><strong class="text-success fs-6">${s.remaining_matches} Kredi</strong></td>
-            <td class="fw-bold text-dark">₺${parseFloat(s.total_price).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
-            <td>${statusBadge}</td>
-            <td class="text-end">
+            <td class="px-3 py-3">
+                <div class="fw-bold text-dark fs-7">${escapeHtml(s.user_name)}</div>
+                <span class="badge bg-light text-primary border fs-8">${usernameTag}</span>
+            </td>
+            <td class="px-3 py-3">${escapeHtml(s.user_phone)}</td>
+            <td class="px-3 py-3"><span class="badge bg-warning bg-opacity-10 text-warning border border-warning fw-bold">${escapeHtml(s.package_name)}</span></td>
+            <td class="px-3 py-3 fw-semibold">${escapeHtml(s.field_name)}</td>
+            <td class="px-3 py-3">${modeBadge}</td>
+            <td class="px-3 py-3 fw-bold">${s.total_matches} Maç</td>
+            <td class="px-3 py-3"><strong class="text-success fs-6">${s.remaining_matches} Kredi</strong></td>
+            <td class="px-3 py-3 fw-bold text-dark">₺${parseFloat(s.total_price).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
+            <td class="px-3 py-3">${statusBadge}</td>
+            <td class="px-3 py-3 text-end">
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteSubscription(${s.id})"><i class="fa-solid fa-trash me-1"></i> İptal Et / Sil</button>
             </td>
         </tr>`;
     });
     tbody.innerHTML = html;
-}
-
-async function deleteSubscription(subId) {
-    if (!confirm('Bu abonmanlık kaydını iptal etmek / silmek istediğinize emin misiniz?')) return;
-    const formData = new FormData();
-    formData.append('sub_id', subId);
-
-    const res = await fetch('api/facility.php?action=delete_subscription', { method: 'POST', body: formData });
-    const json = await res.json();
-    if (json.status === 'success') {
-        loadOwnerSubscriptions();
-        loadOwnerReservations();
-    } else {
-        alert(json.message);
-    }
-}
-
-function openOwnerAddSubModal() {
-    const selectEl = document.getElementById('ownerSubFieldSelect');
-    selectEl.innerHTML = ownerFieldsData.map(f => `<option value="${f.id}">${escapeHtml(f.field_name)} (₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')}/Saat)</option>`).join('');
-    new bootstrap.Modal(document.getElementById('ownerAddSubModal')).show();
 }
 
 function toggleOwnerPeriodicOptions() {
@@ -1138,6 +1160,27 @@ async function checkOwnerPeriodicAvailabilityLive() {
     }
 }
 
+async function deleteSubscription(subId) {
+    if (!confirm('Bu abonmanlık kaydını iptal etmek / silmek istediğinize emin misiniz?')) return;
+    const formData = new FormData();
+    formData.append('sub_id', subId);
+
+    const res = await fetch('api/facility.php?action=delete_subscription', { method: 'POST', body: formData });
+    const json = await res.json();
+    if (json.status === 'success') {
+        loadOwnerSubscriptions();
+        loadOwnerReservations();
+    } else {
+        alert(json.message);
+    }
+}
+
+function openOwnerAddSubModal() {
+    const selectEl = document.getElementById('ownerSubFieldSelect');
+    selectEl.innerHTML = ownerFieldsData.map(f => `<option value="${f.id}">${escapeHtml(f.field_name)} (₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')}/Saat)</option>`).join('');
+    new bootstrap.Modal(document.getElementById('ownerAddSubModal')).show();
+}
+
 async function handleSaveOwnerSubscription(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -1156,10 +1199,12 @@ function showBookingDetails(id) {
     const r = ownerReservationsData.find(item => item.id == id);
     if (!r) return;
 
+    const usernameTag = r.username ? `@${escapeHtml(r.username)}` : '@oyuncu1';
+
     document.getElementById('detailTitle').innerText = `Randevu #${r.id}`;
     document.getElementById('detailContent').innerHTML = `
         <p class="mb-1"><strong>Takım Adı:</strong> ${escapeHtml(r.team_name)}</p>
-        <p class="mb-1"><strong>Yetkili:</strong> ${escapeHtml(r.contact_name)}</p>
+        <p class="mb-1"><strong>Yetkili / @Kullanıcı:</strong> ${escapeHtml(r.contact_name)} <span class="badge bg-light text-primary border">${usernameTag}</span></p>
         <p class="mb-1"><strong>Telefon:</strong> ${escapeHtml(r.phone)}</p>
         <p class="mb-1"><strong>Saha:</strong> ${escapeHtml(r.field_name)}</p>
         <p class="mb-1"><strong>Tarih / Saat:</strong> ${r.reservation_date} - ${r.reservation_time}</p>
@@ -1181,38 +1226,102 @@ function quickWalkinModal(fieldId, date, time) {
     document.getElementById('walkinDate').value = date;
     document.getElementById('walkinTimeSelect').value = time;
 
-    // Populate active subscriptions dropdown for owner fast booking
-    const walkinSubSel = document.getElementById('walkinUseSubSelect');
-    walkinSubSel.innerHTML = `<option value="0" selected>💵 Standart Elden Ödeme (Ücretli)</option>`;
-
-    const activeSubs = ownerSubscriptionsData.filter(s => s.remaining_matches > 0 && s.status === 'Aktif');
-    activeSubs.forEach(s => {
-        walkinSubSel.innerHTML += `<option value="${s.id}" data-name="${escapeHtml(s.user_name)}" data-phone="${escapeHtml(s.user_phone)}">🎁 ${escapeHtml(s.user_name)} - ${escapeHtml(s.package_name)} (Kalan: ${s.remaining_matches} Kredi - ₺0.00)</option>`;
-    });
+    // Reset payment mode radio to standard
+    document.getElementById('payModeStandard').checked = true;
+    switchWalkinPayMode('standard');
 
     new bootstrap.Modal(document.getElementById('walkinModal')).show();
 }
 
-function onOwnerWalkinSubChange(selectEl) {
-    const subId = parseInt(selectEl.value);
+function switchWalkinPayMode(mode) {
+    const picker = document.getElementById('walkinSubPickerContainer');
     const feeInput = document.getElementById('walkinFeeInput');
-    const contactInput = document.getElementById('walkinContactName');
-    const phoneInput = document.getElementById('walkinPhone');
-    const teamInput = document.getElementById('walkinTeamName');
 
-    if (subId > 0) {
-        const selectedOpt = selectEl.options[selectEl.selectedIndex];
-        const name = selectedOpt.getAttribute('data-name');
-        const phone = selectedOpt.getAttribute('data-phone');
-
-        if (name && !contactInput.value) contactInput.value = name;
-        if (phone && !phoneInput.value) phoneInput.value = phone;
-        if (!teamInput.value) teamInput.value = name + ' (Abonman)';
-        feeInput.value = '0.00 (Abonman Kredisi)';
+    if (mode === 'subscription') {
+        picker.classList.remove('d-none');
+        filterWalkinSubPicker();
     } else {
+        picker.classList.add('d-none');
+        clearWalkinSelectedSub();
         const fieldId = document.getElementById('walkinFieldSelect').value;
         const field = ownerFieldsData.find(f => f.id == fieldId);
         feeInput.value = field ? field.hourly_fee : '1200.00';
+    }
+}
+
+function filterWalkinSubPicker() {
+    const query = document.getElementById('walkinSubSearchInput').value.toLowerCase().trim();
+    const container = document.getElementById('walkinSubCardList');
+
+    const activeSubs = ownerSubscriptionsData.filter(s => s.remaining_matches > 0 && s.status === 'Aktif');
+
+    let filtered = activeSubs;
+    if (query) {
+        filtered = activeSubs.filter(s => 
+            (s.user_name && s.user_name.toLowerCase().includes(query)) ||
+            (s.username && s.username.toLowerCase().includes(query)) ||
+            (s.user_phone && s.user_phone.includes(query)) ||
+            (s.package_name && s.package_name.toLowerCase().includes(query))
+        );
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-3 text-center text-muted fs-8">Eşleşen aktif abonman kredisi bulunamadı.</div>`;
+        return;
+    }
+
+    let html = '';
+    filtered.forEach(s => {
+        const usernameTag = s.username ? `@${escapeHtml(s.username)}` : '@oyuncu1';
+        html += `<div class="p-2.5 bg-white rounded-3 border d-flex align-items-center justify-content-between cursor-pointer hover-shadow" onclick="selectWalkinSubCard(${s.id})">
+            <div>
+                <div class="fw-bold text-dark fs-7">${escapeHtml(s.user_name)} <span class="badge bg-light text-primary border ms-1">${usernameTag}</span></div>
+                <span class="text-muted fs-8"><i class="fa-solid fa-phone text-success me-1"></i>${escapeHtml(s.user_phone)} &bull; <strong class="text-warning">${escapeHtml(s.package_name)}</strong></span>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-success text-white fw-bold fs-8">🎁 Kalan: ${s.remaining_matches} Maç</span>
+                <span class="d-block text-muted fs-8">₺0.00 / Maç</span>
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+function selectWalkinSubCard(subId) {
+    const s = ownerSubscriptionsData.find(item => item.id == subId);
+    if (!s) return;
+
+    document.getElementById('walkinUseSubId').value = s.id;
+    document.getElementById('walkinUsername').value = s.username || 'oyuncu1';
+
+    document.getElementById('walkinContactName').value = s.user_name;
+    document.getElementById('walkinPhone').value = s.user_phone;
+    document.getElementById('walkinTeamName').value = s.user_name + ' (Abonman)';
+    document.getElementById('walkinFeeInput').value = '0.00 (Abonman Kredisi)';
+
+    document.getElementById('selectedSubCustomerName').innerText = s.user_name;
+    document.getElementById('selectedSubUsername').innerText = s.username ? `@${s.username}` : '@oyuncu1';
+    document.getElementById('selectedSubPhone').innerText = s.user_phone;
+    document.getElementById('selectedSubRemaining').innerText = `Kalan: ${s.remaining_matches} Maç Kredisi`;
+
+    document.getElementById('walkinSubSearchState').classList.add('d-none');
+    document.getElementById('walkinSubSelectedState').classList.remove('d-none');
+}
+
+function clearWalkinSelectedSub() {
+    document.getElementById('walkinUseSubId').value = '0';
+    document.getElementById('walkinUsername').value = '';
+
+    const searchInput = document.getElementById('walkinSubSearchInput');
+    if (searchInput) searchInput.value = '';
+
+    document.getElementById('walkinSubSearchState').classList.remove('d-none');
+    document.getElementById('walkinSubSelectedState').classList.add('d-none');
+
+    const fieldId = document.getElementById('walkinFieldSelect').value;
+    const field = ownerFieldsData.find(f => f.id == fieldId);
+    if (field) {
+        document.getElementById('walkinFeeInput').value = field.hourly_fee;
     }
 }
 
@@ -1394,7 +1503,12 @@ function filterReservations() {
     }
 
     if (query) {
-        activeList = activeList.filter(r => r.team_name.toLowerCase().includes(query) || r.contact_name.toLowerCase().includes(query) || r.phone.includes(query));
+        activeList = activeList.filter(r => 
+            r.team_name.toLowerCase().includes(query) || 
+            r.contact_name.toLowerCase().includes(query) || 
+            (r.username && r.username.toLowerCase().includes(query)) ||
+            r.phone.includes(query)
+        );
     }
 
     activeList.sort((a, b) => {
@@ -1419,9 +1533,14 @@ function filterReservations() {
 
     let html = '';
     activeList.forEach(r => {
+        const usernameTag = r.username ? `@${escapeHtml(r.username)}` : '@oyuncu1';
+
         html += `<tr>
             <td class="fw-bold text-dark px-3 py-3">${escapeHtml(r.team_name)}</td>
-            <td class="px-3 py-3">${escapeHtml(r.contact_name)}</td>
+            <td class="px-3 py-3">
+                <div class="fw-bold text-dark fs-7">${escapeHtml(r.contact_name)}</div>
+                <span class="badge bg-light text-primary border fs-8">${usernameTag}</span>
+            </td>
             <td class="px-3 py-3">${escapeHtml(r.phone)}</td>
             <td class="px-3 py-3"><span class="badge bg-light text-dark border px-2 py-1">${escapeHtml(r.field_name)}</span></td>
             <td class="px-3 py-3 text-primary fw-semibold">${r.reservation_date}</td>

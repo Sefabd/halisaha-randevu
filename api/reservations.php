@@ -34,7 +34,8 @@ try {
         }
 
         if ($search !== '') {
-            $sql .= " AND (r.team_name LIKE ? OR r.contact_name LIKE ? OR r.phone LIKE ?)";
+            $sql .= " AND (r.team_name LIKE ? OR r.contact_name LIKE ? OR r.phone LIKE ? OR r.username LIKE ?)";
+            $params[] = "%{$search}%";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
@@ -164,26 +165,31 @@ try {
             exit;
         }
 
+        $username = trim($_POST['username'] ?? '');
+        if (empty($username) && isset($_SESSION['user_name'])) {
+            $username = $_SESSION['user_name'];
+        }
+
         if ($id > 0) {
             // Update
             $updateSql = "UPDATE field_reservations SET 
-                facility_id = ?, field_id = ?, field_name = ?, team_name = ?, contact_name = ?, phone = ?, city = ?, district = ?, 
+                facility_id = ?, field_id = ?, field_name = ?, team_name = ?, username = ?, contact_name = ?, phone = ?, city = ?, district = ?, 
                 reservation_date = ?, reservation_time = ?, fee = ?, status = ?, subscription_plan = ?, subscription_id = ?, needs_player = ?, notes = ?
                 WHERE id = ?";
             $stmt = $pdo->prepare($updateSql);
             $stmt->execute([
-                $facility_id, $field_id, $field_name, $team_name, $contact_name, $phone, $city, $district, 
+                $facility_id, $field_id, $field_name, $team_name, $username, $contact_name, $phone, $city, $district, 
                 $reservation_date, $reservation_time, $fee, $status, $subscription_plan, $use_subscription_id, $needs_player, $notes, $id
             ]);
             echo json_encode(['status' => 'success', 'message' => 'Randevu başarıyla güncellendi.']);
         } else {
             // Insert
             $insertSql = "INSERT INTO field_reservations 
-                (facility_id, field_id, field_name, team_name, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, subscription_id, needs_player, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                (facility_id, field_id, field_name, team_name, username, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, subscription_id, needs_player, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($insertSql);
             $stmt->execute([
-                $facility_id, $field_id, $field_name, $team_name, $contact_name, $phone, $city, $district, 
+                $facility_id, $field_id, $field_name, $team_name, $username, $contact_name, $phone, $city, $district, 
                 $reservation_date, $reservation_time, $fee, $status, $subscription_plan, $use_subscription_id, $needs_player, $notes
             ]);
             echo json_encode(['status' => 'success', 'message' => 'Yeni randevu başarıyla kaydoldu!']);

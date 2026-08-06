@@ -402,18 +402,20 @@ try {
             }
         }
 
-        $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $insSub->execute([$user_id, $user_name, $user_phone, $facility_id, $fac['name'], $field_id, $fieldName, $packageName, $package_type, $totalMatches, $usedMatches, $remainingMatches, $discountRate, $totalPrice, $booking_mode, $preferred_day, $preferred_time, 'Aktif']);
+        $username = $_SESSION['user_name'] ?? 'oyuncu1';
+
+        $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, username, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $insSub->execute([$user_id, $username, $user_name, $user_phone, $facility_id, $fac['name'], $field_id, $fieldName, $packageName, $package_type, $totalMatches, $usedMatches, $remainingMatches, $discountRate, $totalPrice, $booking_mode, $preferred_day, $preferred_time, 'Aktif']);
         $subId = $pdo->lastInsertId();
 
         // If Periodic Booking selected, auto-book the target free dates!
         if ($booking_mode === 'periodic' && $field_id > 0) {
-            $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, subscription_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, username, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, subscription_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $perMatchFee = $totalPrice / $totalMatches;
 
             $checkResult = checkPeriodicSubscriptionConflicts($pdo, $field_id, $package_type, $preferred_day, $preferred_time);
             foreach ($checkResult['target_dates'] as $dateStr) {
-                $insRes->execute([$facility_id, $field_id, $fieldName, $team_name, $user_name, $user_phone, $fac['city'], $fac['district'], $dateStr, $preferred_time, $perMatchFee, 'Onaylandı', $packageName, $subId]);
+                $insRes->execute([$facility_id, $field_id, $fieldName, $team_name, $username, $user_name, $user_phone, $fac['city'], $fac['district'], $dateStr, $preferred_time, $perMatchFee, 'Onaylandı', $packageName, $subId]);
             }
         }
 
@@ -515,17 +517,22 @@ try {
             }
         }
 
-        $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $insSub->execute([0, $user_name, $user_phone, $facility_id, $fac['name'], $field_id, $fieldName, $packageName, $package_type, $totalMatches, $usedMatches, $remainingMatches, $discountRate, $totalPrice, $booking_mode, $preferred_day, $preferred_time, 'Aktif']);
+        $username = trim($_POST['username'] ?? '');
+        if (empty($username)) {
+            $username = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $user_name));
+        }
+
+        $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, username, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $insSub->execute([0, $username, $user_name, $user_phone, $facility_id, $fac['name'], $field_id, $fieldName, $packageName, $package_type, $totalMatches, $usedMatches, $remainingMatches, $discountRate, $totalPrice, $booking_mode, $preferred_day, $preferred_time, 'Aktif']);
         $subId = $pdo->lastInsertId();
 
         if ($booking_mode === 'periodic' && $field_id > 0) {
-            $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, subscription_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, username, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, subscription_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $perMatchFee = $totalPrice / $totalMatches;
 
             $checkResult = checkPeriodicSubscriptionConflicts($pdo, $field_id, $package_type, $preferred_day, $preferred_time);
             foreach ($checkResult['target_dates'] as $dateStr) {
-                $insRes->execute([$facility_id, $field_id, $fieldName, $team_name, $user_name, $user_phone, $fac['city'], $fac['district'], $dateStr, $preferred_time, $perMatchFee, 'Onaylandı', $packageName, $subId]);
+                $insRes->execute([$facility_id, $field_id, $fieldName, $team_name, $username, $user_name, $user_phone, $fac['city'], $fac['district'], $dateStr, $preferred_time, $perMatchFee, 'Onaylandı', $packageName, $subId]);
             }
         }
 
