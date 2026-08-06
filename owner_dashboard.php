@@ -477,11 +477,11 @@ $today_str = date('Y-m-d');
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">SAHA SEÇİMİ *</label>
-                            <select class="form-select fw-bold" name="field_id" id="ownerSubFieldSelect" required></select>
+                            <select class="form-select fw-bold" name="field_id" id="ownerSubFieldSelect" onchange="checkOwnerPeriodicAvailabilityLive()" required></select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">PAKET SEÇİMİ *</label>
-                            <select class="form-select fw-bold" name="package_type" required>
+                            <select class="form-select fw-bold" name="package_type" id="ownerSubPackageSelect" onchange="checkOwnerPeriodicAvailabilityLive()" required>
                                 <option value="1_month" selected>🔵 Aylık Paket (4 Maç - %10 İndirim)</option>
                                 <option value="3_months">🟡 3 Aylık Paket (12 Maç - %15 İndirim)</option>
                                 <option value="6_months">👑 6 Aylık Paket (24 Maç - %20 İndirim VIP)</option>
@@ -499,7 +499,7 @@ $today_str = date('Y-m-d');
                                 <div class="row g-2">
                                     <div class="col-md-6">
                                         <label class="fs-8 text-muted fw-semibold">HAFTANIN GÜNÜ</label>
-                                        <select class="form-select form-select-sm fw-bold" name="preferred_day">
+                                        <select class="form-select form-select-sm fw-bold" name="preferred_day" id="ownerSubPreferredDay" onchange="checkOwnerPeriodicAvailabilityLive()">
                                             <option value="Pazartesi">Pazartesi</option>
                                             <option value="Salı">Salı</option>
                                             <option value="Çarşamba" selected>Çarşamba</option>
@@ -511,7 +511,7 @@ $today_str = date('Y-m-d');
                                     </div>
                                     <div class="col-md-6">
                                         <label class="fs-8 text-muted fw-semibold">SABİT SAAT</label>
-                                        <select class="form-select form-select-sm fw-bold" name="preferred_time">
+                                        <select class="form-select form-select-sm fw-bold" name="preferred_time" id="ownerSubPreferredTime" onchange="checkOwnerPeriodicAvailabilityLive()">
                                             <option value="18:00">18:00</option>
                                             <option value="19:00">19:00</option>
                                             <option value="20:00" selected>20:00</option>
@@ -522,11 +522,14 @@ $today_str = date('Y-m-d');
                                 </div>
                             </div>
                         </div>
+
+                        <!-- CANLI ÇAKIŞMA UYARI KUTUSU -->
+                        <div id="ownerSubAvailabilityAlert" class="col-12 d-none"></div>
                     </div>
                 </div>
                 <div class="modal-footer border-top">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-team">Abonmanlığı Kaydet</button>
+                    <button type="submit" class="btn btn-team" id="ownerSubSubmitBtn">Abonmanlığı Kaydet</button>
                 </div>
             </form>
         </div>
@@ -1084,8 +1087,54 @@ function toggleOwnerPeriodicOptions() {
     const container = document.getElementById('ownerPeriodicContainer');
     if (mode === 'periodic') {
         container.classList.remove('d-none');
+        checkOwnerPeriodicAvailabilityLive();
     } else {
         container.classList.add('d-none');
+        document.getElementById('ownerSubAvailabilityAlert').classList.add('d-none');
+        document.getElementById('ownerSubSubmitBtn').disabled = false;
+    }
+}
+
+async function checkOwnerPeriodicAvailabilityLive() {
+    const mode = document.getElementById('ownerSubModeSelect').value;
+    const alertBox = document.getElementById('ownerSubAvailabilityAlert');
+    const submitBtn = document.getElementById('ownerSubSubmitBtn');
+
+    if (mode !== 'periodic') {
+        alertBox.classList.add('d-none');
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+    }
+
+    const fieldId = document.getElementById('ownerSubFieldSelect').value;
+    const packageType = document.getElementById('ownerSubPackageSelect').value;
+    const preferredDay = document.getElementById('ownerSubPreferredDay').value;
+    const preferredTime = document.getElementById('ownerSubPreferredTime').value;
+
+    if (!fieldId || fieldId == 0) return;
+
+    const res = await fetch(`api/facility.php?action=check_subscription_availability&field_id=${fieldId}&package_type=${packageType}&preferred_day=${encodeURIComponent(preferredDay)}&preferred_time=${encodeURIComponent(preferredTime)}`);
+    const json = await res.json();
+
+    if (json.status === 'success' && json.has_conflict) {
+        const conflictText = json.conflicts.map(c => `📅 <strong>${c.date}</strong> (${escapeHtml(c.team)})`).join('<br>');
+        alertBox.className = 'col-12 alert alert-danger fw-semibold fs-7 mb-0 shadow-sm';
+        alertBox.innerHTML = `<div class="d-flex align-items-start gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-danger fs-5 mt-0.5"></i>
+            <div>
+                <strong class="text-danger d-block mb-1">⚠️ DOLULUK ÇAKIŞMASI TESPİT EDİLDİ!</strong>
+                <p class="mb-1 fs-8">Seçtiğiniz <u>${escapeHtml(preferredDay)} - ${preferredTime}</u> saatinde önümüzdeki ${json.total_matches} hafta içerisinde daha önceden alınmış randevular var:</p>
+                <div class="p-2 bg-white rounded border border-danger border-opacity-25 fs-8 mb-2">${conflictText}</div>
+                <span class="fs-8 text-dark d-block">💡 <strong>Çözüm:</strong> Lütfen boş bir gün/saat seçiniz ya da <strong>'Esnek Kullanım'</strong> modunu seçerek maç kredisi veriniz.</span>
+            </div>
+        </div>`;
+        alertBox.classList.remove('d-none');
+        if (submitBtn) submitBtn.disabled = true;
+    } else {
+        alertBox.className = 'col-12 alert alert-success fw-semibold fs-7 mb-0 shadow-sm';
+        alertBox.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> <strong>SABİT RANDEVU UYGUNDUR:</strong> Önümüzdeki ${json.total_matches} haftanın tamamı bu gün ve saatte boştur! Müşteri abonmanlığı kilitlenebilir.`;
+        alertBox.classList.remove('d-none');
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 

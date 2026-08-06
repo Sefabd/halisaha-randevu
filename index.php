@@ -482,7 +482,7 @@ $today_str = date('Y-m-d');
                                 <div class="row g-2">
                                     <div class="col-md-6">
                                         <label class="fs-8 text-muted fw-semibold">HAFTANIN GÜNÜ</label>
-                                        <select class="form-select form-select-sm fw-bold" name="preferred_day">
+                                        <select class="form-select form-select-sm fw-bold" name="preferred_day" id="facSubPreferredDay" onchange="checkPeriodicAvailabilityLive()">
                                             <option value="Pazartesi">Pazartesi</option>
                                             <option value="Salı">Salı</option>
                                             <option value="Çarşamba" selected>Çarşamba</option>
@@ -494,7 +494,7 @@ $today_str = date('Y-m-d');
                                     </div>
                                     <div class="col-md-6">
                                         <label class="fs-8 text-muted fw-semibold">SABİT MAÇ SAATİ</label>
-                                        <select class="form-select form-select-sm fw-bold" name="preferred_time">
+                                        <select class="form-select form-select-sm fw-bold" name="preferred_time" id="facSubPreferredTime" onchange="checkPeriodicAvailabilityLive()">
                                             <option value="17:00">17:00</option>
                                             <option value="18:00">18:00</option>
                                             <option value="19:00">19:00</option>
@@ -507,6 +507,9 @@ $today_str = date('Y-m-d');
                                 </div>
                             </div>
                         </div>
+
+                        <!-- CANLI ÇAKIŞMA UYARI KUTUSU -->
+                        <div id="facSubAvailabilityAlert" class="col-12 d-none"></div>
 
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">TAKIM ADINIZ *</label>
@@ -532,7 +535,7 @@ $today_str = date('Y-m-d');
                 </div>
                 <div class="modal-footer border-top">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-team fw-bold">Abonmanlığı Başlat & Satın Al</button>
+                    <button type="submit" class="btn btn-team fw-bold" id="facSubSubmitBtn">Abonmanlığı Başlat & Satın Al</button>
                 </div>
             </form>
         </div>
@@ -1115,8 +1118,54 @@ function togglePeriodicFields() {
     const container = document.getElementById('periodicOptionsContainer');
     if (mode === 'periodic') {
         container.classList.remove('d-none');
+        checkPeriodicAvailabilityLive();
     } else {
         container.classList.add('d-none');
+        document.getElementById('facSubAvailabilityAlert').classList.add('d-none');
+        document.getElementById('facSubSubmitBtn').disabled = false;
+    }
+}
+
+async function checkPeriodicAvailabilityLive() {
+    const mode = document.getElementById('facSubBookingMode').value;
+    const alertBox = document.getElementById('facSubAvailabilityAlert');
+    const submitBtn = document.getElementById('facSubSubmitBtn');
+
+    if (mode !== 'periodic') {
+        alertBox.classList.add('d-none');
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+    }
+
+    const fieldId = document.getElementById('facSubFieldSelect').value;
+    const packageType = document.getElementById('facSubPackageSelect').value;
+    const preferredDay = document.getElementById('facSubPreferredDay').value;
+    const preferredTime = document.getElementById('facSubPreferredTime').value;
+
+    if (!fieldId || fieldId == 0) return;
+
+    const res = await fetch(`api/facility.php?action=check_subscription_availability&field_id=${fieldId}&package_type=${packageType}&preferred_day=${encodeURIComponent(preferredDay)}&preferred_time=${encodeURIComponent(preferredTime)}`);
+    const json = await res.json();
+
+    if (json.status === 'success' && json.has_conflict) {
+        const conflictText = json.conflicts.map(c => `📅 <strong>${c.date}</strong> (${escapeHtml(c.team)})`).join('<br>');
+        alertBox.className = 'col-12 alert alert-danger fw-semibold fs-7 mb-0 shadow-sm';
+        alertBox.innerHTML = `<div class="d-flex align-items-start gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-danger fs-5 mt-0.5"></i>
+            <div>
+                <strong class="text-danger d-block mb-1">⚠️ DOLULUK ÇAKIŞMASI TESPİT EDİLDİ!</strong>
+                <p class="mb-1 fs-8">Seçtiğiniz <u>${escapeHtml(preferredDay)} - ${preferredTime}</u> saatinde önümüzdeki ${json.total_matches} hafta içerisinde daha önceden alınmış randevular mevcut:</p>
+                <div class="p-2 bg-white rounded border border-danger border-opacity-25 fs-8 mb-2">${conflictText}</div>
+                <span class="fs-8 text-dark d-block">💡 <strong>Çözüm:</strong> Lütfen boş bir gün/saat seçiniz ya da maçlarınızı dilediğiniz gibi kullanmak için <strong>'Esnek Kullanım'</strong> modunu tercih ediniz.</span>
+            </div>
+        </div>`;
+        alertBox.classList.remove('d-none');
+        if (submitBtn) submitBtn.disabled = true;
+    } else {
+        alertBox.className = 'col-12 alert alert-success fw-semibold fs-7 mb-0 shadow-sm';
+        alertBox.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> <strong>SABİT RANDEVU UYGUNDUR:</strong> Önümüzdeki ${json.total_matches} haftanın tamamı bu gün ve saatte tamamiyle boştur! Otomatik kilitleme yapılabilir.`;
+        alertBox.classList.remove('d-none');
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 
@@ -1145,6 +1194,7 @@ function updateSubPriceCalculation() {
 
     document.getElementById('subPriceCalcDetail').innerText = `${pkgLabel} - ${totalMatches} Maç x ₺${hourlyFee.toLocaleString('tr-TR')} (%${discountRate} İndirimli)`;
     document.getElementById('subTotalPriceText').innerText = `₺${totalPrice.toLocaleString('tr-TR', {minimumFractionDigits:2})}`;
+    checkPeriodicAvailabilityLive();
 }
 
 async function handleFacilitySubscription(e) {

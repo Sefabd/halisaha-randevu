@@ -7,6 +7,44 @@ header('Content-Type: application/json; charset=utf-8');
 
 $pdo = require __DIR__ . '/../config/db.php';
 
+function checkPeriodicSubscriptionConflicts($pdo, $field_id, $package_type, $preferred_day, $preferred_time) {
+    $totalMatches = 4;
+    if ($package_type === '3_months') $totalMatches = 12;
+    elseif ($package_type === '6_months') $totalMatches = 24;
+
+    $turkishDays = ['Pazar' => 0, 'Pazartesi' => 1, 'Salı' => 2, 'Çarşamba' => 3, 'Perşembe' => 4, 'Cuma' => 5, 'Cumartesi' => 6];
+    $targetDayNum = $turkishDays[$preferred_day] ?? 3;
+
+    $conflicts = [];
+    $targetDates = [];
+    $currentDate = new DateTime();
+
+    while (count($targetDates) < $totalMatches) {
+        if ((int)$currentDate->format('w') === $targetDayNum && $currentDate->format('Y-m-d') >= date('Y-m-d')) {
+            $dateStr = $currentDate->format('Y-m-d');
+            $targetDates[] = $dateStr;
+
+            $chk = $pdo->prepare("SELECT reservation_date, team_name, contact_name FROM field_reservations WHERE field_id = ? AND reservation_date = ? AND reservation_time = ? AND status != 'İptal'");
+            $chk->execute([$field_id, $dateStr, $preferred_time]);
+            $existing = $chk->fetch(PDO::FETCH_ASSOC);
+
+            if ($existing) {
+                $conflicts[] = [
+                    'date' => $dateStr,
+                    'team' => $existing['team_name'] ?: $existing['contact_name']
+                ];
+            }
+        }
+        $currentDate->modify('+1 day');
+    }
+
+    return [
+        'total_matches' => $totalMatches,
+        'target_dates' => $targetDates,
+        'conflicts' => $conflicts
+    ];
+}
+
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 try {
@@ -353,40 +391,29 @@ try {
         $usedMatches = 0;
         $remainingMatches = $totalMatches;
 
-        if ($booking_mode === 'periodic') {
-            $usedMatches = $totalMatches;
-            $remainingMatches = 0;
+        // Pre-check for Periodic Subscription Conflicts
+        if ($booking_mode === 'periodic' && $field_id > 0) {
+            $checkResult = checkPeriodicSubscriptionConflicts($pdo, $field_id, $package_type, $preferred_day, $preferred_time);
+            if (!empty($checkResult['conflicts'])) {
+                $conflictList = array_map(function($c) { return "📅 " . $c['date'] . " (" . $c['team'] . ")"; }, $checkResult['conflicts']);
+                $conflictStr = implode(', ', $conflictList);
+                echo json_encode(['status' => 'error', 'message' => "⚠️ Seçtiğiniz {$preferred_day} saat {$preferred_time} için önümüzdeki {$checkResult['total_matches']} hafta içerisinde doluluk çakışması tespit edildi:\n{$conflictStr}\n\nLütfen boş başka bir gün/saat seçiniz veya 'Esnek Kullanım' modunu tercih ediniz."]);
+                exit;
+            }
         }
 
         $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $insSub->execute([$user_id, $user_name, $user_phone, $facility_id, $fac['name'], $field_id, $fieldName, $packageName, $package_type, $totalMatches, $usedMatches, $remainingMatches, $discountRate, $totalPrice, $booking_mode, $preferred_day, $preferred_time, 'Aktif']);
         $subId = $pdo->lastInsertId();
 
-        // If Periodic Booking selected, auto-book the next 4, 12, or 24 weekly slots!
+        // If Periodic Booking selected, auto-book the target free dates!
         if ($booking_mode === 'periodic' && $field_id > 0) {
-            $turkishDays = ['Pazar' => 0, 'Pazartesi' => 1, 'Salı' => 2, 'Çarşamba' => 3, 'Perşembe' => 4, 'Cuma' => 5, 'Cumartesi' => 6];
-            $targetDayNum = $turkishDays[$preferred_day] ?? 3;
-
             $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, subscription_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $perMatchFee = $totalPrice / $totalMatches;
 
-            $currentDate = new DateTime();
-            $bookedCount = 0;
-
-            while ($bookedCount < $totalMatches) {
-                if ((int)$currentDate->format('w') === $targetDayNum && $currentDate->format('Y-m-d') >= date('Y-m-d')) {
-                    $dateStr = $currentDate->format('Y-m-d');
-                    
-                    // Check if slot already booked
-                    $chk = $pdo->prepare("SELECT id FROM field_reservations WHERE field_id = ? AND reservation_date = ? AND reservation_time = ? AND status != 'İptal'");
-                    $chk->execute([$field_id, $dateStr, $preferred_time]);
-
-                    if (!$chk->fetch()) {
-                        $insRes->execute([$facility_id, $field_id, $fieldName, $team_name, $user_name, $user_phone, $fac['city'], $fac['district'], $dateStr, $preferred_time, $perMatchFee, 'Onaylandı', $packageName, $subId]);
-                        $bookedCount++;
-                    }
-                }
-                $currentDate->modify('+1 day');
+            $checkResult = checkPeriodicSubscriptionConflicts($pdo, $field_id, $package_type, $preferred_day, $preferred_time);
+            foreach ($checkResult['target_dates'] as $dateStr) {
+                $insRes->execute([$facility_id, $field_id, $fieldName, $team_name, $user_name, $user_phone, $fac['city'], $fac['district'], $dateStr, $preferred_time, $perMatchFee, 'Onaylandı', $packageName, $subId]);
             }
         }
 
@@ -477,36 +504,28 @@ try {
 
         $totalPrice = ($hourlyFee * $totalMatches) * (1 - ($discountRate / 100));
 
-        $usedMatches = ($booking_mode === 'periodic') ? $totalMatches : 0;
-        $remainingMatches = ($booking_mode === 'periodic') ? 0 : $totalMatches;
+        // Pre-check for Periodic Subscription Conflicts
+        if ($booking_mode === 'periodic' && $field_id > 0) {
+            $checkResult = checkPeriodicSubscriptionConflicts($pdo, $field_id, $package_type, $preferred_day, $preferred_time);
+            if (!empty($checkResult['conflicts'])) {
+                $conflictList = array_map(function($c) { return "📅 " . $c['date'] . " (" . $c['team'] . ")"; }, $checkResult['conflicts']);
+                $conflictStr = implode(', ', $conflictList);
+                echo json_encode(['status' => 'error', 'message' => "⚠️ Seçtiğiniz {$preferred_day} saat {$preferred_time} için önümüzdeki {$checkResult['total_matches']} hafta içerisinde doluluk çakışması tespit edildi:\n{$conflictStr}\n\nLütfen boş başka bir gün/saat seçiniz veya 'Esnek Kullanım' modunu tercih ediniz."]);
+                exit;
+            }
+        }
 
         $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $insSub->execute([0, $user_name, $user_phone, $facility_id, $fac['name'], $field_id, $fieldName, $packageName, $package_type, $totalMatches, $usedMatches, $remainingMatches, $discountRate, $totalPrice, $booking_mode, $preferred_day, $preferred_time, 'Aktif']);
         $subId = $pdo->lastInsertId();
 
         if ($booking_mode === 'periodic' && $field_id > 0) {
-            $turkishDays = ['Pazar' => 0, 'Pazartesi' => 1, 'Salı' => 2, 'Çarşamba' => 3, 'Perşembe' => 4, 'Cuma' => 5, 'Cumartesi' => 6];
-            $targetDayNum = $turkishDays[$preferred_day] ?? 3;
-
             $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, subscription_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $perMatchFee = $totalPrice / $totalMatches;
 
-            $currentDate = new DateTime();
-            $bookedCount = 0;
-
-            while ($bookedCount < $totalMatches) {
-                if ((int)$currentDate->format('w') === $targetDayNum && $currentDate->format('Y-m-d') >= date('Y-m-d')) {
-                    $dateStr = $currentDate->format('Y-m-d');
-                    
-                    $chk = $pdo->prepare("SELECT id FROM field_reservations WHERE field_id = ? AND reservation_date = ? AND reservation_time = ? AND status != 'İptal'");
-                    $chk->execute([$field_id, $dateStr, $preferred_time]);
-
-                    if (!$chk->fetch()) {
-                        $insRes->execute([$facility_id, $field_id, $fieldName, $team_name, $user_name, $user_phone, $fac['city'], $fac['district'], $dateStr, $preferred_time, $perMatchFee, 'Onaylandı', $packageName, $subId]);
-                        $bookedCount++;
-                    }
-                }
-                $currentDate->modify('+1 day');
+            $checkResult = checkPeriodicSubscriptionConflicts($pdo, $field_id, $package_type, $preferred_day, $preferred_time);
+            foreach ($checkResult['target_dates'] as $dateStr) {
+                $insRes->execute([$facility_id, $field_id, $fieldName, $team_name, $user_name, $user_phone, $fac['city'], $fac['district'], $dateStr, $preferred_time, $perMatchFee, 'Onaylandı', $packageName, $subId]);
             }
         }
 
@@ -528,6 +547,28 @@ try {
         $del->execute([$sub_id, $facility_id]);
 
         echo json_encode(['status' => 'success', 'message' => 'Abonman kaydı başarıyla silindi/iptal edildi.']);
+        exit;
+    }
+
+    // 12. CHECK PERIODIC SUBSCRIPTION AVAILABILITY (LIVE MODAL CHECK)
+    if ($action === 'check_subscription_availability') {
+        $field_id = intval($_GET['field_id'] ?? $_POST['field_id'] ?? 0);
+        $package_type = trim($_GET['package_type'] ?? $_POST['package_type'] ?? '1_month');
+        $preferred_day = trim($_GET['preferred_day'] ?? $_POST['preferred_day'] ?? 'Çarşamba');
+        $preferred_time = trim($_GET['preferred_time'] ?? $_POST['preferred_time'] ?? '20:00');
+
+        if ($field_id <= 0) {
+            echo json_encode(['status' => 'success', 'conflicts' => []]);
+            exit;
+        }
+
+        $res = checkPeriodicSubscriptionConflicts($pdo, $field_id, $package_type, $preferred_day, $preferred_time);
+        echo json_encode([
+            'status' => 'success',
+            'has_conflict' => !empty($res['conflicts']),
+            'total_matches' => $res['total_matches'],
+            'conflicts' => $res['conflicts']
+        ]);
         exit;
     }
 
