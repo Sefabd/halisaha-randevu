@@ -488,6 +488,23 @@ try {
         exit;
     }
 
+    // 11. OWNER DELETE/CANCEL SUBSCRIPTION
+    if ($action === 'delete_subscription') {
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'owner') {
+            echo json_encode(['status' => 'error', 'message' => 'Yetkisiz erişim']);
+            exit;
+        }
+
+        $facility_id = $_SESSION['facility_id'];
+        $sub_id = intval($_POST['sub_id'] ?? 0);
+
+        $del = $pdo->prepare("DELETE FROM user_subscriptions WHERE id = ? AND facility_id = ?");
+        $del->execute([$sub_id, $facility_id]);
+
+        echo json_encode(['status' => 'success', 'message' => 'Abonman kaydı başarıyla silindi/iptal edildi.']);
+        exit;
+    }
+
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => 'Veritabanı hatası: ' . $e->getMessage()]);
     exit;

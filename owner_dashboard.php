@@ -1,5 +1,5 @@
 <?php
-// owner_dashboard.php - Tesis İşletmecisi Paneli (Field Re-Opening Bug Fix, Weekend Hours Fix & Subscription Management)
+// owner_dashboard.php - Tesis İşletmecisi Paneli (Field Re-Opening Fix, Weekend Hours Fix & Subscription Management)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -285,7 +285,7 @@ $today_str = date('Y-m-d');
         </div>
     </div>
 
-    <!-- 3. ABONMAN YÖNETİMİ & SATIŞ TAKİBİ KARTI (YENİ EKLEME) -->
+    <!-- 3. ABONMAN YÖNETİMİ & SATIŞ TAKİBİ KARTI (İPTAL ET / SİL BUTONUYLA) -->
     <section class="minimal-card p-4 mb-4">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
             <div>
@@ -310,6 +310,7 @@ $today_str = date('Y-m-d');
                         <th>KALAN KREDİ</th>
                         <th>TUTAR</th>
                         <th>DURUM</th>
+                        <th class="text-end">İŞLEMLER</th>
                     </tr>
                 </thead>
                 <tbody id="ownerSubscriptionsBody"></tbody>
@@ -391,7 +392,7 @@ $today_str = date('Y-m-d');
 
 </div>
 
-<!-- Modal: SAHA DURUMU VE KAPALI TARİH/SAAT ARALIĞI AYARLA MODALI (RE-OPENING BUG FIX) -->
+<!-- Modal: SAHA DURUMU VE KAPALI TARİH/SAAT ARALIĞI AYARLA MODALI -->
 <div class="modal fade" id="fieldStatusModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -464,7 +465,7 @@ $today_str = date('Y-m-d');
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">MÜŞTERİ AD SOYAD *</label>
-                            <input type="text" class="form-control fw-bold" name="user_name" required placeholder="Örn: Ali Yılmaz">
+                            <input type="text" class="form-control fw-bold" name="user_name" required placeholder="Örn: Ahmet Yılmaz">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
@@ -596,7 +597,7 @@ $today_str = date('Y-m-d');
     </div>
 </div>
 
-<!-- Modal: Walk-in / Elden Hızlı Randevu Ekle -->
+<!-- Modal: Walk-in / Elden Hızlı Randevu Ekle (ABONMAN KREDİSİ DESTEKLİ) -->
 <div class="modal fade" id="walkinModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -607,17 +608,26 @@ $today_str = date('Y-m-d');
             <form id="walkinForm" onsubmit="saveWalkinReservation(event)">
                 <div class="modal-body p-4">
                     <div class="row g-3">
+
+                        <!-- MÜŞTERİ KREDİSİ SEÇİMİ (İÇTEN KREDİ DÜŞME) -->
+                        <div class="col-12">
+                            <label class="form-label text-warning fs-7 fw-bold"><i class="fa-solid fa-crown me-1"></i> MÜŞTERİ ABONMAN KREDİSİ KULLAN (İSTEĞE BAĞLI)</label>
+                            <select class="form-select border-warning fw-bold" name="use_subscription_id" id="walkinUseSubSelect" onchange="onOwnerWalkinSubChange(this)">
+                                <option value="0" selected>💵 Standart Elden Ödeme (Ücretli)</option>
+                            </select>
+                        </div>
+
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">TAKIM ADI *</label>
-                            <input type="text" class="form-control" name="team_name" required placeholder="Örn: Karaköy Gücü">
+                            <input type="text" class="form-control" name="team_name" id="walkinTeamName" required placeholder="Örn: Karaköy Gücü">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">YETKİLİ KİŞİ *</label>
-                            <input type="text" class="form-control" name="contact_name" required placeholder="Ad Soyad">
+                            <input type="text" class="form-control" name="contact_name" id="walkinContactName" required placeholder="Ad Soyad">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
-                            <input type="text" class="form-control" name="phone" required placeholder="05XX XXX XX XX">
+                            <input type="text" class="form-control" name="phone" id="walkinPhone" required placeholder="05XX XXX XX XX">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">SAHA SEÇİMİ *</label>
@@ -633,7 +643,7 @@ $today_str = date('Y-m-d');
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">ÜCRET (TL) *</label>
-                            <input type="number" step="0.01" class="form-control" name="fee" value="1200.00" required>
+                            <input type="text" class="form-control fw-bold text-success" name="fee" id="walkinFeeInput" value="1200.00" required>
                         </div>
                         <input type="hidden" name="status" value="Onaylandı">
                     </div>
@@ -720,6 +730,7 @@ function onOwnerCityChange(defaultDistrict = null) {
 let ownerFieldsData = [];
 let ownerFacilityData = null;
 let ownerReservationsData = [];
+let ownerSubscriptionsData = [];
 let activeReservationTab = 'today';
 let currentSortColumn = 'reservation_date';
 let currentSortAsc = true;
@@ -1013,14 +1024,15 @@ async function loadOwnerSubscriptions() {
     const res = await fetch('api/facility.php?action=list_owner_subscriptions');
     const json = await res.json();
     if (json.status === 'success') {
-        renderOwnerSubscriptions(json.data || []);
+        ownerSubscriptionsData = json.data || [];
+        renderOwnerSubscriptions(ownerSubscriptionsData);
     }
 }
 
 function renderOwnerSubscriptions(list) {
     const tbody = document.getElementById('ownerSubscriptionsBody');
     if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-3">Tesisinize tanımlı abonmanlık bulunmuyor.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted py-3">Tesisinize tanımlı abonmanlık bulunmuyor.</td></tr>`;
         return;
     }
     let html = '';
@@ -1038,9 +1050,27 @@ function renderOwnerSubscriptions(list) {
             <td><strong class="text-success fs-6">${s.remaining_matches} Kredi</strong></td>
             <td class="fw-bold text-dark">₺${parseFloat(s.total_price).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
             <td>${statusBadge}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteSubscription(${s.id})"><i class="fa-solid fa-trash me-1"></i> İptal Et / Sil</button>
+            </td>
         </tr>`;
     });
     tbody.innerHTML = html;
+}
+
+async function deleteSubscription(subId) {
+    if (!confirm('Bu abonmanlık kaydını iptal etmek / silmek istediğinize emin misiniz?')) return;
+    const formData = new FormData();
+    formData.append('sub_id', subId);
+
+    const res = await fetch('api/facility.php?action=delete_subscription', { method: 'POST', body: formData });
+    const json = await res.json();
+    if (json.status === 'success') {
+        loadOwnerSubscriptions();
+        loadOwnerReservations();
+    } else {
+        alert(json.message);
+    }
 }
 
 function openOwnerAddSubModal() {
@@ -1101,7 +1131,40 @@ function quickWalkinModal(fieldId, date, time) {
     document.getElementById('walkinFieldSelect').value = fieldId;
     document.getElementById('walkinDate').value = date;
     document.getElementById('walkinTimeSelect').value = time;
+
+    // Populate active subscriptions dropdown for owner fast booking
+    const walkinSubSel = document.getElementById('walkinUseSubSelect');
+    walkinSubSel.innerHTML = `<option value="0" selected>💵 Standart Elden Ödeme (Ücretli)</option>`;
+
+    const activeSubs = ownerSubscriptionsData.filter(s => s.remaining_matches > 0 && s.status === 'Aktif');
+    activeSubs.forEach(s => {
+        walkinSubSel.innerHTML += `<option value="${s.id}" data-name="${escapeHtml(s.user_name)}" data-phone="${escapeHtml(s.user_phone)}">🎁 ${escapeHtml(s.user_name)} - ${escapeHtml(s.package_name)} (Kalan: ${s.remaining_matches} Kredi - ₺0.00)</option>`;
+    });
+
     new bootstrap.Modal(document.getElementById('walkinModal')).show();
+}
+
+function onOwnerWalkinSubChange(selectEl) {
+    const subId = parseInt(selectEl.value);
+    const feeInput = document.getElementById('walkinFeeInput');
+    const contactInput = document.getElementById('walkinContactName');
+    const phoneInput = document.getElementById('walkinPhone');
+    const teamInput = document.getElementById('walkinTeamName');
+
+    if (subId > 0) {
+        const selectedOpt = selectEl.options[selectEl.selectedIndex];
+        const name = selectedOpt.getAttribute('data-name');
+        const phone = selectedOpt.getAttribute('data-phone');
+
+        if (name && !contactInput.value) contactInput.value = name;
+        if (phone && !phoneInput.value) phoneInput.value = phone;
+        if (!teamInput.value) teamInput.value = name + ' (Abonman)';
+        feeInput.value = '0.00 (Abonman Kredisi)';
+    } else {
+        const fieldId = document.getElementById('walkinFieldSelect').value;
+        const field = ownerFieldsData.find(f => f.id == fieldId);
+        feeInput.value = field ? field.hourly_fee : '1200.00';
+    }
 }
 
 function populateWalkinSelects(facility, fields) {
@@ -1334,6 +1397,7 @@ async function saveWalkinReservation(e) {
     if (json.status === 'success') {
         bootstrap.Modal.getInstance(document.getElementById('walkinModal')).hide();
         loadOwnerReservations();
+        loadOwnerSubscriptions();
     } else {
         alert(json.message);
     }

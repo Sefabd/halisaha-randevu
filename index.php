@@ -567,6 +567,16 @@ function isSlotInPast(dateStr, timeStr, openTimeStr) {
     return (hourNum <= currentHour);
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const citySelect = document.getElementById('portalCity');
+    if (citySelect) {
+        citySelect.value = 'İstanbul';
+        onCityChange();
+        document.getElementById('portalDistrict').value = 'Tüm İlçeler';
+        loadFacilities();
+    }
+});
+
 const CITIES_DISTRICTS = {
     'İstanbul': ['Tüm İlçeler', 'Kadıköy', 'Beşiktaş', 'Üsküdar', 'Şişli', 'Beyoğlu', 'Maltepe', 'Ataşehir', 'Ümraniye', 'Bakırköy', 'Fatih', 'Pendik', 'Sarıyer'],
     'Ankara': ['Tüm İlçeler', 'Çankaya', 'Keçiören', 'Yenimahalle', 'Mamak', 'Etimesgut', 'Sincan', 'Gölbaşı'],
