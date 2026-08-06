@@ -1,5 +1,5 @@
 <?php
-// owner_dashboard.php - Tesis İşletmecisi Paneli (Canlı İstemci Saati İle Geçmiş Saatler GEÇTİ Rozeti Düzeltmesi)
+// owner_dashboard.php - Tesis İşletmecisi Paneli (Field Re-Opening Bug Fix, Weekend Hours Fix & Subscription Management)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -28,7 +28,7 @@ $today_str = date('Y-m-d');
 </head>
 <body>
 
-<!-- Header Navbar (Anlık Canlı Sistem Saati Widget'ı ile) -->
+<!-- Header Navbar -->
 <header class="minimal-navbar py-3 mb-4">
     <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-3">
@@ -101,7 +101,7 @@ $today_str = date('Y-m-d');
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-days text-primary me-2"></i> Canlı Saatlik Doluluk Matrisi</h5>
-                <span class="text-muted fs-8">Tarih değiştirerek istenen günün doluluğunu inceleyin. 🟢 Boş saatlere tıklayarak elden kayıt yapabilirsiniz.</span>
+                <span class="text-muted fs-8">Tarih değiştirerek istenen günün doluluğunu inceleyin. (Hafta sonu saatleri otomatik devreye girer). 🟢 Boş saatlere tıklayarak elden kayıt yapabilirsiniz.</span>
             </div>
             <div class="d-flex align-items-center gap-3">
                 <div class="d-flex align-items-center gap-2 fs-8 d-none d-md-flex">
@@ -125,7 +125,7 @@ $today_str = date('Y-m-d');
     </section>
 
     <div class="row g-4 mb-4">
-        <!-- 1. GELİŞMİŞ TESİS & ÇALIŞMA SAATLERİ (TESİS SEVİYESİ İMKANLAR FORMU) -->
+        <!-- 1. GELİŞMİŞ TESİS & ÇALIŞMA SAATLERİ -->
         <div class="col-lg-5">
             <div class="minimal-card p-4 h-100">
                 <h5 class="fw-bold text-dark mb-3">
@@ -191,7 +191,7 @@ $today_str = date('Y-m-d');
                             </select>
                         </div>
 
-                        <!-- TESİS SEVİYESİ İMKANLAR VE ÖZELLİKLER FORMU -->
+                        <!-- TESİS SEVİYESİ İMKANLAR FORMU -->
                         <div class="col-12 border-top pt-3">
                             <label class="form-label text-dark fs-8 fw-bold mb-2"><i class="fa-solid fa-list-check text-primary me-1"></i> TESİS İMKANLARI VE HİZMETLERİ</label>
                             <div class="row g-2 fs-7">
@@ -238,9 +238,7 @@ $today_str = date('Y-m-d');
                                     <input type="text" class="form-control form-control-sm" name="closed_reason" id="closedReason" placeholder="Neden? (Örn: Tesis Bakımı / Özel İzin)">
                                 </div>
                             </div>
-                            <div class="d-flex flex-wrap gap-1 fs-8" id="closedDatesBadgeList">
-                                <!-- Closed dates badges populated via JS -->
-                            </div>
+                            <div class="d-flex flex-wrap gap-1 fs-8" id="closedDatesBadgeList"></div>
                         </div>
 
                         <div class="col-12 mt-3">
@@ -287,7 +285,39 @@ $today_str = date('Y-m-d');
         </div>
     </div>
 
-    <!-- 3. RANDEVU LİSTELERİNDE SIRALANABİLİR KOLONLAR VE SAHA FİLTRESİ -->
+    <!-- 3. ABONMAN YÖNETİMİ & SATIŞ TAKİBİ KARTI (YENİ EKLEME) -->
+    <section class="minimal-card p-4 mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
+            <div>
+                <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-crown text-warning me-2"></i> ABONMAN YÖNETİMİ & SATIŞ TAKİBİ</h5>
+                <span class="text-muted fs-7">Tesisinize abone olan oyuncuları, kalan maç kredilerini ve sabit gün/saat tercihlerini yönetin.</span>
+            </div>
+            <button class="btn btn-warning text-dark fw-bold btn-sm shadow-sm" onclick="openOwnerAddSubModal()">
+                <i class="fa-solid fa-plus me-1"></i> Müşteriye Abonman Tanımla
+            </button>
+        </div>
+
+        <div class="scrollable-table-container" style="max-height:300px;">
+            <table class="table table-hover align-middle m-0 fs-7">
+                <thead class="table-light text-muted border-bottom sticky-top">
+                    <tr>
+                        <th>MÜŞTERİ AD SOYAD</th>
+                        <th>TELEFON</th>
+                        <th>PAKET</th>
+                        <th>SAHA</th>
+                        <th>KULLANIM MODU</th>
+                        <th>TOPLAM MAÇ</th>
+                        <th>KALAN KREDİ</th>
+                        <th>TUTAR</th>
+                        <th>DURUM</th>
+                    </tr>
+                </thead>
+                <tbody id="ownerSubscriptionsBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 4. RANDEVU LİSTELERİNDE SIRALANABİLİR KOLONLAR VE SAHA FİLTRESİ -->
     <section class="minimal-card p-4 mb-5">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3 border-bottom pb-3">
             <div>
@@ -361,7 +391,7 @@ $today_str = date('Y-m-d');
 
 </div>
 
-<!-- Modal: SAHA DURUMU VE KAPALI TARİH/SAAT ARALIĞI AYARLA MODALI -->
+<!-- Modal: SAHA DURUMU VE KAPALI TARİH/SAAT ARALIĞI AYARLA MODALI (RE-OPENING BUG FIX) -->
 <div class="modal fade" id="fieldStatusModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -380,13 +410,13 @@ $today_str = date('Y-m-d');
 
                     <div class="mb-3">
                         <label class="form-label text-muted fs-7 fw-semibold">DURUM SEÇİMİ</label>
-                        <select class="form-select" id="statusSelect">
-                            <option value="Aktif">✅ Aktif (Açık)</option>
+                        <select class="form-select fw-bold" id="statusSelect" onchange="onStatusSelectChange(this)">
+                            <option value="Aktif">✅ Aktif (Açık - Tüm Saatler Kiralanabilir)</option>
                             <option value="Pasif">🔴 Kapalı (Tarih ve Saat Aralıklı)</option>
                         </select>
                     </div>
 
-                    <div class="p-3 bg-light rounded-3 border mb-3">
+                    <div class="p-3 bg-light rounded-3 border mb-3" id="closedRangeFormContainer">
                         <h6 class="fw-bold text-danger fs-8 mb-2"><i class="fa-solid fa-calendar-xmark me-1"></i> KAPALI KALACAĞI TARİH VE SAAT ARALIĞI</h6>
                         <div class="row g-2">
                             <div class="col-6">
@@ -415,6 +445,87 @@ $today_str = date('Y-m-d');
                 <div class="modal-footer border-top">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
                     <button type="submit" class="btn btn-team fw-bold">Ayarları Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: İŞLETMECİ ELDEN ABONMAN TANIMLAMA MODALI -->
+<div class="modal fade" id="ownerAddSubModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-crown text-warning me-2"></i> Müşteriye Özel Abonman Paketi Tanımla</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="handleSaveOwnerSubscription(event)">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">MÜŞTERİ AD SOYAD *</label>
+                            <input type="text" class="form-control fw-bold" name="user_name" required placeholder="Örn: Ali Yılmaz">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
+                            <input type="text" class="form-control" name="user_phone" required placeholder="0532 555 12 34">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">TAKIM ADI *</label>
+                            <input type="text" class="form-control" name="team_name" required placeholder="Örn: Karaköy Gücü">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">SAHA SEÇİMİ *</label>
+                            <select class="form-select fw-bold" name="field_id" id="ownerSubFieldSelect" required></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">PAKET SEÇİMİ *</label>
+                            <select class="form-select fw-bold" name="package_type" required>
+                                <option value="1_month" selected>🔵 Aylık Paket (4 Maç - %10 İndirim)</option>
+                                <option value="3_months">🟡 3 Aylık Paket (12 Maç - %15 İndirim)</option>
+                                <option value="6_months">👑 6 Aylık Paket (24 Maç - %20 İndirim VIP)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">KULLANIM MODU *</label>
+                            <select class="form-select fw-bold" name="booking_mode" id="ownerSubModeSelect" onchange="toggleOwnerPeriodicOptions()" required>
+                                <option value="flexible" selected>🎯 Esnek Kullanım (Maç Kredisi Ver)</option>
+                                <option value="periodic">📅 Sabit Periyodik Kullanım (Haftalık Otomatik Kitle)</option>
+                            </select>
+                        </div>
+                        <div class="col-12 d-none" id="ownerPeriodicContainer">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="fs-8 text-muted fw-semibold">HAFTANIN GÜNÜ</label>
+                                        <select class="form-select form-select-sm fw-bold" name="preferred_day">
+                                            <option value="Pazartesi">Pazartesi</option>
+                                            <option value="Salı">Salı</option>
+                                            <option value="Çarşamba" selected>Çarşamba</option>
+                                            <option value="Perşembe">Perşembe</option>
+                                            <option value="Cuma">Cuma</option>
+                                            <option value="Cumartesi">Cumartesi</option>
+                                            <option value="Pazar">Pazar</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fs-8 text-muted fw-semibold">SABİT SAAT</label>
+                                        <select class="form-select form-select-sm fw-bold" name="preferred_time">
+                                            <option value="18:00">18:00</option>
+                                            <option value="19:00">19:00</option>
+                                            <option value="20:00" selected>20:00</option>
+                                            <option value="21:00">21:00</option>
+                                            <option value="22:00">22:00</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-team">Abonmanlığı Kaydet</button>
                 </div>
             </form>
         </div>
@@ -553,12 +664,11 @@ function isSlotInPast(dateStr, timeStr, openTimeStr) {
     if (dateStr < todayStr) return true;
     if (dateStr > todayStr) return false;
 
-    // dateStr === todayStr
     const hourNum = parseInt(timeStr.split(':')[0], 10);
     const openH = parseInt((openTimeStr || '13').split(':')[0], 10);
 
     if (hourNum < openH) {
-        return true; // Early morning hours of TODAY passed earlier today
+        return true;
     }
     return (hourNum <= currentHour);
 }
@@ -575,6 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startLiveClock();
     loadOwnerFacility();
     loadOwnerReservations();
+    loadOwnerSubscriptions();
 });
 
 function startLiveClock() {
@@ -739,7 +850,9 @@ function openFieldStatusModal(fieldId, fieldName, currentStatus) {
     const f = ownerFieldsData.find(item => item.id == fieldId);
     document.getElementById('statusFieldId').value = fieldId;
     document.getElementById('statusFieldName').value = fieldName;
-    document.getElementById('statusSelect').value = currentStatus || 'Aktif';
+    
+    const selectEl = document.getElementById('statusSelect');
+    selectEl.value = currentStatus || 'Aktif';
 
     const range = (f && f.closed_range_obj) ? f.closed_range_obj : {};
     document.getElementById('fieldClosedStartDate').value = range.start_date || todayStr;
@@ -750,19 +863,37 @@ function openFieldStatusModal(fieldId, fieldName, currentStatus) {
     document.getElementById('fieldClosedEndTime').value = range.end_time || '23:59';
     document.getElementById('fieldClosedReason').value = range.reason || 'Bakım / Tamir';
 
+    onStatusSelectChange(selectEl);
     new bootstrap.Modal(document.getElementById('fieldStatusModal')).show();
 }
 
+function onStatusSelectChange(selectEl) {
+    const container = document.getElementById('closedRangeFormContainer');
+    if (selectEl.value === 'Aktif') {
+        container.style.opacity = '0.5';
+    } else {
+        container.style.opacity = '1.0';
+    }
+}
+
+// FIELD RE-OPENING BUG FIX: Clear range inputs if Aktif
 async function handleSaveFieldStatusRange(e) {
     e.preventDefault();
+    const statusVal = document.getElementById('statusSelect').value;
+
     const formData = new FormData();
     formData.append('field_id', document.getElementById('statusFieldId').value);
-    formData.append('status', document.getElementById('statusSelect').value);
-    formData.append('closed_start_date', document.getElementById('fieldClosedStartDate').value);
-    formData.append('closed_start_time', document.getElementById('fieldClosedStartTime').value);
-    formData.append('closed_end_date', document.getElementById('fieldClosedEndDate').value);
-    formData.append('closed_end_time', document.getElementById('fieldClosedEndTime').value);
-    formData.append('closed_reason', document.getElementById('fieldClosedReason').value);
+    formData.append('status', statusVal);
+
+    if (statusVal === 'Pasif') {
+        formData.append('closed_start_date', document.getElementById('fieldClosedStartDate').value);
+        formData.append('closed_start_time', document.getElementById('fieldClosedStartTime').value);
+        formData.append('closed_end_date', document.getElementById('fieldClosedEndDate').value);
+        formData.append('closed_end_time', document.getElementById('fieldClosedEndTime').value);
+        formData.append('closed_reason', document.getElementById('fieldClosedReason').value);
+    } else {
+        formData.append('closed_start_date', '');
+    }
 
     const res = await fetch('api/facility.php?action=set_field_closed_range', { method: 'POST', body: formData });
     const json = await res.json();
@@ -787,9 +918,9 @@ function onMatrixDateInput(inputEl) {
 
 function isSlotClosedByRange(dateStr, timeStr, fieldObj) {
     if (!fieldObj) return false;
-    const range = fieldObj.closed_range_obj;
+    if (fieldObj.status === 'Pasif' && (!fieldObj.closed_range_obj || !fieldObj.closed_range_obj.start_date)) return true;
 
-    if (fieldObj.status === 'Pasif' && (!range || !range.start_date)) return true;
+    const range = fieldObj.closed_range_obj;
     if (!range || !range.start_date) return false;
 
     const slotDt = `${dateStr} ${timeStr}`;
@@ -799,15 +930,23 @@ function isSlotClosedByRange(dateStr, timeStr, fieldObj) {
     return (slotDt >= startDt && slotDt <= endDt);
 }
 
-// YÖNETİCİ MATRİSİNDE CANLI İSTEMCİ SAATİ İLE GEÇMİŞ SAATLERİ GEÇTİ ROZETİ OLARAK BASMA FIX
+// HAFTA SONU SAATLERİ FIX & CANLI MATRİS RENDER
 function renderOwnerMatrix() {
     if (!ownerFacilityData || ownerFieldsData.length === 0) return;
     const { todayStr } = getLiveClientDateAndHour();
     const dateInput = document.getElementById('matrixDate');
     const date = (dateInput && dateInput.value && dateInput.value.length === 10) ? dateInput.value : todayStr;
 
-    const openH = parseInt(ownerFacilityData.open_time || '13');
-    let closeH = parseInt(ownerFacilityData.close_time || '01');
+    // HAFTA SONU SAATLERİ FIX:
+    const parts = date.split('-');
+    const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
+
+    let activeOpenStr = (isWeekend && ownerFacilityData.open_time_weekend) ? ownerFacilityData.open_time_weekend : (ownerFacilityData.open_time || '13:00');
+    let activeCloseStr = (isWeekend && ownerFacilityData.close_time_weekend) ? ownerFacilityData.close_time_weekend : (ownerFacilityData.close_time || '01:00');
+
+    const openH = parseInt(activeOpenStr.split(':')[0], 10);
+    let closeH = parseInt(activeCloseStr.split(':')[0], 10);
     if (closeH <= openH) closeH += 24;
 
     const hourNumbers = [];
@@ -853,8 +992,7 @@ function renderOwnerMatrix() {
                         <i class="fa-solid ${iconClass} me-1"></i>${h}
                     </div>
                 </td>`;
-            } else if (isSlotInPast(date, h, ownerFacilityData.open_time)) {
-                // YÖNETİCİ MATRİSİNDE GEÇMİŞ SAATLERİ GEÇTİ (GRİ ROZET) OLARAK BAS
+            } else if (isSlotInPast(date, h, activeOpenStr)) {
                 bHtml += `<td><div class="slot-badge bg-secondary bg-opacity-10 text-muted border border-secondary border-opacity-25" style="cursor:not-allowed;" title="Saat Geçti"><i class="fa-solid fa-clock-rotate-left me-1"></i>GEÇTİ</div></td>`;
             } else {
                 bHtml += `<td>
@@ -869,6 +1007,70 @@ function renderOwnerMatrix() {
     });
 
     tbody.innerHTML = bHtml;
+}
+
+async function loadOwnerSubscriptions() {
+    const res = await fetch('api/facility.php?action=list_owner_subscriptions');
+    const json = await res.json();
+    if (json.status === 'success') {
+        renderOwnerSubscriptions(json.data || []);
+    }
+}
+
+function renderOwnerSubscriptions(list) {
+    const tbody = document.getElementById('ownerSubscriptionsBody');
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-3">Tesisinize tanımlı abonmanlık bulunmuyor.</td></tr>`;
+        return;
+    }
+    let html = '';
+    list.forEach(s => {
+        const modeBadge = (s.booking_mode === 'periodic') ? `<span class="badge bg-info bg-opacity-10 text-info border border-info">📅 Periyodik (${escapeHtml(s.preferred_day)} ${s.preferred_time})</span>` : `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary">🎯 Esnek Kredi</span>`;
+        const statusBadge = (s.status === 'Aktif') ? `<span class="badge bg-success text-white">✅ Aktif</span>` : `<span class="badge bg-secondary text-white">🏁 Tamamlandı</span>`;
+
+        html += `<tr>
+            <td class="fw-bold text-dark">${escapeHtml(s.user_name)}</td>
+            <td>${escapeHtml(s.user_phone)}</td>
+            <td><span class="badge bg-warning bg-opacity-10 text-warning border border-warning fw-bold">${escapeHtml(s.package_name)}</span></td>
+            <td class="fw-semibold">${escapeHtml(s.field_name)}</td>
+            <td>${modeBadge}</td>
+            <td class="fw-bold">${s.total_matches} Maç</td>
+            <td><strong class="text-success fs-6">${s.remaining_matches} Kredi</strong></td>
+            <td class="fw-bold text-dark">₺${parseFloat(s.total_price).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
+            <td>${statusBadge}</td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+function openOwnerAddSubModal() {
+    const selectEl = document.getElementById('ownerSubFieldSelect');
+    selectEl.innerHTML = ownerFieldsData.map(f => `<option value="${f.id}">${escapeHtml(f.field_name)} (₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')}/Saat)</option>`).join('');
+    new bootstrap.Modal(document.getElementById('ownerAddSubModal')).show();
+}
+
+function toggleOwnerPeriodicOptions() {
+    const mode = document.getElementById('ownerSubModeSelect').value;
+    const container = document.getElementById('ownerPeriodicContainer');
+    if (mode === 'periodic') {
+        container.classList.remove('d-none');
+    } else {
+        container.classList.add('d-none');
+    }
+}
+
+async function handleSaveOwnerSubscription(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+
+    const res = await fetch('api/facility.php?action=add_owner_subscription', { method: 'POST', body: formData });
+    const json = await res.json();
+    alert(json.message);
+    if (json.status === 'success') {
+        bootstrap.Modal.getInstance(document.getElementById('ownerAddSubModal')).hide();
+        loadOwnerSubscriptions();
+        loadOwnerReservations();
+    }
 }
 
 function showBookingDetails(id) {

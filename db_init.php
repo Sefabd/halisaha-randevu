@@ -1,9 +1,10 @@
 <?php
-// db_init.php - Database Schema Rebuilder with Features, Maintenance, Weekend Hours & Closed Range
+// db_init.php - Database Schema Rebuilder with Features, Maintenance, Weekend Hours, Closed Range & User Subscriptions
 $pdo = require __DIR__ . '/config/db.php';
 
 try {
-    // 1. Drop existing tables for fresh schema
+    // 1. Drop existing tables for fresh clean schema
+    $pdo->exec("DROP TABLE IF EXISTS user_subscriptions");
     $pdo->exec("DROP TABLE IF EXISTS field_reservations");
     $pdo->exec("DROP TABLE IF EXISTS facility_fields");
     $pdo->exec("DROP TABLE IF EXISTS facilities");
@@ -41,7 +42,7 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
-    // 4. Facility Fields Table (With closed_range)
+    // 4. Facility Fields Table
     $pdo->exec("CREATE TABLE facility_fields (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         facility_id INTEGER NOT NULL,
@@ -54,7 +55,33 @@ try {
         FOREIGN KEY (facility_id) REFERENCES facilities(id) ON DELETE CASCADE
     )");
 
-    // 5. Field Reservations Table (With city, district, needs_player, notes)
+    // 5. User Subscriptions Table (Flexible & Periodic Match Credits)
+    $pdo->exec("CREATE TABLE user_subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        user_name TEXT NOT NULL,
+        user_phone TEXT NOT NULL,
+        facility_id INTEGER NOT NULL,
+        facility_name TEXT NOT NULL,
+        field_id INTEGER DEFAULT 0,
+        field_name TEXT DEFAULT '',
+        package_name TEXT NOT NULL,
+        period_type TEXT NOT NULL,
+        total_matches INTEGER NOT NULL,
+        used_matches INTEGER DEFAULT 0,
+        remaining_matches INTEGER NOT NULL,
+        discount_rate INTEGER DEFAULT 10,
+        total_price REAL NOT NULL,
+        booking_mode TEXT DEFAULT 'flexible',
+        preferred_day TEXT DEFAULT '',
+        preferred_time TEXT DEFAULT '',
+        status TEXT DEFAULT 'Aktif',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (facility_id) REFERENCES facilities(id)
+    )");
+
+    // 6. Field Reservations Table
     $pdo->exec("CREATE TABLE field_reservations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         facility_id INTEGER NOT NULL,
@@ -70,6 +97,7 @@ try {
         fee REAL DEFAULT 1200.00,
         status TEXT DEFAULT 'Onaylandı',
         subscription_plan TEXT DEFAULT 'Standart',
+        subscription_id INTEGER DEFAULT 0,
         needs_player INTEGER DEFAULT 0,
         notes TEXT DEFAULT '',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -81,6 +109,7 @@ try {
     // Player 1
     $pdo->prepare("INSERT INTO users (full_name, username, password, phone, favorite_team) VALUES (?, ?, ?, ?, ?)")
         ->execute(['AHMET YILMAZ', 'oyuncu1', $defaultPass, '0532 111 22 33', 'galatasaray']);
+    $user1_id = $pdo->lastInsertId();
 
     // Owner 1
     $pdo->prepare("INSERT INTO facilities (name, owner_name, username, password, city, district, address, phone, open_time, close_time, open_time_weekend, close_time_weekend, favorite_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
@@ -92,13 +121,18 @@ try {
     $defaultFeats = json_encode(["HD Kamera Kaydı", "Ücretsiz Su & İkram", "Soyunma Odası & Duş", "Krampon / Ayakkabı Kiralama"]);
     
     $insField->execute([$fac1_id, 'Saha 1', 'Kapalı Futbol Sahası', 1200.00, 'Aktif', $defaultFeats]);
+    $field1_id = $pdo->lastInsertId();
     $insField->execute([$fac1_id, 'Saha 2', 'Açık Futbol Sahası', 1100.00, 'Aktif', $defaultFeats]);
     $insField->execute([$fac1_id, 'Basketbol Sahası', 'Kapalı Basketbol Sahası', 1300.00, 'Aktif', $defaultFeats]);
     $insField->execute([$fac1_id, 'Tenis Kortu 1', 'Açık Tenis Kortu', 1400.00, 'Aktif', $defaultFeats]);
 
+    // Seed Demo User Subscription for oyuncu1
+    $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $insSub->execute([$user1_id, 'AHMET YILMAZ', '0532 111 22 33', $fac1_id, 'Kadıköy Şampiyonlar Spor Kompleksi', $field1_id, 'Saha 1', 'Aylık Paket (4 Maç - %10 İndirim)', '1_month', 4, 1, 3, 10, 4320.00, 'flexible', 'Çarşamba', '20:00', 'Aktif']);
+
     // Owner 2
-    $pdo->prepare("INSERT INTO facilities (name, owner_name, username, password, city, district, address, phone, open_time, close_time, favorite_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-        ->execute(['Moda Park VIP Spor Tesisleri', 'CAN YILMAZ', 'moda_vip', $defaultPass, 'İstanbul', 'Kadıköy', 'Moda Sahil Yolu No:18 Kadıköy / İstanbul', '0533 444 55 66', '12:00', '02:00', 'besiktas']);
+    $pdo->prepare("INSERT INTO facilities (name, owner_name, username, password, city, district, address, phone, open_time, close_time, open_time_weekend, close_time_weekend, favorite_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        ->execute(['Moda Park VIP Spor Tesisleri', 'CAN YILMAZ', 'moda_vip', $defaultPass, 'İstanbul', 'Kadıköy', 'Moda Sahil Yolu No:18 Kadıköy / İstanbul', '0533 444 55 66', '12:00', '02:00', '09:00', '03:00', 'besiktas']);
     $fac2_id = $pdo->lastInsertId();
 
     $insField->execute([$fac2_id, 'VIP Arena 1', 'Kapalı Futbol Sahası', 1400.00, 'Aktif', $defaultFeats]);
@@ -109,11 +143,11 @@ try {
     $insRes = $pdo->prepare("INSERT INTO field_reservations (facility_id, field_id, field_name, team_name, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
     $insRes->execute([$fac1_id, 1, 'Saha 1', 'Moda Gençlik', 'KAPTAN ALİ', '05321112233', 'İstanbul', 'Kadıköy', $today, '11:00', 1200.00, 'Onaylandı', 'Standart']);
-    $insRes->execute([$fac1_id, 1, 'Saha 1', 'Fenerbahçe Veteran', 'SERKAN HOCA', '05352223344', 'İstanbul', 'Kadıköy', $today, '12:00', 1200.00, 'Onaylandı', 'Aylık Fix']);
+    $insRes->execute([$fac1_id, 1, 'Saha 1', 'Fenerbahçe Veteran', 'SERKAN HOCA', '05352223344', 'İstanbul', 'Kadıköy', $today, '12:00', 1200.00, 'Onaylandı', 'Aylık Paket (4 Maç)']);
     $insRes->execute([$fac1_id, 2, 'Saha 2', 'Kadıköy Gücü', 'CANER ERTEKİN', '05334445566', 'İstanbul', 'Kadıköy', $today, '14:00', 1100.00, 'Onaylandı', 'Standart']);
 
     echo "<h2>⚽ SahaNet PRO Veritabanı Kurulumu</h2>";
-    echo "<p>🎉 Veritabanı Sıfırlandı ve Sade Yapıya Döndürüldü!</p>";
+    echo "<p>🎉 Veritabanı Sıfırlandı ve Abonman Tablosuyla Yenilendi!</p>";
 
 } catch (PDOException $e) {
     die("Veritabanı Kurulum Hatası: " . $e->getMessage());

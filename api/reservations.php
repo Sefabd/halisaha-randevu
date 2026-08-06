@@ -1,5 +1,5 @@
 <?php
-// api/reservations.php - Multi-Tenant Reservation CRUD
+// api/reservations.php - Multi-Tenant Reservation CRUD & Subscription Credit Deduction
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -97,10 +97,30 @@ try {
         $reservation_date = trim($_POST['reservation_date'] ?? '');
         $reservation_time = trim($_POST['reservation_time'] ?? '');
         $fee = (float)($_POST['fee'] ?? 0);
-        $status = trim($_POST['status'] ?? 'Bekliyor');
+        $status = trim($_POST['status'] ?? 'Onaylandı');
         $subscription_plan = trim($_POST['subscription_plan'] ?? 'Standart');
+        $use_subscription_id = (int)($_POST['use_subscription_id'] ?? 0);
         $needs_player = isset($_POST['needs_player']) ? 1 : 0;
         $notes = trim($_POST['notes'] ?? '');
+
+        // Deduct subscription credit if selected
+        if ($use_subscription_id > 0) {
+            $subStmt = $pdo->prepare("SELECT * FROM user_subscriptions WHERE id = ? AND remaining_matches > 0 AND status = 'Aktif'");
+            $subStmt->execute([$use_subscription_id]);
+            $sub = $subStmt->fetch();
+
+            if ($sub) {
+                $rem = $sub['remaining_matches'] - 1;
+                $used = $sub['used_matches'] + 1;
+                $subStatus = ($rem <= 0) ? 'Tamamlandı' : 'Aktif';
+
+                $upSub = $pdo->prepare("UPDATE user_subscriptions SET remaining_matches = ?, used_matches = ?, status = ? WHERE id = ?");
+                $upSub->execute([$rem, $used, $subStatus, $use_subscription_id]);
+
+                $fee = 0.00;
+                $subscription_plan = $sub['package_name'];
+            }
+        }
 
         // Owner override
         if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'owner') {
@@ -148,23 +168,23 @@ try {
             // Update
             $updateSql = "UPDATE field_reservations SET 
                 facility_id = ?, field_id = ?, field_name = ?, team_name = ?, contact_name = ?, phone = ?, city = ?, district = ?, 
-                reservation_date = ?, reservation_time = ?, fee = ?, status = ?, subscription_plan = ?, needs_player = ?, notes = ?
+                reservation_date = ?, reservation_time = ?, fee = ?, status = ?, subscription_plan = ?, subscription_id = ?, needs_player = ?, notes = ?
                 WHERE id = ?";
             $stmt = $pdo->prepare($updateSql);
             $stmt->execute([
                 $facility_id, $field_id, $field_name, $team_name, $contact_name, $phone, $city, $district, 
-                $reservation_date, $reservation_time, $fee, $status, $subscription_plan, $needs_player, $notes, $id
+                $reservation_date, $reservation_time, $fee, $status, $subscription_plan, $use_subscription_id, $needs_player, $notes, $id
             ]);
             echo json_encode(['status' => 'success', 'message' => 'Randevu başarıyla güncellendi.']);
         } else {
             // Insert
             $insertSql = "INSERT INTO field_reservations 
-                (facility_id, field_id, field_name, team_name, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, needs_player, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                (facility_id, field_id, field_name, team_name, contact_name, phone, city, district, reservation_date, reservation_time, fee, status, subscription_plan, subscription_id, needs_player, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($insertSql);
             $stmt->execute([
                 $facility_id, $field_id, $field_name, $team_name, $contact_name, $phone, $city, $district, 
-                $reservation_date, $reservation_time, $fee, $status, $subscription_plan, $needs_player, $notes
+                $reservation_date, $reservation_time, $fee, $status, $subscription_plan, $use_subscription_id, $needs_player, $notes
             ]);
             echo json_encode(['status' => 'success', 'message' => 'Yeni randevu başarıyla kaydoldu!']);
         }

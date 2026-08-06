@@ -1,5 +1,5 @@
 <?php
-// index.php - SporNet PRO Online Spor Tesisleri Kiralama Portalı
+// index.php - SporNet PRO Online Spor Tesisleri Kiralama Portalı (Weekend Hours Fix & Revamped Subscriptions)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -57,7 +57,7 @@ $today_str = date('Y-m-d');
                     <option value="neutral" <?php echo $current_team === 'neutral' ? 'selected' : ''; ?>>🟢⚪ Yeşil</option>
                 </select>
 
-                <!-- Clean User Name Badge (Clickable for Profile & Password & My Reservations) -->
+                <!-- Clean User Name Badge -->
                 <button class="badge bg-light text-dark border p-2 btn btn-link text-decoration-none cursor-pointer" onclick="openUserProfileModal()">
                     <i class="fa-solid fa-user-gear text-primary me-1"></i> <?php echo htmlspecialchars($user_name_upper); ?>
                 </button>
@@ -243,7 +243,7 @@ $today_str = date('Y-m-d');
 
 </div>
 
-<!-- Modal: KULLANICI PROFİLİ, ŞİFRE DEĞİŞTİRME VE RANDEVULARIM -->
+<!-- Modal: KULLANICI PROFİLİ, ŞİFRE DEĞİŞTİRME, RANDEVULARIM VE ABONMANLARIM -->
 <div class="modal fade" id="userProfileModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -261,6 +261,11 @@ $today_str = date('Y-m-d');
                     <li class="nav-item">
                         <button class="nav-link fw-bold fs-7" data-bs-toggle="tab" data-bs-target="#tabMyReservations" onclick="loadMyReservations()">
                             <i class="fa-solid fa-calendar-check me-1 text-success"></i> Randevularım
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold fs-7" data-bs-toggle="tab" data-bs-target="#tabMySubscriptions" onclick="loadMySubscriptions()">
+                            <i class="fa-solid fa-crown me-1 text-warning"></i> Abonmanlarım & Maç Kredilerim
                         </button>
                     </li>
                 </ul>
@@ -311,6 +316,27 @@ $today_str = date('Y-m-d');
                                     </tr>
                                 </thead>
                                 <tbody id="myReservationsList"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: ABONMANLARIM & MAÇ KREDİLERİM -->
+                    <div class="tab-pane fade" id="tabMySubscriptions">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle fs-7 m-0">
+                                <thead class="table-light text-muted border-bottom">
+                                    <tr>
+                                        <th>TESİS ADI</th>
+                                        <th>PAKET</th>
+                                        <th>SAHA</th>
+                                        <th>MOD</th>
+                                        <th>TOPLAM MAÇ</th>
+                                        <th>KALAN HAK</th>
+                                        <th>TUTAR</th>
+                                        <th>DURUM</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mySubscriptionsList"></tbody>
                             </table>
                         </div>
                     </div>
@@ -376,12 +402,22 @@ $today_str = date('Y-m-d');
                             <label class="form-label text-muted fs-7 fw-semibold">SAAT</label>
                             <input type="text" class="form-control" name="reservation_time" id="modalTime" readonly>
                         </div>
+
+                        <!-- ABONMAN KREDİSİ İLE ÖDEME SEÇENEĞİ -->
+                        <div class="col-md-6">
+                            <label class="form-label text-warning fs-7 fw-bold"><i class="fa-solid fa-crown me-1"></i> ÖDEME YÖNTEMİ / KREDİ SEÇİMİ</label>
+                            <select class="form-select border-warning fw-bold" name="use_subscription_id" id="modalUseSubSelect" onchange="onSubCreditSelectChange(this)">
+                                <option value="0" selected>💵 Normal Ödeme (Saha Ücreti)</option>
+                            </select>
+                        </div>
+
                         <div class="col-md-6">
                             <label class="form-label text-muted fs-7 fw-semibold">ÜCRET (TL)</label>
-                            <input type="text" class="form-control" name="fee" id="modalFee" readonly>
+                            <input type="text" class="form-control fw-bold text-success" name="fee" id="modalFee" readonly>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-check form-switch mt-4">
+
+                        <div class="col-md-12">
+                            <div class="form-check form-switch mt-2">
                                 <input class="form-check-input" type="checkbox" name="needs_player" id="modalNeedsPlayer" value="1">
                                 <label class="form-check-label text-dark fs-7 fw-semibold" for="modalNeedsPlayer">
                                     <i class="fa-solid fa-user-plus me-1 text-primary"></i> Eksik Oyuncu İlanı Yayınlansın
@@ -399,41 +435,104 @@ $today_str = date('Y-m-d');
     </div>
 </div>
 
-<!-- Modal: TESİSE ÖZEL ABONMANLIK MODALI -->
+<!-- Modal: TESİSE ÖZEL ESNEK ABONMANLIK MODALI (4, 12, 24 MAÇ) -->
 <div class="modal fade" id="facilitySubModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header border-bottom">
-                <h5 class="modal-title fw-bold" id="facSubModalTitle"><i class="fa-solid fa-crown text-warning me-2"></i> İncele & Abone Ol</h5>
+                <h5 class="modal-title fw-bold" id="facSubModalTitle"><i class="fa-solid fa-crown text-warning me-2"></i> İncele & Abone Ol (4, 12, 24 Maç İndirimli Paketler)</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form onsubmit="handleFacilitySubscription(event)">
                 <div class="modal-body p-4">
-                    <input type="hidden" id="facSubId">
-                    <div class="mb-3">
-                        <label class="form-label text-muted fs-7 fw-semibold">TESİS ADI</label>
-                        <input type="text" class="form-control fw-bold" id="facSubName" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted fs-7 fw-semibold">ABONMAN PAKETİ SEÇİN</label>
-                        <select class="form-select" id="facSubTierSelect">
-                            <option value="Aylık Fix (4.000 TL/Ay)">🔵 Aylık Fix Paket - 4.000 TL / Ay (%10 İndirim + Sabit Saat)</option>
-                            <option value="Sezonluk Efsane VIP (21.500 TL/Sezon)" selected>👑 Sezonluk Efsane VIP - 21.500 TL / Sezon (HD Özet + VIP Garantili)</option>
-                            <option value="Kemik Kadro (11.000 TL/3 Ay)">🟡 Kemik Kadro Paket - 11.000 TL / 3 Ay (%15 İndirim + 1 Bedava Maç)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted fs-7 fw-semibold">TAKIM KAPTANI AD SOYAD *</label>
-                        <input type="text" class="form-control fw-bold" id="facSubCaptain" value="<?php echo htmlspecialchars($user_name_upper); ?>" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
-                        <input type="text" class="form-control" id="facSubPhone" required placeholder="0532 555 12 34">
+                    <input type="hidden" id="facSubId" name="facility_id">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">TESİS ADI</label>
+                            <input type="text" class="form-control fw-bold" id="facSubName" readonly>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">SAHA SEÇİMİ *</label>
+                            <select class="form-select fw-bold" id="facSubFieldSelect" name="field_id" onchange="updateSubPriceCalculation()" required></select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">ABONMAN PAKETİ SEÇİN *</label>
+                            <select class="form-select fw-bold" id="facSubPackageSelect" name="package_type" onchange="updateSubPriceCalculation()" required>
+                                <option value="1_month" selected>🔵 Aylık Paket (4 Maç) - %10 İndirimli</option>
+                                <option value="3_months">🟡 3 Aylık Paket (12 Maç) - %15 İndirimli</option>
+                                <option value="6_months">👑 6 Aylık Paket (24 Maç VIP) - %20 İndirimli</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">KULLANIM MODU *</label>
+                            <select class="form-select fw-bold" id="facSubBookingMode" name="booking_mode" onchange="togglePeriodicFields()" required>
+                                <option value="flexible" selected>🎯 Esnek Kullanım (Kullanıcı Hesabına Maç Kredisi Yükle)</option>
+                                <option value="periodic">📅 Sabit Periyodik Kullanım (Her Hafta Belli Gün ve Saat Kitle)</option>
+                            </select>
+                        </div>
+
+                        <!-- PERİYODİK MOD SEÇİLİRSE GÜN VE SAAT SEÇİMİ -->
+                        <div class="col-12 d-none" id="periodicOptionsContainer">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <h6 class="fw-bold text-dark fs-7 mb-2"><i class="fa-solid fa-calendar-week text-primary me-1"></i> Haftalık Sabit Gün ve Saat Tercihi</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="fs-8 text-muted fw-semibold">HAFTANIN GÜNÜ</label>
+                                        <select class="form-select form-select-sm fw-bold" name="preferred_day">
+                                            <option value="Pazartesi">Pazartesi</option>
+                                            <option value="Salı">Salı</option>
+                                            <option value="Çarşamba" selected>Çarşamba</option>
+                                            <option value="Perşembe">Perşembe</option>
+                                            <option value="Cuma">Cuma</option>
+                                            <option value="Cumartesi">Cumartesi</option>
+                                            <option value="Pazar">Pazar</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fs-8 text-muted fw-semibold">SABİT MAÇ SAATİ</label>
+                                        <select class="form-select form-select-sm fw-bold" name="preferred_time">
+                                            <option value="17:00">17:00</option>
+                                            <option value="18:00">18:00</option>
+                                            <option value="19:00">19:00</option>
+                                            <option value="20:00" selected>20:00</option>
+                                            <option value="21:00">21:00</option>
+                                            <option value="22:00">22:00</option>
+                                            <option value="23:00">23:00</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">TAKIM ADINIZ *</label>
+                            <input type="text" class="form-control fw-bold" name="team_name" required placeholder="Örn: Efsane Veteranlar">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-muted fs-7 fw-semibold">TELEFON *</label>
+                            <input type="text" class="form-control" name="phone" id="facSubPhone" required placeholder="0532 555 12 34">
+                        </div>
+
+                        <!-- FİYAT HESAPLAMA ÖZETİ -->
+                        <div class="col-12 mt-3">
+                            <div class="p-3 bg-success bg-opacity-10 border border-success rounded-3 text-success d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fs-8 text-uppercase fw-bold text-dark d-block">TOPLAM İNDİRİMLİ PAKET TUTARI</span>
+                                    <span class="fs-7 text-muted" id="subPriceCalcDetail">4 Maç x ₺1.200 (%10 İndirimli)</span>
+                                </div>
+                                <h4 class="fw-extrabold text-success mb-0" id="subTotalPriceText">₺4.320,00</h4>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-top">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-team fw-bold">Abonmanlığı Başlat</button>
+                    <button type="submit" class="btn btn-team fw-bold">Abonmanlığı Başlat & Satın Al</button>
                 </div>
             </form>
         </div>
@@ -459,12 +558,11 @@ function isSlotInPast(dateStr, timeStr, openTimeStr) {
     if (dateStr < todayStr) return true;
     if (dateStr > todayStr) return false;
 
-    // dateStr === todayStr
     const hourNum = parseInt(timeStr.split(':')[0], 10);
     const openH = parseInt((openTimeStr || '13').split(':')[0], 10);
 
     if (hourNum < openH) {
-        return true; // Early morning hours of TODAY passed earlier today
+        return true;
     }
     return (hourNum <= currentHour);
 }
@@ -518,6 +616,8 @@ function switchTeamTheme(team) {
     });
 }
 
+let currentUserProfileSubs = [];
+
 async function openUserProfileModal() {
     const res = await fetch('api/auth.php?action=get_user_profile');
     const json = await res.json();
@@ -525,6 +625,7 @@ async function openUserProfileModal() {
         document.getElementById('profileFullName').value = json.profile.full_name || '';
         document.getElementById('profilePhone').value = json.profile.phone || '';
         renderMyReservations(json.reservations || []);
+        loadMySubscriptions();
         new bootstrap.Modal(document.getElementById('userProfileModal')).show();
     }
 }
@@ -568,6 +669,40 @@ function renderMyReservations(list) {
     tbody.innerHTML = html;
 }
 
+async function loadMySubscriptions() {
+    const res = await fetch('api/facility.php?action=list_user_subscriptions');
+    const json = await res.json();
+    if (json.status === 'success') {
+        currentUserProfileSubs = json.data || [];
+        renderMySubscriptions(currentUserProfileSubs);
+    }
+}
+
+function renderMySubscriptions(list) {
+    const tbody = document.getElementById('mySubscriptionsList');
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-3">Henüz tanımlı abonmanlığınız bulunmuyor.</td></tr>`;
+        return;
+    }
+    let html = '';
+    list.forEach(s => {
+        const modeBadge = (s.booking_mode === 'periodic') ? `<span class="badge bg-info bg-opacity-10 text-info border border-info">📅 Periyodik (${escapeHtml(s.preferred_day)} ${s.preferred_time})</span>` : `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary">🎯 Esnek Kredi</span>`;
+        const statusBadge = (s.status === 'Aktif') ? `<span class="badge bg-success text-white">✅ Aktif</span>` : `<span class="badge bg-secondary text-white">🏁 Tamamlandı</span>`;
+
+        html += `<tr>
+            <td class="fw-bold text-dark">${escapeHtml(s.facility_name)}</td>
+            <td><span class="badge bg-warning bg-opacity-10 text-warning border border-warning fw-bold">${escapeHtml(s.package_name)}</span></td>
+            <td class="fw-semibold">${escapeHtml(s.field_name)}</td>
+            <td>${modeBadge}</td>
+            <td class="fw-bold">${s.total_matches} Maç</td>
+            <td><strong class="text-success fs-6">${s.remaining_matches} Maç Kredisi</strong></td>
+            <td class="fw-bold text-dark">₺${parseFloat(s.total_price).toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
+            <td>${statusBadge}</td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
 async function cancelMyReservation(id) {
     if (!confirm('Randevunuzu iptal etmek istediğinize emin misiniz?')) return;
     const formData = new FormData();
@@ -582,7 +717,6 @@ let currentFacilities = [];
 
 function executeSearch(e) {
     if (e) e.preventDefault();
-
     const city = document.getElementById('portalCity').value;
 
     if (!city) {
@@ -663,7 +797,7 @@ function renderFacilitiesList(facilities) {
                 <div>
                     <div class="d-flex align-items-center gap-2 mb-1">
                         <h4 class="fw-bold text-dark fs-5 mb-0"><i class="fa-solid fa-stadium text-primary me-1"></i>${escapeHtml(fac.name)}</h4>
-                        <span class="badge bg-light text-dark border fs-8"><i class="fa-solid fa-clock text-primary me-1"></i>Açık Saatler: ${fac.open_time} - ${fac.close_time}</span>
+                        <span class="badge bg-light text-dark border fs-8"><i class="fa-solid fa-clock text-primary me-1"></i>Hafta İçi: ${fac.open_time} - ${fac.close_time} | Hafta Sonu: ${fac.open_time_weekend || '09:00'} - ${fac.close_time_weekend || '03:00'}</span>
                     </div>
                     <p class="text-muted fs-7 mb-2"><i class="fa-solid fa-location-dot text-danger me-1"></i>${escapeHtml(fac.address)} &bull; <i class="fa-solid fa-phone text-success me-1"></i>${escapeHtml(fac.phone)}</p>
                 </div>
@@ -696,7 +830,7 @@ function renderFacilitiesList(facilities) {
                     <i class="fa-solid fa-calendar-days me-1"></i> Saatleri Gör & Randevu Al
                 </button>
                 <button class="btn btn-outline-secondary py-2 fs-7 fw-bold" onclick="openFacilitySubModal(${fac.id}, '${escapeHtml(fac.name)}')">
-                    <i class="fa-solid fa-crown text-warning me-1"></i> İncele & Abone Ol
+                    <i class="fa-solid fa-crown text-warning me-1"></i> İncele & Abone Ol (4, 12, 24 Maç)
                 </button>
             </div>
 
@@ -766,7 +900,7 @@ function isSlotClosedByRange(dateStr, timeStr, fieldObj) {
     return (slotDt >= startDt && slotDt <= endDt);
 }
 
-// CANLI DİNAMİK İSTEMCİ SAATİ İLE VARDİYA GEÇMİŞ SAAT DENETİMİ
+// HAFTA SONU SAATLERİ FIX & CANLI DİNAMİK İSTEMCİ SAATİ İLE VARDİYA DENETİMİ
 async function renderInlineDrawerTimeline(facId) {
     const fac = currentFacilities.find(f => f.id == facId);
     if (!fac) return;
@@ -787,6 +921,14 @@ async function renderInlineDrawerTimeline(facId) {
             </div>`;
         return;
     }
+
+    // HAFTA SONU SAATLERİ FIX:
+    const parts = date.split('-');
+    const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
+
+    let activeOpenStr = (isWeekend && fac.open_time_weekend) ? fac.open_time_weekend : (fac.open_time || '13:00');
+    let activeCloseStr = (isWeekend && fac.close_time_weekend) ? fac.close_time_weekend : (fac.close_time || '01:00');
 
     // TESİS KAPALI GÜN KONTROLÜ
     const closedDates = fac.closed_dates_array || [];
@@ -814,8 +956,8 @@ async function renderInlineDrawerTimeline(facId) {
     const json = await res.json();
     const reservations = json.data || [];
 
-    const openH = parseInt(fac.open_time || '13');
-    let closeH = parseInt(fac.close_time || '01');
+    const openH = parseInt(activeOpenStr.split(':')[0], 10);
+    let closeH = parseInt(activeCloseStr.split(':')[0], 10);
     if (closeH <= openH) closeH += 24;
 
     const hourNumbers = [];
@@ -845,7 +987,7 @@ async function renderInlineDrawerTimeline(facId) {
                 return;
             }
 
-            const isPast = isSlotInPast(date, h, fac.open_time);
+            const isPast = isSlotInPast(date, h, activeOpenStr);
             const isBooked = reservations.some(r => r.field_id == field.id && r.reservation_date === date && r.reservation_time === h && r.status !== 'İptal');
 
             if (isBooked) {
@@ -854,7 +996,7 @@ async function renderInlineDrawerTimeline(facId) {
                 hHtml += `<td><div class="slot-badge bg-secondary bg-opacity-10 text-muted border border-secondary border-opacity-25" style="cursor:not-allowed;" title="Saat Geçti"><i class="fa-solid fa-clock-rotate-left me-1"></i>GEÇTİ</div></td>`;
             } else {
                 hHtml += `<td>
-                    <div class="slot-badge slot-free" onclick="handleSlotClick(${fac.id}, ${field.id}, '${escapeHtml(field.field_name)}', '${date}', '${h}', ${field.hourly_fee}, '${fac.open_time}')">
+                    <div class="slot-badge slot-free" onclick="handleSlotClick(${fac.id}, ${field.id}, '${escapeHtml(field.field_name)}', '${date}', '${h}', ${field.hourly_fee}, '${activeOpenStr}')">
                         +${h}
                     </div>
                 </td>`;
@@ -886,7 +1028,7 @@ function handleSlotClick(facId, fieldId, fieldName, date, time, fee, openTime) {
     openPlayerBookModal(facId, fieldId, fieldName, date, time, fee);
 }
 
-function openPlayerBookModal(facId, fieldId, fieldName, date, time, fee) {
+async function openPlayerBookModal(facId, fieldId, fieldName, date, time, fee) {
     const { todayStr } = getLiveClientDateAndHour();
 
     document.getElementById('modalFacId').value = facId;
@@ -898,27 +1040,117 @@ function openPlayerBookModal(facId, fieldId, fieldName, date, time, fee) {
     document.getElementById('modalFee').value = fee;
     document.getElementById('modalSubPlan').value = 'Standart';
 
+    // Populate active user subscription credits dropdown for this facility
+    const selectEl = document.getElementById('modalUseSubSelect');
+    selectEl.innerHTML = `<option value="0" selected>💵 Normal Ödeme (₺${parseFloat(fee).toLocaleString('tr-TR')})</option>`;
+
+    if (IS_LOGGED_IN) {
+        const res = await fetch('api/facility.php?action=list_user_subscriptions');
+        const json = await res.json();
+
+        if (json.status === 'success' && json.data) {
+            const availableSubs = json.data.filter(s => s.facility_id == facId && s.remaining_matches > 0 && s.status === 'Aktif');
+            availableSubs.forEach(s => {
+                selectEl.innerHTML += `<option value="${s.id}">🎁 ${escapeHtml(s.package_name)} (Kalan: ${s.remaining_matches} Maç - ₺0.00)</option>`;
+            });
+        }
+    }
+
     new bootstrap.Modal(document.getElementById('playerModal')).show();
 }
+
+function onSubCreditSelectChange(selectEl) {
+    const feeInput = document.getElementById('modalFee');
+    const selectedSubId = parseInt(selectEl.value);
+
+    if (selectedSubId > 0) {
+        feeInput.value = '0.00 (Abonman Kredisi)';
+    } else {
+        // Restore standard fee
+        const facId = document.getElementById('modalFacId').value;
+        const fac = currentFacilities.find(f => f.id == facId);
+        const fieldId = document.getElementById('modalFieldId').value;
+        const field = fac ? fac.fields.find(ff => ff.id == fieldId) : null;
+        feeInput.value = field ? field.hourly_fee : '1200.00';
+    }
+}
+
+let activeFacSubObj = null;
 
 function openFacilitySubModal(facId, facName) {
     if (!IS_LOGGED_IN) {
         new bootstrap.Modal(document.getElementById('authRequiredModal')).show();
         return;
     }
+
+    const fac = currentFacilities.find(f => f.id == facId);
+    activeFacSubObj = fac;
+
     document.getElementById('facSubId').value = facId;
     document.getElementById('facSubName').value = facName;
+
+    const fieldSelect = document.getElementById('facSubFieldSelect');
+    if (fac && fac.fields) {
+        fieldSelect.innerHTML = fac.fields.map(f => `<option value="${f.id}" data-fee="${f.hourly_fee}">${escapeHtml(f.field_name)} (₺${parseFloat(f.hourly_fee).toLocaleString('tr-TR')}/Saat)</option>`).join('');
+    } else {
+        fieldSelect.innerHTML = `<option value="0">Tüm Sahalar</option>`;
+    }
+
+    updateSubPriceCalculation();
     new bootstrap.Modal(document.getElementById('facilitySubModal')).show();
 }
 
-function handleFacilitySubscription(e) {
-    e.preventDefault();
-    const facName = document.getElementById('facSubName').value;
-    const tier = document.getElementById('facSubTierSelect').value;
-    const captain = document.getElementById('facSubCaptain').value;
+function togglePeriodicFields() {
+    const mode = document.getElementById('facSubBookingMode').value;
+    const container = document.getElementById('periodicOptionsContainer');
+    if (mode === 'periodic') {
+        container.classList.remove('d-none');
+    } else {
+        container.classList.add('d-none');
+    }
+}
 
-    alert(`🎉 TEBRİKLER!\n${facName} tesisi için [${tier}] abonmanlık talebiniz oluşturuldu.\nKaptan: ${captain}\nİşletmeci sizinle iletişime geçecektir.`);
-    bootstrap.Modal.getInstance(document.getElementById('facilitySubModal')).hide();
+function updateSubPriceCalculation() {
+    const fieldSelect = document.getElementById('facSubFieldSelect');
+    const selectedOpt = fieldSelect.options[fieldSelect.selectedIndex];
+    const hourlyFee = selectedOpt ? parseFloat(selectedOpt.getAttribute('data-fee') || 1200) : 1200;
+
+    const packageType = document.getElementById('facSubPackageSelect').value;
+
+    let totalMatches = 4;
+    let discountRate = 10;
+    let pkgLabel = 'Aylık Paket (4 Maç)';
+
+    if (packageType === '3_months') {
+        totalMatches = 12;
+        discountRate = 15;
+        pkgLabel = '3 Aylık Paket (12 Maç)';
+    } else if (packageType === '6_months') {
+        totalMatches = 24;
+        discountRate = 20;
+        pkgLabel = '6 Aylık Paket (24 Maç VIP)';
+    }
+
+    const totalPrice = (hourlyFee * totalMatches) * (1 - (discountRate / 100));
+
+    document.getElementById('subPriceCalcDetail').innerText = `${pkgLabel} - ${totalMatches} Maç x ₺${hourlyFee.toLocaleString('tr-TR')} (%${discountRate} İndirimli)`;
+    document.getElementById('subTotalPriceText').innerText = `₺${totalPrice.toLocaleString('tr-TR', {minimumFractionDigits:2})}`;
+}
+
+async function handleFacilitySubscription(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+
+    const res = await fetch('api/facility.php?action=buy_subscription', { method: 'POST', body: formData });
+    const json = await res.json();
+
+    if (json.status === 'success') {
+        alert(json.message);
+        bootstrap.Modal.getInstance(document.getElementById('facilitySubModal')).hide();
+        openUserProfileModal();
+    } else {
+        alert(json.message);
+    }
 }
 
 async function handlePlayerBook(e) {
