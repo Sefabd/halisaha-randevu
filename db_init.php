@@ -113,9 +113,10 @@ try {
         ->execute(['AHMET YILMAZ', 'oyuncu1', $defaultPass, '0532 111 22 33', 'galatasaray']);
     $user1_id = $pdo->lastInsertId();
 
-    // Owner 1
-    $pdo->prepare("INSERT INTO facilities (name, owner_name, username, password, city, district, address, phone, open_time, close_time, open_time_weekend, close_time_weekend, favorite_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-        ->execute(['Kadıköy Şampiyonlar Spor Kompleksi', 'MEHMET KAYA', 'kadikoy_arena', $defaultPass, 'İstanbul', 'Kadıköy', 'Caferağa Mah. Moda Cad. No:45 Kadıköy / İstanbul', '0532 555 12 34', '08:00', '03:00', '08:00', '03:00', 'fenerbahce']);
+    $insFac = $pdo->prepare("INSERT INTO facilities (name, owner_name, username, password, city, district, address, phone, open_time, close_time, open_time_weekend, close_time_weekend, favorite_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+    // Owner 1: Kadıköy Şampiyonlar Spor Kompleksi
+    $insFac->execute(['Kadıköy Şampiyonlar Spor Kompleksi', 'MEHMET KAYA', 'kadikoy_arena', $defaultPass, 'İstanbul', 'Kadıköy', 'Caferağa Mah. Moda Cad. No:45 Kadıköy / İstanbul', '0532 555 12 34', '08:00', '03:00', '08:00', '03:00', 'fenerbahce']);
     $fac1_id = $pdo->lastInsertId();
 
     // Fields for Fac 1 (Futbol, Basketbol, Tenis)
@@ -132,13 +133,33 @@ try {
     $insSub = $pdo->prepare("INSERT INTO user_subscriptions (user_id, username, user_name, user_phone, facility_id, facility_name, field_id, field_name, package_name, period_type, total_matches, used_matches, remaining_matches, discount_rate, total_price, booking_mode, preferred_day, preferred_time, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $insSub->execute([$user1_id, 'oyuncu1', 'AHMET YILMAZ', '0532 111 22 33', $fac1_id, 'Kadıköy Şampiyonlar Spor Kompleksi', $field1_id, 'Saha 1', 'Aylık Paket (4 Maç - %10 İndirim)', '1_month', 4, 1, 3, 10, 4320.00, 'flexible', 'Çarşamba', '20:00', 'Aktif']);
 
-    // Owner 2
-    $pdo->prepare("INSERT INTO facilities (name, owner_name, username, password, city, district, address, phone, open_time, close_time, open_time_weekend, close_time_weekend, favorite_team) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-        ->execute(['Moda Park VIP Spor Tesisleri', 'CAN YILMAZ', 'moda_vip', $defaultPass, 'İstanbul', 'Kadıköy', 'Moda Sahil Yolu No:18 Kadıköy / İstanbul', '0533 444 55 66', '12:00', '02:00', '09:00', '03:00', 'besiktas']);
+    // Owner 2: Moda Park VIP Spor Tesisleri
+    $insFac->execute(['Moda Park VIP Spor Tesisleri', 'CAN YILMAZ', 'moda_vip', $defaultPass, 'İstanbul', 'Kadıköy', 'Moda Sahil Yolu No:18 Kadıköy / İstanbul', '0533 444 55 66', '12:00', '02:00', '09:00', '03:00', 'besiktas']);
     $fac2_id = $pdo->lastInsertId();
 
     $insField->execute([$fac2_id, 'VIP Arena 1', 'Kapalı Futbol Sahası', 1400.00, 'Aktif', $defaultFeats]);
     $insField->execute([$fac2_id, 'VIP Arena 2', 'Açık Futbol Sahası', 1300.00, 'Aktif', $defaultFeats]);
+
+    // Owner 3: Beşiktaş Yıldızlar Halı Saha & Arena
+    $insFac->execute(['Beşiktaş Yıldızlar Halı Saha & Arena', 'SERKAN DEMİR', 'besiktas_arena', $defaultPass, 'İstanbul', 'Beşiktaş', 'Barbaros Bulvarı No:102 Beşiktaş / İstanbul', '0534 333 22 11', '10:00', '02:00', '09:00', '03:00', 'besiktas']);
+    $fac3_id = $pdo->lastInsertId();
+    $insField->execute([$fac3_id, 'Saha A (Çim)', 'Kapalı Futbol Sahası', 1500.00, 'Aktif', $defaultFeats]);
+    $insField->execute([$fac3_id, 'Saha B (Açık)', 'Açık Futbol Sahası', 1350.00, 'Aktif', $defaultFeats]);
+
+    // Owner 4: Çankaya Premier Futbol & Spor Kompleksi
+    $insFac->execute(['Çankaya Premier Futbol & Spor Kompleksi', 'BURAK ÖZTÜRK', 'cankaya_spor', $defaultPass, 'Ankara', 'Çankaya', 'Tunalı Hilmi Cad. No:88 Çankaya / Ankara', '0535 777 88 99', '11:00', '01:00', '09:00', '02:00', 'neutral']);
+    $fac4_id = $pdo->lastInsertId();
+    $insField->execute([$fac4_id, 'Ankara VIP Arena', 'Kapalı Futbol Sahası', 1250.00, 'Aktif', $defaultFeats]);
+
+    // Owner 5: Karşıyaka Sahil Arena Spor Tesisleri
+    $insFac->execute(['Karşıyaka Sahil Arena Spor Tesisleri', 'EFE KAHRAMAN', 'karsiyaka_arena', $defaultPass, 'İzmir', 'Karşıyaka', 'Cemal Gürsel Cad. No:42 Karşıyaka / İzmir', '0536 999 11 22', '09:00', '02:00', '09:00', '03:00', 'galatasaray']);
+    $fac5_id = $pdo->lastInsertId();
+    $insField->execute([$fac5_id, 'Ege Futbol Sahası', 'Kapalı Futbol Sahası', 1300.00, 'Aktif', $defaultFeats]);
+
+    // Owner 6: Nilüfer Olimpik Halı Saha Tesisleri
+    $insFac->execute(['Nilüfer Olimpik Halı Saha Tesisleri', 'MURAT ERDEM', 'nilufer_spor', $defaultPass, 'Bursa', 'Nilüfer', 'Fatih Sultan Mehmet Bulvarı No:15 Nilüfer / Bursa', '0537 222 33 44', '10:00', '01:00', '09:00', '02:00', 'bursaspor']);
+    $fac6_id = $pdo->lastInsertId();
+    $insField->execute([$fac6_id, 'Bursa Çim Saha 1', 'Kapalı Futbol Sahası', 1150.00, 'Aktif', $defaultFeats]);
 
     // Demo Reservations for Today and Yesterday
     $today = date('Y-m-d');
